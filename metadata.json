@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix: Pouch Supply Neon",
+  "description": "Replica of Pouch Supply featuring a high-fidelity Shopify-like store frontend, subscription packages, collections search with custom filters, and a complete Shopify style Admin Dashboard with full persistence for products, collections, builder pages, analytics, files, customers, and discounts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
