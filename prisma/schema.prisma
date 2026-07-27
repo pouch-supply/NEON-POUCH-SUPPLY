@@ -97,17 +97,28 @@ model Collection {
 }
 
 model FileEntry {
-  id          String   @id
-  fileName    String
-  altText     String?
-  dateAdded   String?
-  size        String?
-  references  String?
-  url         String
-  mimeType    String?
-  data        Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id
+  publicId         String?  @unique
+  url              String
+  secureUrl        String?
+  resourceType     String?  @default("image")
+  format           String?
+  width            Int?
+  height           Int?
+  fileSize         String?
+  folder           String?  @default("storefront_media")
+  originalFilename String?
+  fileName         String?
+  altText          String?
+  dateAdded        String?
+  size             String?
+  references       String?
+  mimeType         String?
+  data             Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([publicId])
 }
 
 model Order {

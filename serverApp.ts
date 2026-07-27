@@ -17,6 +17,10 @@ import discountsRouter from "./backend/routes/discounts";
 import customPagesRouter from "./backend/routes/customPages";
 import blogsRouter from "./backend/routes/blogs";
 
+import mediaRouter from "./backend/routes/media";
+import { uploadToCloudinary, isCloudinaryConfigured } from "./backend/services/cloudinary";
+import { prisma } from "./src/lib/prisma";
+
 export async function createExpressApp() {
   const app = express();
 
@@ -147,31 +151,63 @@ export async function createExpressApp() {
       }
       base64String = (base64String || "").trim();
 
-      const id = `file-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      
-      let extension = "";
-      if (filename && filename.includes(".")) {
-        const parts = filename.split(".");
-        const extracted = parts.pop()?.toLowerCase();
-        if (extracted && extracted.length <= 5) {
-          extension = extracted;
-        }
+      const displayName = filename || `upload-${Date.now()}`;
+      const isVideo = mimeType.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(displayName);
+
+      // 1. If Cloudinary is configured, upload directly to Cloudinary
+      if (isCloudinaryConfigured()) {
+        const fileBuffer = Buffer.from(base64String, "base64");
+        const uploadResult = await uploadToCloudinary(fileBuffer, {
+          folder: 'storefront_media',
+          originalFilename: displayName,
+          resourceType: isVideo ? 'video' : 'auto'
+        });
+
+        const id = `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const displaySize = uploadResult.fileSize > 1024 * 1024
+          ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(uploadResult.fileSize / 1024)} KB`;
+
+        const newFile = await prisma.fileEntry.create({
+          data: {
+            id,
+            publicId: uploadResult.publicId,
+            url: uploadResult.secureUrl || uploadResult.url,
+            secureUrl: uploadResult.secureUrl,
+            resourceType: uploadResult.resourceType,
+            format: uploadResult.format,
+            width: uploadResult.width || null,
+            height: uploadResult.height || null,
+            fileSize: displaySize,
+            folder: uploadResult.folder,
+            originalFilename: displayName,
+            fileName: displayName,
+            altText: displayName.split('.')[0] || 'Uploaded Asset',
+            dateAdded: new Date().toISOString().split('T')[0],
+            references: 'Direct Upload',
+            mimeType: mimeType
+          }
+        });
+
+        return res.json({
+          url: newFile.url,
+          secureUrl: newFile.secureUrl,
+          publicId: newFile.publicId,
+          id: newFile.id,
+          fileName: displayName,
+          mimeType
+        });
       }
 
-      if (!extension) {
-        if (mimeType.includes("jpeg") || mimeType.includes("jpg")) {
-          extension = "jpg";
-        } else if (mimeType.includes("gif")) {
-          extension = "gif";
-        } else if (mimeType.includes("webp")) {
-          extension = "webp";
-        } else if (mimeType.includes("mp4")) {
-          extension = "mp4";
-        } else if (mimeType.includes("png")) {
-          extension = "png";
-        } else {
-          extension = "bin";
-        }
+      // 2. Fallback if Cloudinary environment variables are missing
+      const id = `file-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      let extension = "png";
+      if (filename && filename.includes(".")) {
+        extension = filename.split(".").pop()?.toLowerCase() || "png";
+      } else if (mimeType.includes("jpeg") || mimeType.includes("jpg")) {
+        extension = "jpg";
+      } else if (mimeType.includes("mp4")) {
+        extension = "mp4";
       }
 
       const filenameOnDisk = `${id}.${extension}`;
@@ -185,29 +221,25 @@ export async function createExpressApp() {
       await saveUploadedImage(id, base64String, mimeType);
       
       const fileUrl = `/uploads/${filenameOnDisk}`;
-      const displayName = filename || `${id}.${extension}`;
       const rawBytes = Math.round(base64String.length * 0.75);
       const calculatedSize = rawBytes > 1024 * 1024 
         ? `${(rawBytes / (1024 * 1024)).toFixed(1)} MB` 
         : `${Math.round(rawBytes / 1024)} KB`;
 
       try {
-        const currentFiles = await fetchResource("files") || [];
-        const newFileEntry = {
-          id,
-          fileName: displayName,
-          url: fileUrl,
-          altText: displayName.split('.')[0] || 'Uploaded Media Asset',
-          mimeType: mimeType,
-          size: calculatedSize,
-          fileSize: calculatedSize,
-          references: 'Direct Upload',
-          dateAdded: new Date().toISOString().split('T')[0]
-        };
-        if (!currentFiles.some((f: any) => f.id === id || f.url === fileUrl)) {
-          currentFiles.unshift(newFileEntry);
-          await saveResource("files", currentFiles);
-        }
+        await prisma.fileEntry.create({
+          data: {
+            id,
+            fileName: displayName,
+            url: fileUrl,
+            altText: displayName.split('.')[0] || 'Uploaded Media Asset',
+            mimeType: mimeType,
+            size: calculatedSize,
+            fileSize: calculatedSize,
+            references: 'Direct Upload',
+            dateAdded: new Date().toISOString().split('T')[0]
+          }
+        });
       } catch (fileRegErr) {}
 
       res.json({ url: fileUrl, id, fileName: displayName, mimeType });
@@ -287,6 +319,7 @@ export async function createExpressApp() {
   });
 
   // Mount modular backend routers
+  app.use("/api/media", mediaRouter);
   app.use("/api/products", productsRouter);
   app.use("/api/collections", collectionsRouter);
   app.use("/api/orders", ordersRouter);
