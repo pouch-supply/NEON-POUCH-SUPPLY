@@ -146,11 +146,20 @@ export default function ImageUploadInput({
     setIsLoadingFiles(true);
     let loaded: FileEntry[] = [];
     try {
-      const res = await fetch('/api/files');
+      const res = await fetch('/api/media');
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
           loaded = data;
+        }
+      }
+      if (loaded.length === 0) {
+        const resFiles = await fetch('/api/files');
+        if (resFiles.ok) {
+          const dataFiles = await resFiles.json();
+          if (Array.isArray(dataFiles)) {
+            loaded = dataFiles;
+          }
         }
       }
     } catch (_) {}
@@ -186,7 +195,7 @@ export default function ImageUploadInput({
     fetchFiles();
   };
 
-  const processFile = (file: File, isForModal = false) => {
+  const processFile = async (file: File, isForModal = false) => {
     const isVid = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(file.name);
     const isImg = file.type.startsWith('image/') || /\.(png|jpe?g|webp|svg|gif|avif|ico|heic|bmp)$/i.test(file.name);
     const isDoc = file.type.includes('pdf') || /\.(pdf|doc|docx|csv|xlsx|zip|txt)$/i.test(file.name);
@@ -208,70 +217,97 @@ export default function ImageUploadInput({
     else setIsUploading(true);
     setUploadStatus(`Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)}MB)...`);
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      if (typeof reader.result === 'string') {
-        const rawData = reader.result;
-        let finalUrl = rawData;
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: rawData, filename: file.name })
-          });
-          if (res.ok) {
-            const info = await res.json();
-            if (info.url) {
-              finalUrl = info.url;
-            }
-          }
-        } catch (err) {
-          console.warn('[FileUpload] API upload failed, using DataURL fallback:', err);
-        } finally {
-          if (isForModal) setIsModalUploading(false);
-          else setIsUploading(false);
-          setUploadStatus(null);
-        }
+    let finalUrl = '';
+    let returnedEntry: FileEntry | null = null;
 
-        const rawBytes = file.size;
-        const calculatedSize = rawBytes > 1024 * 1024 
-          ? `${(rawBytes / (1024 * 1024)).toFixed(1)} MB` 
-          : `${Math.round(rawBytes / 1024)} KB`;
+    // 1. Try Multipart Cloudinary Upload
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'storefront_media');
 
-        const newFileEntry: FileEntry = {
-          id: `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-          fileName: file.name,
-          altText: file.name.split('.')[0] || 'Uploaded Asset',
-          dateAdded: new Date().toISOString().split('T')[0],
-          size: calculatedSize,
-          references: 'Direct Upload',
-          url: finalUrl,
-          mimeType: file.type
-        };
+      const res = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData
+      });
 
-        // Dispatch custom events for App.tsx and AdminDashboard.tsx to update media registry safely
-        window.dispatchEvent(new CustomEvent('app-image-uploaded', {
-          detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
-        }));
-        window.dispatchEvent(new CustomEvent('app-file-uploaded', {
-          detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
-        }));
-
-        if (isForModal) {
-          setFileManagerFiles(prev => [newFileEntry, ...prev.filter(f => f.url !== finalUrl)]);
-          setSelectedFileUrl(finalUrl);
-        } else {
-          onChange(finalUrl);
+      if (res.ok) {
+        const info = await res.json();
+        if (info.url) {
+          finalUrl = info.url;
+          returnedEntry = info.file || null;
         }
       }
+    } catch (err) {
+      console.warn('[Cloudinary FormData upload failed, falling back to base64]', err);
+    }
+
+    // 2. Base64 Fallback
+    if (!finalUrl) {
+      await new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          if (typeof reader.result === 'string') {
+            const rawData = reader.result;
+            finalUrl = rawData;
+            try {
+              const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: rawData, filename: file.name })
+              });
+              if (res.ok) {
+                const info = await res.json();
+                if (info.url) finalUrl = info.url;
+              }
+            } catch (_) {}
+          }
+          resolve();
+        };
+        reader.onerror = () => resolve();
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (isForModal) setIsModalUploading(false);
+    else setIsUploading(false);
+    setUploadStatus(null);
+
+    if (!finalUrl) {
+      alert('Failure uploading attachment file.');
+      return;
+    }
+
+    const rawBytes = file.size;
+    const calculatedSize = rawBytes > 1024 * 1024 
+      ? `${(rawBytes / (1024 * 1024)).toFixed(1)} MB` 
+      : `${Math.round(rawBytes / 1024)} KB`;
+
+    const newFileEntry: FileEntry = returnedEntry || {
+      id: `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      fileName: file.name,
+      altText: file.name.split('.')[0] || 'Uploaded Asset',
+      dateAdded: new Date().toISOString().split('T')[0],
+      size: calculatedSize,
+      references: 'Direct Upload',
+      url: finalUrl,
+      mimeType: file.type
     };
-    reader.onerror = () => {
-      alert('Failure reading attachment file.');
-      if (isForModal) setIsModalUploading(false);
-      else setIsUploading(false);
-      setUploadStatus(null);
-    };
-    reader.readAsDataURL(file);
+
+    // Dispatch custom events
+    window.dispatchEvent(new CustomEvent('app-image-uploaded', {
+      detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
+    }));
+    window.dispatchEvent(new CustomEvent('app-file-uploaded', {
+      detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
+    }));
+
+    if (isForModal) {
+      setFileManagerFiles(prev => [newFileEntry, ...prev.filter(f => f.url !== finalUrl)]);
+      setSelectedFileUrl(finalUrl);
+    } else {
+      onChange(finalUrl);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
