@@ -19,7 +19,6 @@ import PlansCanOverlay from './PlansCanOverlay';
 import { Crown, Flame, Cloud } from 'lucide-react';
 import AnalyticsTab from './admin/AnalyticsTab';
 import FilesTab from './admin/FilesTab';
-import RoyalMailTab from './admin/RoyalMailTab';
 import OrdersTab from './admin/OrdersTab';
 import CustomersTab from './admin/CustomersTab';
 import CollectionsTab from './admin/CollectionsTab';
@@ -566,7 +565,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'royalmail';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -603,8 +602,7 @@ export default function AdminDashboard({
     files: 'files',
     customers: 'customers',
     discounts: 'discounts',
-    layout: 'layout',
-    royalmail: 'royal-mail'
+    layout: 'layout'
   };
 
   const pathToTabMap: Record<string, SidebarTab> = {
@@ -620,8 +618,7 @@ export default function AdminDashboard({
     media: 'files',
     customers: 'customers',
     discounts: 'discounts',
-    layout: 'layout',
-    'royal-mail': 'royalmail'
+    layout: 'layout'
   };
 
   const getInitialTab = (): SidebarTab => {
@@ -690,163 +687,6 @@ export default function AdminDashboard({
   const [dbDetailsLoading, setDbDetailsLoading] = useState(false);
   const [dbDetailsData, setDbDetailsData] = useState<any | null>(null);
   const [dbDetailsError, setDbDetailsError] = useState<string | null>(null);
-
-  // Email Dispatcher State
-  const [emailSettings, setEmailSettings] = useState({
-    senderEmail: 'scottkivlinpouch@gmail.com',
-    smtpUser: 'scottkivlinpouch@gmail.com',
-    smtpPass: '',
-    smtpHost: 'smtp.gmail.com',
-    smtpPort: 465,
-    hasPasswordSet: false
-  });
-  const [testEmailRecipient, setTestEmailRecipient] = useState('scottkivlinpouch@gmail.com');
-  const [emailStatusMsg, setEmailStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
-  const [isSavingEmailSettings, setIsSavingEmailSettings] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/email/settings')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data) setEmailSettings(data);
-      })
-      .catch(err => console.error("Failed to fetch email settings:", err));
-  }, []);
-
-  const handleSaveEmailSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingEmailSettings(true);
-    setEmailStatusMsg(null);
-    try {
-      const res = await fetch('/api/email/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailSettings)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setEmailSettings(data.config);
-        setEmailStatusMsg({ type: 'success', text: 'Email SMTP configuration saved successfully!' });
-      } else {
-        setEmailStatusMsg({ type: 'error', text: data.error || 'Failed to update email settings' });
-      }
-    } catch (err: any) {
-      setEmailStatusMsg({ type: 'error', text: err.message || 'Error connecting to server.' });
-    } finally {
-      setIsSavingEmailSettings(false);
-    }
-  };
-
-  const handleSendTestEmail = async () => {
-    setIsSendingTestEmail(true);
-    setEmailStatusMsg(null);
-    try {
-      const res = await fetch('/api/email/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toEmail: testEmailRecipient })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setEmailStatusMsg({ type: 'success', text: data.message });
-      } else {
-        setEmailStatusMsg({ 
-          type: 'error', 
-          text: `${data.message} ${data.hint || ''}`.trim() 
-        });
-      }
-    } catch (err: any) {
-      setEmailStatusMsg({ type: 'error', text: err.message || 'Failed to dispatch test email' });
-    } finally {
-      setIsSendingTestEmail(false);
-    }
-  };
-
-  // AgeChecked Compliance API State
-  const [ageCheckedSettings, setAgeCheckedSettings] = useState({
-    publicKey: 'RFGzMiuNjEGeAICshAEISF5aBwvq3FmtWZYxC2E98V5Y8qUR1U9Umy8v87Wwi99o',
-    secretKey: '',
-    environment: 'production' as 'production' | 'sandbox',
-    serviceId: 'pouch_supply_uk_18',
-    minimumAge: 18,
-    customApiUrl: '',
-    active: true,
-    apiUrl: 'https://api.agechecked.com',
-    totalVerifiedCount: 0,
-    hasSecretKeySet: false
-  });
-  const [ageCheckedStatusMsg, setAgeCheckedStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [isSavingAgeChecked, setIsSavingAgeChecked] = useState(false);
-  const [isTestingAgeChecked, setIsTestingAgeChecked] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/agechecked/config')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data) {
-          setAgeCheckedSettings(prev => ({
-            ...prev,
-            publicKey: data.publicKey || prev.publicKey,
-            environment: data.environment || 'production',
-            serviceId: data.serviceId || 'pouch_supply_uk_18',
-            minimumAge: data.minimumAge || 18,
-            active: data.active,
-            apiUrl: data.apiUrl || 'https://api.agechecked.com',
-            totalVerifiedCount: data.totalVerifiedCount || 0,
-            hasSecretKeySet: data.hasSecretKeySet
-          }));
-        }
-      })
-      .catch(err => console.error("Failed to load AgeChecked settings:", err));
-  }, []);
-
-  const handleSaveAgeCheckedSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingAgeChecked(true);
-    setAgeCheckedStatusMsg(null);
-    try {
-      const res = await fetch('/api/agechecked/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ageCheckedSettings)
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setAgeCheckedStatusMsg({ type: 'success', text: 'AgeChecked API settings saved successfully!' });
-      } else {
-        setAgeCheckedStatusMsg({ type: 'error', text: data.error || 'Failed to save AgeChecked settings.' });
-      }
-    } catch (err: any) {
-      setAgeCheckedStatusMsg({ type: 'error', text: err.message || 'Error connecting to server.' });
-    } finally {
-      setIsSavingAgeChecked(false);
-    }
-  };
-
-  const handleTestAgeCheckedConnection = async () => {
-    setIsTestingAgeChecked(true);
-    setAgeCheckedStatusMsg(null);
-    try {
-      const res = await fetch('/api/agechecked/test-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAgeCheckedStatusMsg({ 
-          type: 'success', 
-          text: `[HTTP ${data.statusCode}] ${data.message} (${data.environment.toUpperCase()} Mode)` 
-        });
-      } else {
-        setAgeCheckedStatusMsg({ type: 'error', text: data.message || 'Connection test failed.' });
-      }
-    } catch (err: any) {
-      setAgeCheckedStatusMsg({ type: 'error', text: err.message || 'Error testing AgeChecked connection.' });
-    } finally {
-      setIsTestingAgeChecked(false);
-    }
-  };
 
   // Custom confirmation dialog state to replace blocked window.confirm in sandboxed iframe
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -981,23 +821,6 @@ export default function AdminDashboard({
   const [cloudinaryTestResult, setCloudinaryTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isVideoUploading, setIsVideoUploading] = useState(false);
   const [videoUploadStatus, setVideoUploadStatus] = useState<string | null>(null);
-
-  // --- Royal Mail Click & Drop API Integration State ---
-  const [rmIntegrationName, setRmIntegrationName] = useState(() => {
-    return localStorage.getItem('ps_rm_integration_name') || 'Pouch-Supply';
-  });
-  const [rmApiKey, setRmApiKey] = useState(() => {
-    return localStorage.getItem('ps_rm_api_key') || 'rm_cd_live_7a9f82d0119e84b321';
-  });
-  const [rmServiceType, setRmServiceType] = useState(() => {
-    return localStorage.getItem('ps_rm_service_type') || 'Royal Mail Tracked 24';
-  });
-  const [rmAutoSync, setRmAutoSync] = useState(() => {
-    return localStorage.getItem('ps_rm_auto_sync') !== 'false';
-  });
-  const [rmTestStatus, setRmTestStatus] = useState<string | null>(null);
-  const [rmSavedToast, setRmSavedToast] = useState(false);
-  const [rmTransmittingId, setRmTransmittingId] = useState<string | null>(null);
 
   const parseCloudinaryInput = (cNameVal?: string, aKeyVal?: string, aSecretVal?: string) => {
     let cName = (cNameVal || '').trim();
@@ -3168,9 +2991,6 @@ export default function AdminDashboard({
                 { id: 'files', label: 'Files Manager', icon: HardDrive },
                 { id: 'customers', label: 'Customers', icon: Users },
                 { id: 'discounts', label: 'Discounts', icon: Percent },
-                { id: 'royalmail', label: 'Royal Mail API', icon: Truck },
-                { id: 'email', label: 'Email Confirmations', icon: Mail },
-                { id: 'agechecked', label: 'AgeChecked API', icon: ShieldCheck },
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
               ].map(item => {
                 const Icon = item.icon;
@@ -3963,27 +3783,7 @@ export default function AdminDashboard({
           </div>
         )}
 
-        {/* ROYAL MAIL CLICK & DROP API INTEGRATION TAB */}
-        {activeTab === 'royalmail' && (
-          <RoyalMailTab
-            rmIntegrationName={rmIntegrationName}
-            setRmIntegrationName={setRmIntegrationName}
-            rmApiKey={rmApiKey}
-            setRmApiKey={setRmApiKey}
-            rmServiceType={rmServiceType}
-            setRmServiceType={setRmServiceType}
-            rmAutoSync={rmAutoSync}
-            setRmAutoSync={setRmAutoSync}
-            rmTestStatus={rmTestStatus}
-            setRmTestStatus={setRmTestStatus}
-            rmSavedToast={rmSavedToast}
-            setRmSavedToast={setRmSavedToast}
-            rmTransmittingId={rmTransmittingId}
-            setRmTransmittingId={setRmTransmittingId}
-            orders={orders}
-            onUpdateOrders={onUpdateOrders}
-          />
-        )}
+
 
         {/* CUSTOM CONFIRMATION DIALOG MODAL (Guaranteed to work in sandboxed iframes) */}
         {confirmDialog && confirmDialog.isOpen && (
