@@ -159,6 +159,10 @@ export async function getDatabaseDetails(): Promise<any> {
         status: 'not-configured',
         host: 'N/A',
         database: 'N/A',
+        uriHost: 'N/A',
+        dbName: 'N/A',
+        collections: [],
+        models: [],
         error: 'DATABASE_URL is missing'
       };
     }
@@ -166,13 +170,38 @@ export async function getDatabaseDetails(): Promise<any> {
     const versionResult: any[] = await prisma.$queryRaw`SELECT version()`;
     const version = versionResult[0]?.version || 'PostgreSQL (Neon)';
 
+    let collectionsList: { name: string; count: number }[] = [];
+    try {
+      await ensureNeonTablesExist();
+      const grouped = await prisma.storeResource.groupBy({
+        by: ['resource'],
+        _count: { _all: true }
+      });
+      collectionsList = grouped.map(g => ({
+        name: g.resource,
+        count: g._count._all
+      }));
+    } catch (gErr) {
+      console.warn('[getDatabaseDetails] Failed grouping resources:', gErr);
+    }
+
+    const modelsList = [
+      'SystemStatus', 'StoreResource', 'StoreSetting', 'Product', 
+      'Collection', 'FileEntry', 'Order', 'CustomPage', 'Customer', 
+      'BlogPost', 'Discount', 'LayoutSetting'
+    ];
+
     return {
       provider: 'Neon PostgreSQL',
       status: 'connected',
       host,
       database,
+      uriHost: host,
+      dbName: database,
       version,
-      orm: 'Prisma'
+      orm: 'Prisma',
+      collections: collectionsList,
+      models: modelsList
     };
   } catch (err: any) {
     return {
@@ -180,6 +209,10 @@ export async function getDatabaseDetails(): Promise<any> {
       status: 'error',
       host,
       database,
+      uriHost: host,
+      dbName: database,
+      collections: [],
+      models: [],
       error: err?.message || String(err),
       orm: 'Prisma'
     };
@@ -416,11 +449,49 @@ const memoryImages: Record<string, { base64Data: string; mimeType: string }> = {
 
 export async function saveUploadedImage(id: string, base64Data: string, mimeType: string): Promise<string> {
   memoryImages[id] = { base64Data, mimeType };
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      await prisma.storeResource.upsert({
+        where: {
+          resource_itemId: {
+            resource: 'uploaded_images',
+            itemId: id
+          }
+        },
+        update: { data: { id, base64Data, mimeType } },
+        create: {
+          resource: 'uploaded_images',
+          itemId: id,
+          data: { id, base64Data, mimeType }
+        }
+      });
+    } catch (e) {
+      console.warn('[Neon DB] Failed to persist uploaded image:', e);
+    }
+  }
   return `/uploads/${id}`;
 }
 
 export async function getUploadedImage(id: string): Promise<{ base64Data: string; mimeType: string } | null> {
-  return memoryImages[id] || null;
+  if (memoryImages[id]) return memoryImages[id];
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      const record = await prisma.storeResource.findFirst({
+        where: {
+          resource: 'uploaded_images',
+          itemId: id
+        }
+      });
+      if (record && record.data) {
+        const data = record.data as any;
+        memoryImages[id] = { base64Data: data.base64Data, mimeType: data.mimeType };
+        return memoryImages[id];
+      }
+    } catch (e) {}
+  }
+  return null;
 }
 
 export async function fetchLayoutSettings(): Promise<any> {
