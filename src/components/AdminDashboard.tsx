@@ -682,7 +682,7 @@ export default function AdminDashboard({
     uriHost?: string;
   } | null>(null);
 
-  // MongoDB details modal state
+  // Database details modal state
   const [showDbDetailsModal, setShowDbDetailsModal] = useState(false);
   const [dbDetailsLoading, setDbDetailsLoading] = useState(false);
   const [dbDetailsData, setDbDetailsData] = useState<any | null>(null);
@@ -745,7 +745,7 @@ export default function AdminDashboard({
       if (response.ok) {
         setDbStatus(data);
         if (data.status === 'connected') {
-          setUriUpdateResult({ success: true, message: 'Successfully connected to MongoDB Atlas database!' });
+          setUriUpdateResult({ success: true, message: 'Successfully connected to Neon PostgreSQL database!' });
           setTimeout(() => {
             window.location.reload();
           }, 1500);
@@ -1802,7 +1802,7 @@ export default function AdminDashboard({
       downloadAnchor.click();
       downloadAnchor.remove();
 
-      // Persist to localStorage and MongoDB to guarantee safety
+      // Persist to localStorage and Neon PostgreSQL to guarantee safety
       try {
         localStorage.setItem('ps_custom_pages', JSON.stringify(pagesToExport));
       } catch (e) {
@@ -1868,7 +1868,7 @@ export default function AdminDashboard({
             body: JSON.stringify(merged)
           }).catch(err => console.error('[Import Safety Sync] POST failed:', err));
 
-          alert(`Successfully imported and merged ${importedList.length} pages into MongoDB and local storage!`);
+          alert(`Successfully imported and merged ${importedList.length} pages into database and local storage!`);
         }, "Import Pages Backup");
 
       } catch (err: any) {
@@ -3251,7 +3251,7 @@ export default function AdminDashboard({
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm("Are you sure you want to clear the custom MongoDB URI?")) {
+                      if (confirm("Are you sure you want to clear the custom Database URI?")) {
                         setCustomUriInput('');
                         fetch('/api/update-db-uri', {
                           method: 'POST',
@@ -3268,35 +3268,35 @@ export default function AdminDashboard({
                   </button>
                 </div>
 
-                {/* Highly structured, simple, exact MongoDB whitelisting diagnostic manual */}
+                {/* Neon PostgreSQL Connection Information */}
                 <div className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border border-indigo-150 rounded-xl p-5 space-y-4 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center select-none shrink-0 text-white font-bold text-xs ring-4 ring-indigo-100">
                       ?
                     </div>
                     <div>
-                      <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wide">Why is your Atlas Whitelist failing? (Important diagnostic)</h4>
-                      <p className="text-[10px] text-indigo-700 font-semibold">The SSL Handshake Failed (TLS Alert 80) error results solely from dynamic container hosting.</p>
+                      <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wide">Neon PostgreSQL Database Configuration</h4>
+                      <p className="text-[10px] text-indigo-700 font-semibold">Server-side connection managed via Prisma ORM.</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                     <div className="bg-white/90 border border-slate-150 p-3.5 rounded-lg space-y-2">
-                      <span className="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Diagnosis</span>
+                      <span className="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Database</span>
                       <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                        This web app operates server-side in a secure <strong>Google Cloud Run container</strong>. The requests to MongoDB originate from our Cloud server, <strong>not</strong> your local computer.
+                        Operates on serverless Neon PostgreSQL with auto-scaling and pooled connections.
                       </p>
                     </div>
                     <div className="bg-white/90 border border-slate-150 p-3.5 rounded-lg space-y-2">
-                      <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">The Conflict</span>
+                      <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">ORM</span>
                       <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                        If you whitelisted your laptop's current IP address, Atlas blocks connection attempts from our server container. Cloud Run uses dynamic outbound IPs that rotate constantly.
+                        Prisma Client handles strongly typed schema definitions, indexing, and migration pipelines.
                       </p>
                     </div>
                     <div className="bg-white/90 border border-slate-150 p-3.5 rounded-lg space-y-2">
-                      <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">The Solution</span>
+                      <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Storage</span>
                       <p className="text-[10.5px] text-slate-700 leading-relaxed font-semibold">
-                        In your <strong>MongoDB Atlas Panel</strong> under <strong>Network Access</strong>, click <strong>+ Add IP Address</strong> and click the <strong>Allow Access from Anywhere</strong> button (this adds <code className="font-mono text-slate-900 bg-slate-100 px-1 text-[9.5px] rounded">0.0.0.0/0</code>). This instantly unblocks all Cloud containers!
+                        All products, orders, collections, customers, discounts, and page layouts are synced.
                       </p>
                     </div>
                   </div>
@@ -3304,12 +3304,12 @@ export default function AdminDashboard({
 
                 {/* Secure Configuration Input Form */}
                 <div className="bg-white/80 border border-slate-205 rounded-xl p-4 space-y-3 shadow-3xs">
-                  <span className="text-[10px] font-extrabold text-slate-605 uppercase tracking-wider block">Update MongoDB Connection URI string:</span>
+                  <span className="text-[10px] font-extrabold text-slate-605 uppercase tracking-wider block">Update Neon DATABASE_URL Connection String:</span>
                   <form onSubmit={handleUpdateUriSubmit} className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1 flex items-center">
                       <input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter new MongoDB URI"
+                        placeholder="postgresql://user:password@ep-xyz.neon.tech/neondb?sslmode=require"
                         value={customUriInput}
                         onChange={(e) => setCustomUriInput(e.target.value)}
                         className="w-full text-xs font-mono border border-slate-202 p-2.5 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-505 bg-white font-bold"
@@ -3666,7 +3666,7 @@ export default function AdminDashboard({
                             Connection {dbDetailsData.status === 'connected' ? 'Active' : 'Offline'}
                           </p>
                           <p className="text-[10px] opacity-80 mt-0.5">
-                            Mongoose State: <span className="font-mono font-bold">{dbDetailsData.readyStateLabel}</span> ({dbDetailsData.readyState})
+                            Provider & ORM: <span className="font-mono font-bold">Neon PostgreSQL (Prisma)</span>
                           </p>
                         </div>
                       </div>
@@ -3733,10 +3733,10 @@ export default function AdminDashboard({
                       )}
                     </div>
 
-                    {/* Initialized Mongoose Models */}
+                    {/* Active Prisma Models */}
                     <div className="space-y-2">
                       <h4 className="font-extrabold text-[10px] text-slate-500 uppercase tracking-widest">
-                        Active Mongoose Models ({dbDetailsData.models?.length || 0})
+                        Active Prisma Models (12)
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
                         {dbDetailsData.models?.map((modelName: string) => (

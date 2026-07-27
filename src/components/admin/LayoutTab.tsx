@@ -262,7 +262,7 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({
 
             <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
               Connect your storefront with <strong>Cloudinary CDN</strong>. It provides <strong>lightning-fast global image & video hosting with native support for smooth video streaming and fast loading times</strong>.
-              When configured, any product visuals, brand logo banners, or active section background videos you upload will be permanently hosted on Cloudinary, connected with your MongoDB cluster.
+              When configured, any product visuals, brand logo banners, or active section background videos you upload will be permanently hosted on Cloudinary, connected with your Neon PostgreSQL database.
             </p>
 
             {/* Quick Paste Connection String Box */}

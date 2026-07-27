@@ -480,7 +480,7 @@ export default function App() {
           });
         }
       } catch (err) {
-        console.error("[State Loader] Failed to connect to backend MongoDB API. Using local backup state.", err);
+        console.error("[State Loader] Failed to connect to backend Database API. Using local backup state.", err);
       } finally {
         setIsInitialLoadDone(true);
       }
@@ -801,7 +801,7 @@ export default function App() {
     };
   }, []);
 
-  // --- Write to LocalStorage AND MongoDB Database on Changes ---
+  // --- Write to LocalStorage AND Neon PostgreSQL Database on Changes ---
   useEffect(() => {
     safeSaveToLocalStorage('ps_products', products);
     if (isInitialLoadDone) {
@@ -1593,9 +1593,9 @@ export default function App() {
         <div className="bg-amber-600 text-white px-4 py-2.5 text-center text-[11px] font-bold flex flex-col sm:flex-row items-center justify-center gap-2 relative z-50 shadow-md">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-white animate-ping shrink-0" />
-            <span>⚠️ MongoDB Connection Offline (Pending IP Whitelist):</span>
+            <span>⚠️ Neon PostgreSQL Database Not Configured / Offline:</span>
           </div>
-          <span className="opacity-95">Your Atlas firewall is blocking server connection. To save permanently, allow any IP address (0.0.0.0/0) inside your Atlas Network Access console.</span>
+          <span className="opacity-95">To persist changes permanently across sessions, configure your DATABASE_URL in the Admin Portal.</span>
           <button 
             type="button"
             onClick={() => setIsAdminActive(true)}

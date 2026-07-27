@@ -311,7 +311,7 @@ export default function CustomerAccount({
         ])
       };
     } else {
-      // Ensure sync with loggedInCustomer's real storeCredit and referralCode from MongoDB database
+      // Ensure sync with loggedInCustomer's real storeCredit and referralCode from Neon PostgreSQL database
       state.referralCode = realReferralCode;
       state.referralCredit = realStoreCredit;
       state.referredCount = referredCount;

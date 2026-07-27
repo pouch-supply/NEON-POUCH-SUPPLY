@@ -31,3 +31,195 @@ model StoreSetting {
   data      Json
   updatedAt DateTime @updatedAt
 }
+
+model AnalyticsRecord {
+  id        String   @id @default(uuid())
+  metric    String
+  value     Float
+  period    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id                String   @id
+  title             String
+  description       String?
+  price             Float    @default(0.0)
+  compareAtPrice    Float?   @default(0.0)
+  inventory         Int      @default(0)
+  sku               String?
+  category          String?
+  vendor            String?
+  status            String   @default("Active")
+  image             String?
+  weight            Float?
+  tags              String[] @default([])
+  media             String[] @default([])
+  variants          Json?
+  concreteVariants  Json?
+  barcode           String?
+  weightUnit        String?
+  slug              String?  @unique
+  seoTitle          String?
+  seoDescription   String?
+  strength          String?
+  flavour           String?
+  isVariantCard     Boolean? @default(false)
+  concreteVariantId String?
+  parentSlug        String?
+  parentId          String?
+  data              Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category])
+  @@index([vendor])
+  @@index([status])
+}
+
+model Collection {
+  id                String   @id
+  title             String
+  description       String?
+  type              String   @default("Manual")
+  image             String?
+  productIds        String[] @default([])
+  productConditions String?
+  slug              String?  @unique
+  seoTitle          String?
+  seoDescription   String?
+  ogImage           String?
+  data              Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model FileEntry {
+  id          String   @id
+  fileName    String
+  altText     String?
+  dateAdded   String?
+  size        String?
+  references  String?
+  url         String
+  mimeType    String?
+  data        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id                 String   @id
+  customerName       String
+  customerEmail      String
+  tags               String[] @default([])
+  fulfillmentStatus  String   @default("Unfulfilled")
+  paymentStatus      String?  @default("Paid")
+  worldpayTxId       String?
+  worldpayAuthCode   String?
+  cardBrand          String?
+  total              Float    @default(0.0)
+  storeCreditApplied Float?   @default(0.0)
+  destination        String
+  date               String
+  deliveryMethod     String
+  items              Json
+  trackingId         String?
+  carrier            String?
+  trackingHistory    Json?
+  discountApplied    Json?
+  data               Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([customerEmail])
+  @@index([fulfillmentStatus])
+}
+
+model CustomPage {
+  id          String   @id
+  title       String
+  slug        String   @unique
+  visibility  String   @default("Visible")
+  isHomepage  Boolean  @default(false)
+  sections    Json
+  data        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Customer {
+  id                 String   @id
+  name               String
+  email              String   @unique
+  subscriptionStatus String   @default("Not subscribed")
+  location           String?
+  ordersCount        Int      @default(0)
+  amountSpent        Float    @default(0.0)
+  addresses          String[] @default([])
+  wishlist           String[] @default([])
+  referralCode       String?
+  storeCredit        Float?   @default(0.0)
+  referredByCode     String?
+  subStatus          String?
+  subPlan            String?
+  subFrequency       String?
+  subCansCount       Int?
+  subPrice           Float?
+  nextPayment        String?
+  nextDelivery       String?
+  data               Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([email])
+}
+
+model BlogPost {
+  id          String   @id
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  content     String
+  image       String?
+  author      String?
+  category    String?
+  status      String   @default("Active")
+  publishedAt String?
+  readTime    String?
+  tags        String[] @default([])
+  data        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Discount {
+  id        String   @id
+  title     String
+  status    String   @default("Active")
+  method    String?
+  eligibility String?
+  type      String
+  used      Int      @default(0)
+  details   String?
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title])
+}
+
+model LayoutSetting {
+  id                   String   @id @default("layout_settings")
+  headerLogoText       String?
+  headerLogoSubtext    String?
+  headerLogoImage      String?
+  footerLogoText       String?
+  footerLogoDescription String?
+  footerLogoImage      String?
+  menuItems            Json?
+  data                 Json?
+  updatedAt            DateTime @updatedAt
+}

@@ -473,7 +473,7 @@ export default function ImageUploadInput({
                       {filteredFiles.length} {filteredFiles.length === 1 ? 'file' : 'files'}
                     </span>
                   </h3>
-                  <p className="text-[11px] text-slate-500">Choose an existing media file or upload a new file directly into MongoDB File Manager</p>
+                  <p className="text-[11px] text-slate-500">Choose an existing media file or upload a new file directly into File Manager</p>
                 </div>
               </div>
               <button
