@@ -105,6 +105,9 @@ export interface FileEntry {
   references: string;
   url: string;
   mimeType?: string;
+  publicId?: string;
+  resourceType?: string;
+  secureUrl?: string;
 }
 
 export interface Customer {

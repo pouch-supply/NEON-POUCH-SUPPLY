@@ -192,26 +192,55 @@ export async function createExpressApp() {
           ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
           : `${Math.round(uploadResult.fileSize / 1024)} KB`;
 
-        const newFile = await prisma.fileEntry.create({
-          data: {
+        let newFile: any = null;
+        const entryResourceType = uploadResult.resourceType || (isVideo ? 'video' : 'image');
+        const entryMimeType = mimeType || (isVideo ? 'video/mp4' : 'image/png');
+
+        try {
+          newFile = await prisma.fileEntry.create({
+            data: {
+              id,
+              publicId: uploadResult.publicId,
+              url: uploadResult.secureUrl || uploadResult.url,
+              secureUrl: uploadResult.secureUrl,
+              resourceType: entryResourceType,
+              format: uploadResult.format,
+              width: uploadResult.width || null,
+              height: uploadResult.height || null,
+              fileSize: displaySize,
+              size: displaySize,
+              folder: uploadResult.folder,
+              originalFilename: displayName,
+              fileName: displayName,
+              altText: displayName.split('.')[0] || 'Uploaded Asset',
+              dateAdded: new Date().toISOString().split('T')[0],
+              references: 'Direct Upload',
+              mimeType: entryMimeType
+            }
+          });
+        } catch (dbErr) {
+          newFile = {
             id,
             publicId: uploadResult.publicId,
             url: uploadResult.secureUrl || uploadResult.url,
             secureUrl: uploadResult.secureUrl,
-            resourceType: uploadResult.resourceType,
-            format: uploadResult.format,
-            width: uploadResult.width || null,
-            height: uploadResult.height || null,
-            fileSize: displaySize,
-            folder: uploadResult.folder,
-            originalFilename: displayName,
             fileName: displayName,
             altText: displayName.split('.')[0] || 'Uploaded Asset',
             dateAdded: new Date().toISOString().split('T')[0],
-            references: 'Direct Upload',
-            mimeType: mimeType
-          }
-        });
+            mimeType: entryMimeType,
+            resourceType: entryResourceType,
+            size: displaySize,
+            fileSize: displaySize,
+            references: 'Direct Upload'
+          };
+        }
+
+        try {
+          const currentFiles = await fetchResource('files');
+          const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
+          const updatedFiles = [newFile, ...currentArr.filter((f: any) => f && f.url !== newFile.url)];
+          await saveResource('files', updatedFiles);
+        } catch (sErr) {}
 
         return res.json({
           url: newFile.url,
@@ -219,7 +248,8 @@ export async function createExpressApp() {
           publicId: newFile.publicId,
           id: newFile.id,
           fileName: displayName,
-          mimeType
+          mimeType: entryMimeType,
+          resourceType: entryResourceType
         });
       }
 
@@ -250,23 +280,34 @@ export async function createExpressApp() {
         ? `${(rawBytes / (1024 * 1024)).toFixed(1)} MB` 
         : `${Math.round(rawBytes / 1024)} KB`;
 
+      const isVid = mimeType.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(filename || "");
+      const diskEntry = {
+        id,
+        fileName: displayName,
+        url: fileUrl,
+        altText: displayName.split('.')[0] || 'Uploaded Media Asset',
+        mimeType: mimeType || (isVid ? 'video/mp4' : 'image/png'),
+        resourceType: isVid ? 'video' : 'image',
+        size: calculatedSize,
+        fileSize: calculatedSize,
+        references: 'Direct Upload',
+        dateAdded: new Date().toISOString().split('T')[0]
+      };
+
       try {
         await prisma.fileEntry.create({
-          data: {
-            id,
-            fileName: displayName,
-            url: fileUrl,
-            altText: displayName.split('.')[0] || 'Uploaded Media Asset',
-            mimeType: mimeType,
-            size: calculatedSize,
-            fileSize: calculatedSize,
-            references: 'Direct Upload',
-            dateAdded: new Date().toISOString().split('T')[0]
-          }
+          data: diskEntry
         });
       } catch (fileRegErr) {}
 
-      res.json({ url: fileUrl, id, fileName: displayName, mimeType });
+      try {
+        const currentFiles = await fetchResource('files');
+        const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
+        const updatedFiles = [diskEntry, ...currentArr.filter((f: any) => f && f.url !== diskEntry.url)];
+        await saveResource('files', updatedFiles);
+      } catch (sErr) {}
+
+      res.json({ url: fileUrl, id, fileName: displayName, mimeType: diskEntry.mimeType, resourceType: diskEntry.resourceType });
     } catch (err: any) {
       console.error("[API Upload] Fail:", err);
       res.status(500).json({ error: err.message || "Failed to process image upload" });

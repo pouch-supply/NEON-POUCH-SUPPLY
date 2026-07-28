@@ -3,8 +3,10 @@ import { Upload, X, Image as ImageIcon, HardDrive, Search, Check, FolderOpen, Pl
 import { cleanMediaUrl } from '../utils/mediaUtils';
 import { FileEntry } from '../types';
 
-export function isVideoUrl(url?: string, mimeType?: string, fileName?: string): boolean {
-  if (mimeType && mimeType.startsWith('video/')) return true;
+export function isVideoUrl(url?: string, mimeType?: string, fileName?: string, resourceType?: string): boolean {
+  if (resourceType === 'video' || resourceType === 'video/mp4') return true;
+  if (mimeType && (mimeType.startsWith('video/') || mimeType.includes('mp4') || mimeType.includes('webm') || mimeType.includes('quicktime') || mimeType.includes('video'))) return true;
+  if (/\/video\/upload\//i.test(url || '')) return true;
   const target = (url || '') + ' ' + (fileName || '');
   return /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(target.split('?')[0]);
 }
@@ -15,11 +17,11 @@ export function isPdfOrDocUrl(url?: string, mimeType?: string, fileName?: string
   return /\.(pdf|doc|docx|csv|xlsx|zip|txt)$/i.test(target.split('?')[0]);
 }
 
-export function renderMediaThumbnail(url: string, fileName?: string, mimeType?: string, className = "w-full h-full") {
+export function renderMediaThumbnail(url: string, fileName?: string, mimeType?: string, className = "w-full h-full", resourceType?: string) {
   if (!url) return null;
   const cleaned = cleanMediaUrl(url);
 
-  if (isVideoUrl(url, mimeType, fileName)) {
+  if (isVideoUrl(url, mimeType, fileName, resourceType)) {
     return (
       <div className={`relative bg-slate-900 flex items-center justify-center overflow-hidden rounded ${className}`}>
         <video
@@ -291,16 +293,21 @@ export default function ImageUploadInput({
       size: calculatedSize,
       references: 'Direct Upload',
       url: finalUrl,
-      mimeType: file.type
+      mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
+      resourceType: isVid ? 'video' : 'image'
     };
 
     // Dispatch custom events
-    window.dispatchEvent(new CustomEvent('app-image-uploaded', {
-      detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
-    }));
-    window.dispatchEvent(new CustomEvent('app-file-uploaded', {
-      detail: { url: finalUrl, fileName: file.name, mimeType: file.type, size: calculatedSize }
-    }));
+    const eventDetail = {
+      id: newFileEntry.id,
+      url: finalUrl,
+      fileName: file.name,
+      mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
+      size: calculatedSize,
+      resourceType: isVid ? 'video' : 'image'
+    };
+    window.dispatchEvent(new CustomEvent('app-image-uploaded', { detail: eventDetail }));
+    window.dispatchEvent(new CustomEvent('app-file-uploaded', { detail: eventDetail }));
 
     if (isForModal) {
       setFileManagerFiles(prev => [newFileEntry, ...prev.filter(f => f.url !== finalUrl)]);

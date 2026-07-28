@@ -1191,20 +1191,44 @@ export default function AdminDashboard({
     const handleUploadedMedia = (evt: Event) => {
       const detail = (evt as CustomEvent).detail;
       if (!detail || !detail.url) return;
+      const isVid = (detail.mimeType && detail.mimeType.startsWith('video/')) || 
+                    detail.resourceType === 'video' || 
+                    /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(detail.fileName || detail.url);
+
       setLocalFiles(prev => {
         if (prev.some(f => f.url === detail.url)) return prev;
         const cleanName = detail.fileName || detail.url.split('/').pop() || 'Media Asset';
         const newEntry: FileEntry = {
-          id: `file-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          id: detail.id || `file-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
           fileName: cleanName,
           altText: cleanName.split('.')[0] || 'Uploaded Media Asset',
           dateAdded: new Date().toISOString().split('T')[0],
           size: detail.size || 'Media Asset',
           references: 'Direct Upload',
           url: detail.url,
-          mimeType: detail.mimeType
+          mimeType: detail.mimeType || (isVid ? 'video/mp4' : 'image/png'),
+          resourceType: detail.resourceType || (isVid ? 'video' : 'image')
         };
-        return [newEntry, ...prev];
+        const updated = [newEntry, ...prev];
+
+        // 1. Sync to parent App state
+        if (onUpdateFiles) {
+          onUpdateFiles(updated);
+        }
+
+        // 2. Sync to localStorage immediately
+        try {
+          localStorage.setItem('ps_files', JSON.stringify(updated));
+        } catch (e) {}
+
+        // 3. Persist to /api/files database endpoint
+        fetch('/api/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        }).catch(err => console.error('[Media Upload Sync] Failed to post files:', err));
+
+        return updated;
       });
     };
     window.addEventListener('app-file-uploaded', handleUploadedMedia);
@@ -1213,7 +1237,7 @@ export default function AdminDashboard({
       window.removeEventListener('app-file-uploaded', handleUploadedMedia);
       window.removeEventListener('app-image-uploaded', handleUploadedMedia);
     };
-  }, []);
+  }, [onUpdateFiles]);
 
   // Sync draft states when external database updates occur (when not dirty)
   React.useEffect(() => {

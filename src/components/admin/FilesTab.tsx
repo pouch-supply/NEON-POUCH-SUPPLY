@@ -200,6 +200,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({
         formData.append('file', file);
         formData.append('folder', 'storefront_media');
 
+        const isVid = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(file.name);
         const res = await fetch('/api/media/upload', {
           method: 'POST',
           body: formData
@@ -208,7 +209,14 @@ export const FilesTab: React.FC<FilesTabProps> = ({
         if (res.ok) {
           const data = await res.json();
           window.dispatchEvent(new CustomEvent('app-file-uploaded', {
-            detail: { url: data.url, fileName: file.name, mimeType: file.type }
+            detail: {
+              id: data.id || data.file?.id,
+              url: data.url,
+              fileName: file.name,
+              mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
+              size: data.file?.fileSize || `${(file.size / 1024).toFixed(1)} KB`,
+              resourceType: isVid ? 'video' : 'image'
+            }
           }));
         } else {
           // Fallback to base64 upload
@@ -216,11 +224,24 @@ export const FilesTab: React.FC<FilesTabProps> = ({
           await new Promise<void>((resolve) => {
             reader.onload = async () => {
               if (typeof reader.result === 'string') {
-                await fetch('/api/upload', {
+                const resUp = await fetch('/api/upload', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ data: reader.result, filename: file.name })
                 });
+                if (resUp.ok) {
+                  const dataUp = await resUp.json();
+                  window.dispatchEvent(new CustomEvent('app-file-uploaded', {
+                    detail: {
+                      id: dataUp.id,
+                      url: dataUp.url,
+                      fileName: file.name,
+                      mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
+                      size: `${(file.size / 1024).toFixed(1)} KB`,
+                      resourceType: isVid ? 'video' : 'image'
+                    }
+                  }));
+                }
               }
               resolve();
             };
@@ -238,8 +259,8 @@ export const FilesTab: React.FC<FilesTabProps> = ({
 
   // Filtered files by tab and search
   const displayedFiles = filteredFiles.filter((f) => {
-    if (mediaTypeFilter === 'video') return isVideoUrl(f.url, f.mimeType, f.fileName);
-    if (mediaTypeFilter === 'image') return !isVideoUrl(f.url, f.mimeType, f.fileName) && !isPdfOrDocUrl(f.url, f.mimeType, f.fileName);
+    if (mediaTypeFilter === 'video') return isVideoUrl(f.url, f.mimeType, f.fileName, f.resourceType);
+    if (mediaTypeFilter === 'image') return !isVideoUrl(f.url, f.mimeType, f.fileName, f.resourceType) && !isPdfOrDocUrl(f.url, f.mimeType, f.fileName);
     if (mediaTypeFilter === 'doc') return isPdfOrDocUrl(f.url, f.mimeType, f.fileName);
     return true;
   });

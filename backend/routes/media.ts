@@ -3,7 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '../../src/lib/prisma';
-import { fetchResource, fetchLayoutSettings, saveUploadedImage } from '../../serverDb';
+import { fetchResource, saveResource, fetchLayoutSettings, saveUploadedImage } from '../../serverDb';
 import { 
   uploadToCloudinary, 
   deleteFromCloudinary, 
@@ -181,6 +181,9 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
           : `${Math.round(uploadResult.fileSize / 1024)} KB`;
 
         let savedEntry: any = null;
+        const entryResourceType = uploadResult.resourceType || (isVideo ? 'video' : 'image');
+        const entryMimeType = mimeType || (isVideo ? 'video/mp4' : 'image/png');
+
         try {
           savedEntry = await prisma.fileEntry.create({
             data: {
@@ -188,18 +191,19 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
               publicId: uploadResult.publicId,
               url: uploadResult.secureUrl || uploadResult.url,
               secureUrl: uploadResult.secureUrl,
-              resourceType: uploadResult.resourceType,
+              resourceType: entryResourceType,
               format: uploadResult.format,
               width: uploadResult.width || null,
               height: uploadResult.height || null,
               fileSize: displaySize,
+              size: displaySize,
               folder: uploadResult.folder,
               originalFilename: fileName,
               fileName: fileName,
               altText: fileName.split('.')[0] || 'Uploaded Media Asset',
               dateAdded: new Date().toISOString().split('T')[0],
               references: 'Direct Upload',
-              mimeType: mimeType
+              mimeType: entryMimeType
             }
           });
         } catch (dbErr) {
@@ -211,8 +215,22 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
             fileName: fileName,
             altText: fileName.split('.')[0] || 'Uploaded Media Asset',
             dateAdded: new Date().toISOString().split('T')[0],
-            mimeType: mimeType
+            mimeType: entryMimeType,
+            resourceType: entryResourceType,
+            size: displaySize,
+            fileSize: displaySize,
+            references: 'Direct Upload'
           };
+        }
+
+        // Always sync with fallback StoreResource so files list is guaranteed persisted
+        try {
+          const currentFiles = await fetchResource('files');
+          const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
+          const updatedFiles = [savedEntry, ...currentArr.filter((f: any) => f && f.url !== savedEntry.url)];
+          await saveResource('files', updatedFiles);
+        } catch (sErr) {
+          console.warn('[Media API] Fallback store sync error:', sErr);
         }
 
         return res.json({
@@ -262,7 +280,8 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       fileName,
       url: fileUrl,
       altText: fileName.split('.')[0] || 'Uploaded Media Asset',
-      mimeType,
+      mimeType: mimeType || (isVideo ? 'video/mp4' : 'image/png'),
+      resourceType: isVideo ? 'video' : 'image',
       size: calculatedSize,
       fileSize: calculatedSize,
       references: 'Direct Upload',
@@ -275,13 +294,20 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       });
     } catch (fErr) {}
 
+    try {
+      const currentFiles = await fetchResource('files');
+      const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
+      const updatedFiles = [fileRecord, ...currentArr.filter((f: any) => f && f.url !== fileRecord.url)];
+      await saveResource('files', updatedFiles);
+    } catch (sErr) {}
+
     res.json({
       success: true,
       file: fileRecord,
       url: fileUrl,
       id: fileId,
       fileName,
-      mimeType
+      mimeType: fileRecord.mimeType
     });
   } catch (err: any) {
     console.error('[Media API] Upload error:', err);
