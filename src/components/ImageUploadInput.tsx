@@ -301,10 +301,11 @@ export default function ImageUploadInput({
     const eventDetail = {
       id: newFileEntry.id,
       url: finalUrl,
+      publicId: newFileEntry.publicId,
       fileName: file.name,
-      mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
-      size: calculatedSize,
-      resourceType: isVid ? 'video' : 'image'
+      mimeType: file.type || newFileEntry.mimeType || (isVid ? 'video/mp4' : 'image/png'),
+      size: newFileEntry.size || calculatedSize,
+      resourceType: newFileEntry.resourceType || (isVid ? 'video' : 'image')
     };
     window.dispatchEvent(new CustomEvent('app-image-uploaded', { detail: eventDetail }));
     window.dispatchEvent(new CustomEvent('app-file-uploaded', { detail: eventDetail }));

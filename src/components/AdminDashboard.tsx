@@ -2705,47 +2705,82 @@ export default function AdminDashboard({
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       try {
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        const isVid = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(file.name);
+        let uploadedEntry: any = null;
 
-        let finalUrl = dataUrl;
+        // 1. Primary: FormData Upload to /api/media/upload
         try {
-          const res = await fetch('/api/upload', {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('folder', 'storefront_media');
+
+          const res = await fetch('/api/media/upload', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: dataUrl, filename: file.name })
+            body: formData
           });
           if (res.ok) {
             const data = await res.json();
-            if (data.url) finalUrl = data.url;
+            uploadedEntry = data.file || data;
           }
-        } catch (_) {}
+        } catch (fErr) {
+          console.warn('[Direct File Upload] FormData upload error, falling back:', fErr);
+        }
 
-        const entry: FileEntry = {
-          id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          fileName: file.name,
-          altText: file.name,
-          dateAdded: 'Today at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          size: `${(file.size / 1024).toFixed(1)} KB`,
-          references: 'Media Library',
-          url: finalUrl,
-          mimeType: file.type
-        };
+        // 2. Secondary Fallback: Base64 Upload to /api/upload
+        if (!uploadedEntry || !uploadedEntry.url) {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
 
-        newEntries.push(entry);
+          try {
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: dataUrl, filename: file.name })
+            });
+            if (res.ok) {
+              uploadedEntry = await res.json();
+            }
+          } catch (_) {}
+        }
+
+        const calculatedSize = file.size > 1024 * 1024 
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
+          : `${Math.round(file.size / 1024)} KB`;
+
+        const finalUrl = uploadedEntry?.url || uploadedEntry?.secureUrl;
+        if (finalUrl) {
+          const entry: FileEntry = {
+            id: uploadedEntry?.id || `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            fileName: file.name,
+            altText: file.name.split('.')[0] || 'Uploaded Media Asset',
+            dateAdded: new Date().toISOString().split('T')[0],
+            size: uploadedEntry?.fileSize || uploadedEntry?.size || calculatedSize,
+            references: 'Direct Upload',
+            url: finalUrl,
+            mimeType: file.type || uploadedEntry?.mimeType || (isVid ? 'video/mp4' : 'image/png'),
+            resourceType: uploadedEntry?.resourceType || (isVid ? 'video' : 'image'),
+            publicId: uploadedEntry?.publicId
+          };
+
+          newEntries.push(entry);
+        }
       } catch (err) {
         console.error('Failed uploading file:', file.name, err);
       }
     }
 
     if (newEntries.length > 0) {
-      const updated = [...newEntries, ...files];
+      const updated = [...newEntries, ...files.filter(f => !newEntries.some(ne => ne.url === f.url || ne.id === f.id))];
       onUpdateFiles(updated);
       setLocalFiles(updated);
+      try {
+        localStorage.setItem('ps_files', JSON.stringify(updated));
+      } catch (e) {}
+
       fetch('/api/files', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

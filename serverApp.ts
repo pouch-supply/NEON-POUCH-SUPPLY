@@ -180,77 +180,81 @@ export async function createExpressApp() {
 
       // 1. If Cloudinary is configured, upload directly to Cloudinary
       if (isCloudinaryConfigured()) {
-        const fileBuffer = Buffer.from(base64String, "base64");
-        const uploadResult = await uploadToCloudinary(fileBuffer, {
-          folder: 'storefront_media',
-          originalFilename: displayName,
-          resourceType: isVideo ? 'video' : 'auto'
-        });
-
-        const id = `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const displaySize = uploadResult.fileSize > 1024 * 1024
-          ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
-          : `${Math.round(uploadResult.fileSize / 1024)} KB`;
-
-        let newFile: any = null;
-        const entryResourceType = uploadResult.resourceType || (isVideo ? 'video' : 'image');
-        const entryMimeType = mimeType || (isVideo ? 'video/mp4' : 'image/png');
-
         try {
-          newFile = await prisma.fileEntry.create({
-            data: {
+          const fileBuffer = Buffer.from(base64String, "base64");
+          const uploadResult = await uploadToCloudinary(fileBuffer, {
+            folder: 'storefront_media',
+            originalFilename: displayName,
+            resourceType: isVideo ? 'video' : 'auto'
+          });
+
+          const id = `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          const displaySize = uploadResult.fileSize > 1024 * 1024
+            ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
+            : `${Math.round(uploadResult.fileSize / 1024)} KB`;
+
+          let newFile: any = null;
+          const entryResourceType = uploadResult.resourceType || (isVideo ? 'video' : 'image');
+          const entryMimeType = mimeType || (isVideo ? 'video/mp4' : 'image/png');
+
+          try {
+            newFile = await prisma.fileEntry.create({
+              data: {
+                id,
+                publicId: uploadResult.publicId,
+                url: uploadResult.secureUrl || uploadResult.url,
+                secureUrl: uploadResult.secureUrl,
+                resourceType: entryResourceType,
+                format: uploadResult.format,
+                width: uploadResult.width || null,
+                height: uploadResult.height || null,
+                fileSize: displaySize,
+                size: displaySize,
+                folder: uploadResult.folder,
+                originalFilename: displayName,
+                fileName: displayName,
+                altText: displayName.split('.')[0] || 'Uploaded Asset',
+                dateAdded: new Date().toISOString().split('T')[0],
+                references: 'Direct Upload',
+                mimeType: entryMimeType
+              }
+            });
+          } catch (dbErr) {
+            newFile = {
               id,
               publicId: uploadResult.publicId,
               url: uploadResult.secureUrl || uploadResult.url,
               secureUrl: uploadResult.secureUrl,
-              resourceType: entryResourceType,
-              format: uploadResult.format,
-              width: uploadResult.width || null,
-              height: uploadResult.height || null,
-              fileSize: displaySize,
-              size: displaySize,
-              folder: uploadResult.folder,
-              originalFilename: displayName,
               fileName: displayName,
               altText: displayName.split('.')[0] || 'Uploaded Asset',
               dateAdded: new Date().toISOString().split('T')[0],
-              references: 'Direct Upload',
-              mimeType: entryMimeType
-            }
-          });
-        } catch (dbErr) {
-          newFile = {
-            id,
-            publicId: uploadResult.publicId,
-            url: uploadResult.secureUrl || uploadResult.url,
-            secureUrl: uploadResult.secureUrl,
+              mimeType: entryMimeType,
+              resourceType: entryResourceType,
+              size: displaySize,
+              fileSize: displaySize,
+              references: 'Direct Upload'
+            };
+          }
+
+          try {
+            const currentFiles = await fetchResource('files');
+            const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
+            const updatedFiles = [newFile, ...currentArr.filter((f: any) => f && f.url !== newFile.url)];
+            await saveResource('files', updatedFiles);
+          } catch (sErr) {}
+
+          return res.json({
+            url: newFile.url,
+            secureUrl: newFile.secureUrl,
+            publicId: newFile.publicId,
+            id: newFile.id,
             fileName: displayName,
-            altText: displayName.split('.')[0] || 'Uploaded Asset',
-            dateAdded: new Date().toISOString().split('T')[0],
             mimeType: entryMimeType,
-            resourceType: entryResourceType,
-            size: displaySize,
-            fileSize: displaySize,
-            references: 'Direct Upload'
-          };
+            resourceType: entryResourceType
+          });
+        } catch (cErr: any) {
+          console.warn("[API Upload] Cloudinary upload failed, falling back to disk:", cErr?.message || cErr);
         }
-
-        try {
-          const currentFiles = await fetchResource('files');
-          const currentArr = Array.isArray(currentFiles) ? currentFiles : [];
-          const updatedFiles = [newFile, ...currentArr.filter((f: any) => f && f.url !== newFile.url)];
-          await saveResource('files', updatedFiles);
-        } catch (sErr) {}
-
-        return res.json({
-          url: newFile.url,
-          secureUrl: newFile.secureUrl,
-          publicId: newFile.publicId,
-          id: newFile.id,
-          fileName: displayName,
-          mimeType: entryMimeType,
-          resourceType: entryResourceType
-        });
       }
 
       // 2. Fallback if Cloudinary environment variables are missing

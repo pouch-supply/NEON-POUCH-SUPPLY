@@ -208,14 +208,16 @@ export const FilesTab: React.FC<FilesTabProps> = ({
 
         if (res.ok) {
           const data = await res.json();
+          const fileObj = data.file || data;
           window.dispatchEvent(new CustomEvent('app-file-uploaded', {
             detail: {
-              id: data.id || data.file?.id,
-              url: data.url,
+              id: fileObj.id || data.id,
+              url: fileObj.url || data.url,
+              publicId: fileObj.publicId || data.publicId,
               fileName: file.name,
-              mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
-              size: data.file?.fileSize || `${(file.size / 1024).toFixed(1)} KB`,
-              resourceType: isVid ? 'video' : 'image'
+              mimeType: file.type || fileObj.mimeType || (isVid ? 'video/mp4' : 'image/png'),
+              size: fileObj.fileSize || fileObj.size || `${(file.size / 1024).toFixed(1)} KB`,
+              resourceType: fileObj.resourceType || data.resourceType || (isVid ? 'video' : 'image')
             }
           }));
         } else {
@@ -235,10 +237,11 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                     detail: {
                       id: dataUp.id,
                       url: dataUp.url,
+                      publicId: dataUp.publicId,
                       fileName: file.name,
-                      mimeType: file.type || (isVid ? 'video/mp4' : 'image/png'),
-                      size: `${(file.size / 1024).toFixed(1)} KB`,
-                      resourceType: isVid ? 'video' : 'image'
+                      mimeType: file.type || dataUp.mimeType || (isVid ? 'video/mp4' : 'image/png'),
+                      size: dataUp.fileSize || `${(file.size / 1024).toFixed(1)} KB`,
+                      resourceType: dataUp.resourceType || (isVid ? 'video' : 'image')
                     }
                   }));
                 }
