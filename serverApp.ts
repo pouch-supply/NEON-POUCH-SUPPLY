@@ -278,6 +278,48 @@ export async function createExpressApp() {
     res.json({ status: "ok" });
   });
 
+  // Comprehensive DB diagnostic status endpoint
+  app.get("/api/status", async (req, res) => {
+    try {
+      await getDb();
+      const status = await getConnectionStatus();
+      if (status.status === 'connected') {
+        res.status(200).json({
+          statusCode: 200,
+          status: 'connected',
+          databaseUrlConfigured: true,
+          provider: 'Neon PostgreSQL',
+          host: status.host || 'Connected',
+          database: status.database || 'neondb',
+          error: null,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          statusCode: 500,
+          status: status.status,
+          databaseUrlConfigured: !!process.env.DATABASE_URL,
+          provider: 'Neon PostgreSQL',
+          host: status.host || 'N/A',
+          database: status.database || 'N/A',
+          error: status.error || 'Database connection test failed.',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (err: any) {
+      res.status(500).json({
+        statusCode: 500,
+        status: 'error',
+        databaseUrlConfigured: !!process.env.DATABASE_URL,
+        provider: 'Neon PostgreSQL',
+        host: 'N/A',
+        database: 'N/A',
+        error: err?.message || String(err),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   app.get("/api/db-status", async (req, res) => {
     try {
       await getDb();
@@ -308,6 +350,59 @@ export async function createExpressApp() {
       res.status(500).json({ error: err.message || "Failed to update connection string" });
     }
   });
+
+  // Cloudinary configuration & diagnostic check
+  const handleTestCloudinary = async (req: express.Request, res: express.Response) => {
+    try {
+      let cloudName = req.body?.cloudName || process.env.CLOUDINARY_CLOUD_NAME;
+      let apiKey = req.body?.apiKey || process.env.CLOUDINARY_API_KEY;
+      let apiSecret = req.body?.apiSecret || process.env.CLOUDINARY_API_SECRET;
+
+      if (!cloudName || !apiKey || !apiSecret) {
+        try {
+          const layout = await fetchLayoutSettings();
+          if (layout) {
+            cloudName = cloudName || layout.cloudinaryCloudName;
+            apiKey = apiKey || layout.cloudinaryApiKey;
+            apiSecret = apiSecret || layout.cloudinaryApiSecret;
+          }
+        } catch (e) {}
+      }
+
+      const hasCloudName = Boolean(cloudName && String(cloudName).trim().length > 0);
+      const hasApiKey = Boolean(apiKey && String(apiKey).trim().length > 0);
+      const hasApiSecret = Boolean(apiSecret && String(apiSecret).trim().length > 0);
+      const isConfigured = hasCloudName && hasApiKey && hasApiSecret;
+
+      if (isConfigured) {
+        process.env.CLOUDINARY_CLOUD_NAME = cloudName;
+        process.env.CLOUDINARY_API_KEY = apiKey;
+        process.env.CLOUDINARY_API_SECRET = apiSecret;
+      }
+
+      res.json({
+        success: isConfigured,
+        configured: isConfigured,
+        hasCloudName,
+        hasApiKey,
+        hasApiSecret,
+        cloudName: cloudName ? String(cloudName).trim() : null,
+        apiKeyMasked: apiKey ? `${String(apiKey).substring(0, 4)}***` : null,
+        message: isConfigured 
+          ? 'Cloudinary credentials are fully valid and configured.'
+          : 'Cloudinary environment variables missing or incomplete.'
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        success: false,
+        configured: false,
+        error: err?.message || 'Error testing Cloudinary configuration'
+      });
+    }
+  };
+
+  app.get("/api/test-cloudinary", handleTestCloudinary);
+  app.post("/api/test-cloudinary", handleTestCloudinary);
 
   app.get("/api/layoutsettings", async (req, res) => {
     try {

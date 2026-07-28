@@ -27,6 +27,8 @@ import DiscountsTab from './admin/DiscountsTab';
 import BlogsTab from './admin/BlogsTab';
 import LayoutTab from './admin/LayoutTab';
 import PagesTab from './admin/PagesTab';
+import { DiagnosticsTab } from './admin/DiagnosticsTab';
+import { Activity } from 'lucide-react';
 
 export const AVAILABLE_SECTION_TEMPLATES = [
   { type: 'Image banner', label: 'Image Banner', desc: 'Hero banner with centered headline overlay & CTA buttons', icon: 'ImageIcon' },
@@ -565,7 +567,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'diagnostics';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -602,7 +604,8 @@ export default function AdminDashboard({
     files: 'files',
     customers: 'customers',
     discounts: 'discounts',
-    layout: 'layout'
+    layout: 'layout',
+    diagnostics: 'diagnostics'
   };
 
   const pathToTabMap: Record<string, SidebarTab> = {
@@ -618,7 +621,10 @@ export default function AdminDashboard({
     media: 'files',
     customers: 'customers',
     discounts: 'discounts',
-    layout: 'layout'
+    layout: 'layout',
+    diagnostics: 'diagnostics',
+    status: 'diagnostics',
+    db: 'diagnostics'
   };
 
   const getInitialTab = (): SidebarTab => {
@@ -1110,17 +1116,37 @@ export default function AdminDashboard({
     }
 
     // Direct HTTP POST to API endpoints for instant database persistence
-    fetch('/api/custompages', {
+    const postOptions = {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pagesToSave)
-    }).catch(err => console.error('[Admin Save] Direct POST custompages failed:', err));
+      headers: { 'Content-Type': 'application/json' }
+    };
 
-    fetch('/api/files', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(finalFilesToSave)
-    }).catch(err => console.error('[Admin Save] Direct POST files failed:', err));
+    fetch('/api/products', { ...postOptions, body: JSON.stringify(localProducts) })
+      .catch(err => console.error('[Admin Save] Direct POST products failed:', err));
+
+    fetch('/api/collections', { ...postOptions, body: JSON.stringify(localCollections) })
+      .catch(err => console.error('[Admin Save] Direct POST collections failed:', err));
+
+    fetch('/api/orders', { ...postOptions, body: JSON.stringify(localOrders) })
+      .catch(err => console.error('[Admin Save] Direct POST orders failed:', err));
+
+    fetch('/api/customers', { ...postOptions, body: JSON.stringify(localCustomers) })
+      .catch(err => console.error('[Admin Save] Direct POST customers failed:', err));
+
+    fetch('/api/discounts', { ...postOptions, body: JSON.stringify(localDiscounts) })
+      .catch(err => console.error('[Admin Save] Direct POST discounts failed:', err));
+
+    fetch('/api/blogs', { ...postOptions, body: JSON.stringify(localBlogs) })
+      .catch(err => console.error('[Admin Save] Direct POST blogs failed:', err));
+
+    fetch('/api/custompages', { ...postOptions, body: JSON.stringify(pagesToSave) })
+      .catch(err => console.error('[Admin Save] Direct POST custompages failed:', err));
+
+    fetch('/api/files', { ...postOptions, body: JSON.stringify(finalFilesToSave) })
+      .catch(err => console.error('[Admin Save] Direct POST files failed:', err));
+
+    fetch('/api/layoutsettings', { ...postOptions, body: JSON.stringify(localLayoutSettings) })
+      .catch(err => console.error('[Admin Save] Direct POST layoutsettings failed:', err));
 
     setTimeout(() => {
       setHasUnsavedChanges(false);
@@ -2992,6 +3018,7 @@ export default function AdminDashboard({
                 { id: 'customers', label: 'Customers', icon: Users },
                 { id: 'discounts', label: 'Discounts', icon: Percent },
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
+                { id: 'diagnostics', label: 'DB Diagnostics', icon: Activity },
               ].map(item => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -3608,6 +3635,11 @@ export default function AdminDashboard({
         removeMenuItem={removeMenuItem}
         localPages={localPages}
       />
+    )}
+
+    {/* 11. DIAGNOSTICS & STATUS TEST BLOCK */}
+    {activeTab === 'diagnostics' && (
+      <DiagnosticsTab onRefreshAll={fetchDbDetails} />
     )}
 
         {/* DATABASE CONNECTION DETAILS MODAL */}

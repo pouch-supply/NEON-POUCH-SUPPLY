@@ -56,6 +56,35 @@ export const FilesTab: React.FC<FilesTabProps> = ({
   const [mediaRefs, setMediaRefs] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Cloudinary environment variables validation state
+  const [cloudinaryInfo, setCloudinaryInfo] = useState<{
+    configured: boolean;
+    hasCloudName: boolean;
+    hasApiKey: boolean;
+    hasApiSecret: boolean;
+    cloudName?: string | null;
+    message?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/test-cloudinary')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setCloudinaryInfo(data);
+          console.log('[Cloudinary Validation Check in File Explorer]', {
+            CLOUDINARY_CLOUD_NAME: data.hasCloudName ? 'PRESENT' : 'MISSING',
+            CLOUDINARY_API_KEY: data.hasApiKey ? 'PRESENT' : 'MISSING',
+            CLOUDINARY_API_SECRET: data.hasApiSecret ? 'PRESENT' : 'MISSING',
+            fullyConfigured: data.configured,
+            cloudName: data.cloudName,
+            message: data.message
+          });
+        }
+      })
+      .catch(err => console.error('[Cloudinary Check Error]', err));
+  }, []);
+
   // Sync edit state when active media changes
   useEffect(() => {
     if (activeMedia) {
@@ -218,6 +247,54 @@ export const FilesTab: React.FC<FilesTabProps> = ({
   return (
     <div className="space-y-6">
       
+      {/* Cloudinary Environment Variables Validation Check Banner */}
+      {cloudinaryInfo && (
+        <div className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${
+          cloudinaryInfo.configured
+            ? 'bg-emerald-50/80 border-emerald-200/80 text-emerald-950'
+            : 'bg-amber-50/80 border-amber-200/80 text-amber-950'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${cloudinaryInfo.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold">Cloudinary Environment Variables Status:</span>
+                <span className={`font-extrabold px-2 py-0.5 rounded text-[10px] uppercase ${
+                  cloudinaryInfo.configured ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+                }`}>
+                  {cloudinaryInfo.configured ? 'Active & Configured' : 'Incomplete (Using Local Disk Fallback)'}
+                </span>
+              </div>
+              <p className="opacity-80 text-[11px] mt-0.5">
+                {cloudinaryInfo.configured
+                  ? 'All Cloudinary credentials present. High-resolution images automatically optimize on CDN.'
+                  : 'Missing Cloudinary environment variables. File uploads safely save to local storage and database.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`px-2 py-1 rounded font-mono text-[10px] font-bold ${
+              cloudinaryInfo.hasCloudName ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+            }`}>
+              CloudName: {cloudinaryInfo.hasCloudName ? 'Present' : 'Missing'}
+            </span>
+            <span className={`px-2 py-1 rounded font-mono text-[10px] font-bold ${
+              cloudinaryInfo.hasApiKey ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+            }`}>
+              API Key: {cloudinaryInfo.hasApiKey ? 'Present' : 'Missing'}
+            </span>
+            <span className={`px-2 py-1 rounded font-mono text-[10px] font-bold ${
+              cloudinaryInfo.hasApiSecret ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+            }`}>
+              API Secret: {cloudinaryInfo.hasApiSecret ? 'Present' : 'Missing'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Header controls & Filter Bar */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
