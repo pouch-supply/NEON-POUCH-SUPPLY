@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { prisma } from '../../src/lib/prisma';
+import { fetchResource } from '../../serverDb';
 import { 
   uploadToCloudinary, 
   deleteFromCloudinary, 
@@ -92,8 +93,13 @@ router.get('/', async (req: Request, res: Response) => {
     });
     res.json(files);
   } catch (err: any) {
-    console.error('[Media API] GET error:', err);
-    res.status(500).json({ error: err.message || 'Failed to list media files' });
+    console.warn('[Media API] GET error, falling back to StoreResource:', err?.message || err);
+    try {
+      const fallbackFiles = await fetchResource('files');
+      res.json(fallbackFiles);
+    } catch (fErr: any) {
+      res.status(500).json({ error: fErr.message || 'Failed to list media files' });
+    }
   }
 });
 

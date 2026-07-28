@@ -92,6 +92,30 @@ async function ensureNeonTablesExist(): Promise<void> {
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "FileEntry" (
+        "id" TEXT PRIMARY KEY,
+        "publicId" TEXT UNIQUE,
+        "url" TEXT NOT NULL,
+        "secureUrl" TEXT,
+        "resourceType" TEXT DEFAULT 'image',
+        "format" TEXT,
+        "width" INTEGER,
+        "height" INTEGER,
+        "fileSize" TEXT,
+        "folder" TEXT DEFAULT 'storefront_media',
+        "originalFilename" TEXT,
+        "fileName" TEXT,
+        "altText" TEXT,
+        "dateAdded" TEXT,
+        "size" TEXT,
+        "references" TEXT,
+        "mimeType" TEXT,
+        "data" JSONB,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     isTablesInitialized = true;
   } catch (err) {
     console.warn('[Neon Table Setup] Warning: Table initialization check encountered error:', err);
