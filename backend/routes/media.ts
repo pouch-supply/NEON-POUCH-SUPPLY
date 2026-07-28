@@ -244,7 +244,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     } catch (fsErr) {}
 
     await saveUploadedImage(fileId, base64Str, mimeType);
-    const fileUrl = `/uploads/${filenameOnDisk}`;
+    const fileUrl = `/api/uploads/${filenameOnDisk}`;
     const calculatedSize = fileBuffer.length > 1024 * 1024
       ? `${(fileBuffer.length / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(fileBuffer.length / 1024)} KB`;

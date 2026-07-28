@@ -5,10 +5,10 @@ export function cleanMediaUrl(url?: string): string {
   if (typeof url !== 'string') return '';
   let trimmed = url.trim();
   if (trimmed.startsWith('data:')) return trimmed;
-  if (trimmed.includes('/uploads/') || trimmed.includes('/api/images/')) {
-    trimmed = trimmed.replace(/^https?:\/\/[^/]+(\/(?:uploads|api\/images)\/.+)$/, '$1');
+  if (trimmed.includes('/uploads/') || trimmed.includes('/api/images/') || trimmed.includes('/api/uploads/')) {
+    trimmed = trimmed.replace(/^https?:\/\/[^/]+(\/(?:uploads|api\/images|api\/uploads)\/.+)$/, '$1');
   }
-  if (trimmed.startsWith('uploads/') || trimmed.startsWith('api/images/')) {
+  if (trimmed.startsWith('uploads/') || trimmed.startsWith('api/images/') || trimmed.startsWith('api/uploads/')) {
     trimmed = '/' + trimmed;
   }
   return trimmed;

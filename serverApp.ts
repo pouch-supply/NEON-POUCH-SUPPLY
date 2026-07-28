@@ -104,7 +104,7 @@ export async function createExpressApp() {
     }
   };
 
-  app.get("/uploads/:filename", async (req, res) => {
+  const handleUploadsFileRequest = async (req: express.Request, res: express.Response) => {
     try {
       const filename = req.params.filename;
       const filePath = path.join(uploadsPath, filename);
@@ -129,9 +129,13 @@ export async function createExpressApp() {
       console.error("[Uploads] Error reading uploaded file:", err);
     }
     return res.status(404).send("File not found");
-  });
+  };
+
+  app.get("/uploads/:filename", handleUploadsFileRequest);
+  app.get("/api/uploads/:filename", handleUploadsFileRequest);
 
   app.use("/uploads", express.static(uploadsPath));
+  app.use("/api/uploads", express.static(uploadsPath));
 
   app.post("/api/upload", async (req, res) => {
     try {
@@ -225,7 +229,7 @@ export async function createExpressApp() {
 
       await saveUploadedImage(id, base64String, mimeType);
       
-      const fileUrl = `/uploads/${filenameOnDisk}`;
+      const fileUrl = `/api/uploads/${filenameOnDisk}`;
       const rawBytes = Math.round(base64String.length * 0.75);
       const calculatedSize = rawBytes > 1024 * 1024 
         ? `${(rawBytes / (1024 * 1024)).toFixed(1)} MB` 

@@ -327,11 +327,29 @@ export default function App() {
         ]);
 
         if (Array.isArray(prodsRes) && prodsRes.length > 0) {
-          setProducts(prodsRes);
+          setProducts(prevLocalProds => {
+            const serverMap = new Map(prodsRes.map((p: any) => [p.id, p]));
+            const merged = [...prodsRes];
+            for (const localProd of prevLocalProds) {
+              if (localProd && localProd.id && !serverMap.has(localProd.id)) {
+                merged.push(localProd);
+              }
+            }
+            return merged;
+          });
           loadedProductsSuccess.current = true;
         }
         if (Array.isArray(collsRes) && collsRes.length > 0) {
-          setCollections(collsRes);
+          setCollections(prevLocalColls => {
+            const serverMap = new Map(collsRes.map((c: any) => [c.id, c]));
+            const merged = [...collsRes];
+            for (const localCol of prevLocalColls) {
+              if (localCol && localCol.id && !serverMap.has(localCol.id)) {
+                merged.push(localCol);
+              }
+            }
+            return merged;
+          });
           loadedCollectionsSuccess.current = true;
         }
         if (Array.isArray(ordersRes) && ordersRes.length > 0) {
