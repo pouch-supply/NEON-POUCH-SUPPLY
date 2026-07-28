@@ -24,6 +24,11 @@ import { prisma } from "./src/lib/prisma";
 export async function createExpressApp() {
   const app = express();
 
+  // Hydrate environment variables (including Cloudinary) from stored layout settings
+  try {
+    await fetchLayoutSettings();
+  } catch (err) {}
+
   app.use((req, res, next) => {
     if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
       return next();

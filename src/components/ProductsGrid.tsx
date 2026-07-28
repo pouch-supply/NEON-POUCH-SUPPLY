@@ -28,15 +28,22 @@ export default function ProductsGrid({
   onAddToCart,
   onOpenLoginModal
 }: ProductsGridProps) {
+  // Dynamic max price calculation based on catalog items
+  const maxCatalogPrice = useMemo(() => {
+    if (!products || products.length === 0) return 100;
+    const maxVal = Math.max(...products.map(p => p.price || 0));
+    return Math.max(20, Math.ceil(maxVal));
+  }, [products]);
+
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedStrengths, setSelectedStrengths] = useState<string[]>([]);
   const [selectedFlavours, setSelectedFlavours] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<number>(6.00);
+  const [priceRange, setPriceRange] = useState<number>(100);
   
   // Custom Toggles
-  const [inStockOnly, setInStockOnly] = useState(true);
+  const [inStockOnly, setInStockOnly] = useState(false);
   const [subscriptionEligible, setSubscriptionEligible] = useState(true);
   const [bestSellersOnly, setBestSellersOnly] = useState(false);
   const [newArrivalsOnly, setNewArrivalsOnly] = useState(false);
@@ -105,7 +112,7 @@ export default function ProductsGrid({
     setSelectedBrands([]);
     setSelectedStrengths([]);
     setSelectedFlavours([]);
-    setPriceRange(6.00);
+    setPriceRange(maxCatalogPrice);
     setInStockOnly(false);
     setSubscriptionEligible(false);
     setBestSellersOnly(false);
@@ -283,11 +290,11 @@ export default function ProductsGrid({
     }
 
     // Max Price slider filter
-    list = list.filter(p => p.price <= priceRange);
+    list = list.filter(p => priceRange >= maxCatalogPrice || p.price <= priceRange);
 
     // Stock availability toggle
     if (inStockOnly) {
-      list = list.filter(p => p.inventory > 0);
+      list = list.filter(p => p.inventory === undefined || p.inventory > 0);
     }
 
     // Best Sellers / Featured toggle
@@ -714,20 +721,22 @@ export default function ProductsGrid({
             <div className="space-y-2.5 pt-2 border-t border-slate-100">
               <div className="flex justify-between items-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
                 <span>Price Range</span>
-                <span className="text-slate-800 font-black text-xs">Max £{priceRange.toFixed(2)}</span>
+                <span className="text-slate-800 font-black text-xs">
+                  {priceRange >= maxCatalogPrice ? `All Prices (£${maxCatalogPrice.toFixed(2)}+)` : `Max £${priceRange.toFixed(2)}`}
+                </span>
               </div>
               <input
                 type="range"
-                min="1.99"
-                max="6.00"
-                step="0.10"
-                value={priceRange}
+                min="1.00"
+                max={maxCatalogPrice}
+                step="0.50"
+                value={Math.min(priceRange, maxCatalogPrice)}
                 onChange={(e) => setPriceRange(parseFloat(e.target.value))}
                 className="w-full accent-slate-950 h-1.5 bg-slate-100 rounded-lg cursor-pointer"
               />
               <div className="flex justify-between text-[9px] text-slate-400 font-bold">
-                <span>£1.99</span>
-                <span>£6.00+</span>
+                <span>£1.00</span>
+                <span>£{maxCatalogPrice}.00+</span>
               </div>
             </div>
 

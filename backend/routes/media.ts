@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../../src/lib/prisma';
-import { fetchResource } from '../../serverDb';
+import { fetchResource, fetchLayoutSettings, saveUploadedImage } from '../../serverDb';
 import { 
   uploadToCloudinary, 
   deleteFromCloudinary, 
@@ -147,58 +149,135 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       return res.status(400).json({ error: 'No file data or buffer was provided' });
     }
 
+    // Attempt to hydrate Cloudinary environment variables from stored layout settings if needed
     if (!isCloudinaryConfigured()) {
-      return res.status(400).json({
-        error: 'Cloudinary environment variables (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) are required to upload media.'
-      });
+      try {
+        await fetchLayoutSettings();
+      } catch (e) {}
     }
 
     const isVideo = mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogg|avi|mkv)$/i.test(fileName);
     const resourceType = isVideo ? 'video' : 'auto';
 
-    const uploadResult = await uploadToCloudinary(fileBuffer, {
-      folder,
-      originalFilename: fileName,
-      resourceType
-    });
+    if (isCloudinaryConfigured()) {
+      try {
+        const uploadResult = await uploadToCloudinary(fileBuffer, {
+          folder,
+          originalFilename: fileName,
+          resourceType
+        });
 
-    const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const displaySize = uploadResult.fileSize > 1024 * 1024
-      ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
-      : `${Math.round(uploadResult.fileSize / 1024)} KB`;
+        const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const displaySize = uploadResult.fileSize > 1024 * 1024
+          ? `${(uploadResult.fileSize / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(uploadResult.fileSize / 1024)} KB`;
 
-    // Save ONLY metadata to Neon PostgreSQL
-    const savedEntry = await prisma.fileEntry.create({
-      data: {
-        id: fileId,
-        publicId: uploadResult.publicId,
-        url: uploadResult.secureUrl || uploadResult.url,
-        secureUrl: uploadResult.secureUrl,
-        resourceType: uploadResult.resourceType,
-        format: uploadResult.format,
-        width: uploadResult.width || null,
-        height: uploadResult.height || null,
-        fileSize: displaySize,
-        folder: uploadResult.folder,
-        originalFilename: fileName,
-        fileName: fileName,
-        altText: fileName.split('.')[0] || 'Uploaded Media Asset',
-        dateAdded: new Date().toISOString().split('T')[0],
-        references: 'Direct Upload',
-        mimeType: mimeType
+        let savedEntry: any = null;
+        try {
+          savedEntry = await prisma.fileEntry.create({
+            data: {
+              id: fileId,
+              publicId: uploadResult.publicId,
+              url: uploadResult.secureUrl || uploadResult.url,
+              secureUrl: uploadResult.secureUrl,
+              resourceType: uploadResult.resourceType,
+              format: uploadResult.format,
+              width: uploadResult.width || null,
+              height: uploadResult.height || null,
+              fileSize: displaySize,
+              folder: uploadResult.folder,
+              originalFilename: fileName,
+              fileName: fileName,
+              altText: fileName.split('.')[0] || 'Uploaded Media Asset',
+              dateAdded: new Date().toISOString().split('T')[0],
+              references: 'Direct Upload',
+              mimeType: mimeType
+            }
+          });
+        } catch (dbErr) {
+          savedEntry = {
+            id: fileId,
+            publicId: uploadResult.publicId,
+            url: uploadResult.secureUrl || uploadResult.url,
+            secureUrl: uploadResult.secureUrl,
+            fileName: fileName,
+            altText: fileName.split('.')[0] || 'Uploaded Media Asset',
+            dateAdded: new Date().toISOString().split('T')[0],
+            mimeType: mimeType
+          };
+        }
+
+        return res.json({
+          success: true,
+          file: savedEntry,
+          url: savedEntry.url,
+          publicId: savedEntry.publicId,
+          id: savedEntry.id
+        });
+      } catch (cErr: any) {
+        console.warn('[Media API] Cloudinary upload failed, falling back to local disk:', cErr?.message || cErr);
       }
-    });
+    }
+
+    // Fallback: Local storage & Database buffer asset
+    const fileId = `file-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const base64Str = fileBuffer.toString('base64');
+    let ext = 'png';
+    if (fileName && fileName.includes('.')) {
+      ext = fileName.split('.').pop()?.toLowerCase() || 'png';
+    } else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
+      ext = 'jpg';
+    } else if (mimeType.includes('mp4')) {
+      ext = 'mp4';
+    }
+
+    const filenameOnDisk = `${fileId}.${ext}`;
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      try {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      } catch (mErr) {}
+    }
+    const diskPath = path.join(uploadsDir, filenameOnDisk);
+    try {
+      fs.writeFileSync(diskPath, fileBuffer);
+    } catch (fsErr) {}
+
+    await saveUploadedImage(fileId, base64Str, mimeType);
+    const fileUrl = `/uploads/${filenameOnDisk}`;
+    const calculatedSize = fileBuffer.length > 1024 * 1024
+      ? `${(fileBuffer.length / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(fileBuffer.length / 1024)} KB`;
+
+    let fileRecord: any = {
+      id: fileId,
+      fileName,
+      url: fileUrl,
+      altText: fileName.split('.')[0] || 'Uploaded Media Asset',
+      mimeType,
+      size: calculatedSize,
+      fileSize: calculatedSize,
+      references: 'Direct Upload',
+      dateAdded: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      fileRecord = await prisma.fileEntry.create({
+        data: fileRecord
+      });
+    } catch (fErr) {}
 
     res.json({
       success: true,
-      file: savedEntry,
-      url: savedEntry.url,
-      publicId: savedEntry.publicId,
-      id: savedEntry.id
+      file: fileRecord,
+      url: fileUrl,
+      id: fileId,
+      fileName,
+      mimeType
     });
   } catch (err: any) {
     console.error('[Media API] Upload error:', err);
-    res.status(500).json({ error: err.message || 'Failed to upload media to Cloudinary' });
+    res.status(500).json({ error: err.message || 'Failed to upload media asset' });
   }
 });
 

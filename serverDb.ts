@@ -519,43 +519,75 @@ export async function getUploadedImage(id: string): Promise<{ base64Data: string
 }
 
 export async function fetchLayoutSettings(): Promise<any> {
+  let settingsData: any = null;
   const isConnected = await getDb();
   if (isConnected) {
     try {
       const setting = await prisma.storeSetting.findUnique({
         where: { id: "layout_settings" }
       });
-      if (setting && setting.data) return setting.data;
+      if (setting && setting.data) {
+        settingsData = setting.data;
+      }
     } catch (err) {
       console.error("[Neon DB] Error fetching layout settings:", err);
     }
   }
 
-  const filePath = path.join(process.cwd(), "layout_settings.json");
-  if (fs.existsSync(filePath)) {
-    try {
-      return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    } catch (e) {}
+  if (!settingsData) {
+    const filePath = path.join(process.cwd(), "layout_settings.json");
+    if (fs.existsSync(filePath)) {
+      try {
+        settingsData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      } catch (e) {}
+    }
   }
-  return {
-    id: "layout_settings",
-    headerLogoText: 'POUCH SUPPLY',
-    headerLogoSubtext: 'Premium Nicotine',
-    headerLogoImage: '',
-    footerLogoText: 'POUCH SUPPLY',
-    footerLogoDescription: 'Leading premium directory for tobacco-free nicotine slim white canisters.',
-    footerLogoImage: '',
-    menuItems: [
-      { id: '1', label: 'Home', tab: 'frontend-home', type: 'tab' },
-      { id: '2', label: 'Subscribe', tab: 'frontend-subscribe', type: 'tab' },
-      { id: '3', label: 'Shop Now', tab: 'frontend-shop', type: 'tab' },
-      { id: '4', label: 'All Brands', tab: 'frontend-brands', type: 'tab' },
-      { id: '5', label: 'About', tab: 'about', type: 'tab' }
-    ]
-  };
+
+  if (!settingsData) {
+    settingsData = {
+      id: "layout_settings",
+      headerLogoText: 'POUCH SUPPLY',
+      headerLogoSubtext: 'Premium Nicotine',
+      headerLogoImage: '',
+      footerLogoText: 'POUCH SUPPLY',
+      footerLogoDescription: 'Leading premium directory for tobacco-free nicotine slim white canisters.',
+      footerLogoImage: '',
+      menuItems: [
+        { id: '1', label: 'Home', tab: 'frontend-home', type: 'tab' },
+        { id: '2', label: 'Subscribe', tab: 'frontend-subscribe', type: 'tab' },
+        { id: '3', label: 'Shop Now', tab: 'frontend-shop', type: 'tab' },
+        { id: '4', label: 'All Brands', tab: 'frontend-brands', type: 'tab' },
+        { id: '5', label: 'About', tab: 'about', type: 'tab' }
+      ]
+    };
+  }
+
+  // Hydrate Cloudinary environment variables if stored in layout settings
+  if (settingsData.cloudinaryCloudName && !process.env.CLOUDINARY_CLOUD_NAME) {
+    process.env.CLOUDINARY_CLOUD_NAME = settingsData.cloudinaryCloudName;
+  }
+  if (settingsData.cloudinaryApiKey && !process.env.CLOUDINARY_API_KEY) {
+    process.env.CLOUDINARY_API_KEY = settingsData.cloudinaryApiKey;
+  }
+  if (settingsData.cloudinaryApiSecret && !process.env.CLOUDINARY_API_SECRET) {
+    process.env.CLOUDINARY_API_SECRET = settingsData.cloudinaryApiSecret;
+  }
+
+  return settingsData;
 }
 
 export async function saveLayoutSettings(settings: any): Promise<any> {
+  // Sync Cloudinary process.env if provided in settings payload
+  if (settings.cloudinaryCloudName !== undefined) {
+    process.env.CLOUDINARY_CLOUD_NAME = settings.cloudinaryCloudName || '';
+  }
+  if (settings.cloudinaryApiKey !== undefined) {
+    process.env.CLOUDINARY_API_KEY = settings.cloudinaryApiKey || '';
+  }
+  if (settings.cloudinaryApiSecret !== undefined) {
+    process.env.CLOUDINARY_API_SECRET = settings.cloudinaryApiSecret || '';
+  }
+
   const filePath = path.join(process.cwd(), "layout_settings.json");
   try {
     fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), "utf-8");
