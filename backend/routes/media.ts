@@ -149,7 +149,15 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       return res.status(400).json({ error: 'No file data or buffer was provided' });
     }
 
-    // Attempt to hydrate Cloudinary environment variables from stored layout settings if needed
+    // Attempt to hydrate Cloudinary environment variables from request body or stored layout settings
+    const passedCloudName = req.body?.cloudName || req.body?.cloudinaryCloudName || req.body?.CLOUDINARY_CLOUD_NAME;
+    const passedApiKey = req.body?.apiKey || req.body?.cloudinaryApiKey || req.body?.CLOUDINARY_API_KEY;
+    const passedApiSecret = req.body?.apiSecret || req.body?.cloudinaryApiSecret || req.body?.CLOUDINARY_API_SECRET;
+
+    if (passedCloudName) process.env.CLOUDINARY_CLOUD_NAME = String(passedCloudName).trim();
+    if (passedApiKey) process.env.CLOUDINARY_API_KEY = String(passedApiKey).trim();
+    if (passedApiSecret) process.env.CLOUDINARY_API_SECRET = String(passedApiSecret).trim();
+
     if (!isCloudinaryConfigured()) {
       try {
         await fetchLayoutSettings();

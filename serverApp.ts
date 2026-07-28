@@ -139,9 +139,24 @@ export async function createExpressApp() {
 
   app.post("/api/upload", async (req, res) => {
     try {
-      const { data, filename } = req.body;
+      const { data, filename, cloudName, apiKey, apiSecret, cloudinaryCloudName, cloudinaryApiKey, cloudinaryApiSecret } = req.body;
       if (!data) {
         return res.status(400).json({ error: "Missing data payload for upload." });
+      }
+
+      // Check if Cloudinary credentials were explicitly supplied in request body
+      const passedCloudName = cloudName || cloudinaryCloudName;
+      const passedApiKey = apiKey || cloudinaryApiKey;
+      const passedApiSecret = apiSecret || cloudinaryApiSecret;
+
+      if (passedCloudName) process.env.CLOUDINARY_CLOUD_NAME = String(passedCloudName).trim();
+      if (passedApiKey) process.env.CLOUDINARY_API_KEY = String(passedApiKey).trim();
+      if (passedApiSecret) process.env.CLOUDINARY_API_SECRET = String(passedApiSecret).trim();
+
+      if (!isCloudinaryConfigured()) {
+        try {
+          await fetchLayoutSettings();
+        } catch (e) {}
       }
 
       let base64String = data;
@@ -280,8 +295,8 @@ export async function createExpressApp() {
 
   // Comprehensive DB diagnostic status endpoint
   app.get("/api/status", async (req, res) => {
+    res.setHeader("Content-Type", "application/json");
     try {
-      await getDb();
       const status = await getConnectionStatus();
       if (status.status === 'connected') {
         res.status(200).json({
@@ -295,9 +310,9 @@ export async function createExpressApp() {
           timestamp: new Date().toISOString()
         });
       } else {
-        res.status(500).json({
+        res.status(200).json({
           statusCode: 500,
-          status: status.status,
+          status: status.status || 'error',
           databaseUrlConfigured: !!process.env.DATABASE_URL,
           provider: 'Neon PostgreSQL',
           host: status.host || 'N/A',
@@ -307,7 +322,7 @@ export async function createExpressApp() {
         });
       }
     } catch (err: any) {
-      res.status(500).json({
+      res.status(200).json({
         statusCode: 500,
         status: 'error',
         databaseUrlConfigured: !!process.env.DATABASE_URL,

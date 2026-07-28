@@ -44,27 +44,34 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({ onRefreshAll }) 
     try {
       // Fetch /api/status endpoint
       const res = await fetch(`/api/status?t=${Date.now()}`);
-      const statusCode = res.status;
+      const rawText = await res.text();
       let data: any = {};
       try {
-        data = await res.json();
+        data = JSON.parse(rawText);
       } catch (jsonErr) {
-        data = { error: `Failed to parse response JSON. Raw HTTP Status: ${res.status}` };
+        data = { 
+          statusCode: res.status, 
+          status: 'error', 
+          error: `Non-JSON Server Response (HTTP ${res.status}): ${rawText}` 
+        };
       }
+
+      const statusCode = data.statusCode || res.status;
+      const isOk = statusCode === 200 && data.status === 'connected';
 
       setStatusResult({
         statusCode,
-        status: data.status || (res.ok ? 'connected' : 'error'),
+        status: data.status || (isOk ? 'connected' : 'error'),
         databaseUrlConfigured: data.databaseUrlConfigured ?? true,
         provider: data.provider || 'Neon PostgreSQL',
         host: data.host || 'N/A',
         database: data.database || 'N/A',
-        error: data.error || (res.ok ? null : `HTTP Error ${statusCode}`),
+        error: data.error || (isOk ? null : `Error status code ${statusCode}`),
         timestamp: data.timestamp || new Date().toISOString()
       });
     } catch (err: any) {
       setStatusResult({
-        statusCode: 0,
+        statusCode: 500,
         status: 'error',
         databaseUrlConfigured: false,
         provider: 'Neon PostgreSQL',
