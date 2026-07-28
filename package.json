@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && node generate-static-routes.js && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && esbuild api-entry.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "build": "prisma generate && vite build && node generate-static-routes.js && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && esbuild api-entry.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "postinstall": "prisma generate",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
