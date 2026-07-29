@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
             url: file.url,
             secureUrl: file.secureUrl || file.url,
             mimeType: file.mimeType,
-            publicId: file.publicId,
+            publicId: file.publicId ? file.publicId : null,
             resourceType: file.resourceType,
             format: file.format,
             folder: file.folder
@@ -60,7 +60,7 @@ router.post("/", async (req, res) => {
             url: file.url,
             secureUrl: file.secureUrl || file.url,
             mimeType: file.mimeType,
-            publicId: file.publicId,
+            publicId: file.publicId ? file.publicId : null,
             resourceType: file.resourceType || 'image',
             format: file.format,
             folder: file.folder || 'storefront_media'
