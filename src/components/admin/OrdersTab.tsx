@@ -500,7 +500,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       <div className="flex items-center gap-2 mt-1">
                         <Truck className="h-4 w-4 text-slate-600" />
                         <span className="text-xs font-extrabold text-slate-800">
-                          {selectedOrder.carrier || 'Royal Mail'} {selectedOrder.trackingId ? `- ${selectedOrder.trackingId}` : '(No tracking yet)'}
+                          {selectedOrder.carrier || 'Express Courier'} {selectedOrder.trackingId ? `- ${selectedOrder.trackingId}` : '(No tracking yet)'}
                         </span>
                       </div>
                     </div>
@@ -508,7 +508,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                     <button
                       onClick={() => {
                         setTrackingNumberInput(selectedOrder.trackingId || '');
-                        setCarrierInput(selectedOrder.carrier || 'Royal Mail Tracked 24');
+                        setCarrierInput(selectedOrder.carrier || 'Express Tracked 24');
                         setShowTrackingModal(true);
                       }}
                       className="py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg transition-all shadow-3xs cursor-pointer select-none"
@@ -538,7 +538,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                     <span className="font-extrabold text-slate-800">£{selectedOrder.total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
-                    <span>Shipping (Royal Mail)</span>
+                    <span>Shipping (Express Courier)</span>
                     <span className="font-extrabold text-slate-800">£0.00</span>
                   </div>
                   <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-100">
@@ -679,7 +679,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       type="text"
                       value={carrierInput}
                       onChange={(e) => setCarrierInput(e.target.value)}
-                      placeholder="e.g. Royal Mail Tracked 24"
+                      placeholder="e.g. Express Tracked 24"
                       className="w-full border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-500"
                     />
                   </div>

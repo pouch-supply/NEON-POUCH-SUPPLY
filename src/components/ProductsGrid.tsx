@@ -432,7 +432,7 @@ export default function ProductsGrid({
               <span className="text-sm">🇸🇪</span> Fresh Scandinavian Stock
             </span>
             <span className="flex items-center gap-1.5 text-slate-600">
-              <span className="text-sm">🚚</span> Royal Mail Tracked Delivery
+              <span className="text-sm">🚚</span> Express Tracked Delivery
             </span>
           </div>
           <div className="flex items-center gap-6 mx-auto sm:mx-0">

@@ -396,7 +396,7 @@ function PlansSection({ sec, handleLinkClick }: PlansSectionProps) {
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <Truck className="w-5 h-5 text-[#dfb55a]" />
-            <span>ROYAL MAIL TRACKED</span>
+            <span>EXPRESS TRACKED</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <Gift className="w-5 h-5 text-[#dfb55a]" />
@@ -2334,7 +2334,7 @@ export default function PageRenderer({
 
                     <div className="space-y-4">
                       {(sec.settings.faqItems || [
-                        { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time Royal Mail / European carrier tracking codes emailed instantly upon fulfillment lines dispatch.' },
+                        { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express courier / European carrier tracking codes emailed instantly upon fulfillment lines dispatch.' },
                         { q: 'Are these pouches 100% tobacco-free?', a: 'Under all current EU & UK reseller regulations, our catalog consists strictly of plant-fiber pouch variants utilizing medical crystalline formats.' },
                         { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific week layouts. Pause, skip custom flavors, or cancel anytime for free in the account dashboard.' },
                         { q: 'Where are the canisters formulated?', a: 'Formulated in certified European laboratories under strict vacuum sterile protocols, ensuring consistent aroma and maximum flavor lock.' }

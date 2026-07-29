@@ -400,7 +400,7 @@ export default function CustomerAccount({
     setTrackedOrder(null);
     const checkId = trackerInput.trim().toUpperCase();
     if (!checkId) {
-      setTrackerError('Please enter an Order ID or Royal Mail Tracking reference.');
+      setTrackerError('Please enter an Order ID or Tracking reference.');
       return;
     }
     const found = orders.find(o => 
@@ -556,21 +556,21 @@ export default function CustomerAccount({
               </form>
 
               {trackedOrder && (
-                trackedOrder.carrier === 'Royal Mail' ? (
-                  <div className="bg-[#fef2f2] border border-red-200 p-4 rounded-2xl shadow-xs space-y-4">
-                    <div className="flex justify-between items-center border-b border-red-100 pb-2">
+                trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
+                  <div className="bg-[#f8fafc] border border-slate-200 p-4 rounded-2xl shadow-xs space-y-4">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-serif font-black text-xs text-[#e1192e]">Royal Mail</span>
-                        <span className="text-[8px] bg-red-100 text-[#e1192e] px-1.5 py-0.5 rounded font-bold uppercase">Tracked</span>
+                        <span className="font-serif font-black text-xs text-slate-800">Express Courier</span>
+                        <span className="text-[8px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold uppercase">Tracked</span>
                       </div>
                       <span className="font-mono text-[10px] font-bold text-slate-500">{trackedOrder.trackingId}</span>
                     </div>
                     
                     <div className="space-y-1">
                       <span className="text-[8.5px] text-slate-400 uppercase font-extrabold block">Current Location / Status</span>
-                      <strong className="text-[#e1192e] font-black uppercase text-[11px] block">
+                      <strong className="text-slate-800 font-black uppercase text-[11px] block">
                         {trackedOrder.fulfillmentStatus === 'Delivered' ? 'DELIVERED & SIGNED' : 
-                         trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'IN TRANSIT via Royal Mail' : 'AWAITING COLLECTION'}
+                         trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'IN TRANSIT' : 'AWAITING COLLECTION'}
                       </strong>
                     </div>
 
@@ -1264,26 +1264,26 @@ export default function CustomerAccount({
                     {trackerError && <p className="text-xs text-rose-500 font-bold">{trackerError}</p>}
 
                     {trackedOrder ? (
-                      trackedOrder.carrier === 'Royal Mail' ? (
-                        <div className="bg-[#fef2f2] border-2 border-[#e1192e] rounded-3xl overflow-hidden shadow-xs">
-                          {/* Royal Mail Brand Header */}
-                          <div className="bg-[#e1192e] p-4 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
+                        <div className="bg-[#f8fafc] border-2 border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+                          {/* Express Courier Brand Header */}
+                          <div className="bg-slate-900 p-4 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div className="flex items-center gap-2">
-                              <span className="font-serif font-black tracking-widest text-lg">Royal Mail</span>
+                              <span className="font-serif font-black tracking-widest text-lg">Express Courier</span>
                               <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
                                 Track & Trace Live
                               </span>
                             </div>
                             <div className="text-left sm:text-right">
-                              <span className="text-[8px] text-red-100 block uppercase font-extrabold">TRACKING NUMBER</span>
+                              <span className="text-[8px] text-slate-300 block uppercase font-extrabold">TRACKING NUMBER</span>
                               <span className="font-mono font-black text-sm tracking-wider text-white select-all">{trackedOrder.trackingId}</span>
                             </div>
                           </div>
 
-                          {/* Royal Mail Content Area */}
+                          {/* Courier Content Area */}
                           <div className="p-5 sm:p-6 space-y-6">
                             {/* Status Quick Look */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-red-100">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200">
                               <div>
                                 <span className="text-[9px] text-slate-400 uppercase font-extrabold block">Current Status</span>
                                 <span className={`text-sm font-black uppercase tracking-wide flex items-center gap-1.5 mt-0.5 ${
@@ -1292,7 +1292,7 @@ export default function CustomerAccount({
                                 }`}>
                                   <span className="inline-block w-2.5 h-2.5 rounded-full bg-current" />
                                   {trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered & Signed' : 
-                                   trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'In Transit via Royal Mail' : 'Awaiting Collection'}
+                                   trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'In Transit via Express Courier' : 'Awaiting Collection'}
                                 </span>
                               </div>
                               <div>
@@ -1311,7 +1311,7 @@ export default function CustomerAccount({
                               </div>
                             </div>
 
-                            {/* Royal Mail Progress Timeline */}
+                            {/* Courier Progress Timeline */}
                             <div className="relative pt-2 pb-4">
                               <div className="absolute top-[2.1rem] left-8 right-8 h-1 bg-slate-200" />
                               <div className="absolute top-[2.1rem] left-8 h-1 bg-[#e1192e] transition-all duration-500" style={{
@@ -1345,7 +1345,7 @@ export default function CustomerAccount({
                             {/* Detailed Checkpoints */}
                             <div className="space-y-3 bg-white p-4 sm:p-5 rounded-2xl border border-red-50 text-xs">
                               <div className="flex justify-between items-center border-b border-red-100 pb-2">
-                                <span className="font-extrabold text-[#e1192e] uppercase text-[10px] tracking-wider">Royal Mail Routing History</span>
+                                <span className="font-extrabold text-slate-800 uppercase text-[10px] tracking-wider">Courier Routing History</span>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase">Live Updates via API</span>
                               </div>
                               
@@ -1386,7 +1386,7 @@ export default function CustomerAccount({
                                   <span className="text-[9px] bg-slate-800 text-slate-300 font-bold py-0.5 px-2 rounded">TESTING PANEL</span>
                                 </div>
                                 <p className="text-[10px] text-slate-400 leading-normal">
-                                  Since this is a sandbox environment, you can act as the **Royal Mail delivery agent** to push transit state updates and test how customers track their pouches.
+                                  Since this is a sandbox environment, you can act as the **delivery agent** to push transit state updates and test how customers track their pouches.
                                 </p>
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   {trackedOrder.fulfillmentStatus === 'Unfulfilled' && (
@@ -1447,17 +1447,17 @@ export default function CustomerAccount({
                                       // Generate and send simulated alert/update email
                                       const notificationEmail = {
                                         to: trackedOrder.customerEmail,
-                                        subject: `Royal Mail Delivery Update - Order #${trackedOrder.id}`,
-                                        preview: `Your shipment with Royal Mail reference ${trackedOrder.trackingId} has been updated: current status is ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered' : 'In Transit'}.`,
+                                        subject: `Express Courier Delivery Update - Order #${trackedOrder.id}`,
+                                        preview: `Your shipment with tracking reference ${trackedOrder.trackingId} has been updated: current status is ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered' : 'In Transit'}.`,
                                         body: `
                                           <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-                                            <div style="background-color: #e1192e; padding: 20px; text-align: center; color: white;">
-                                              <h2 style="margin: 0; font-size: 18px;">ROYAL MAIL SERVICE ALERT</h2>
+                                            <div style="background-color: #0f172a; padding: 20px; text-align: center; color: white;">
+                                              <h2 style="margin: 0; font-size: 18px;">EXPRESS COURIER SERVICE ALERT</h2>
                                             </div>
                                             <div style="padding: 20px; font-size: 13px; line-height: 1.5; color: #334155;">
                                               <p>Hello ${trackedOrder.customerName},</p>
-                                              <p>There is a new update on your <strong>Pouch Supply</strong> shipment tracked with Royal Mail reference <strong>${trackedOrder.trackingId}</strong>.</p>
-                                              <div style="background-color: #f8fafc; border-left: 4px solid #e1192e; padding: 12px; margin: 15px 0;">
+                                              <p>There is a new update on your <strong>Pouch Supply</strong> shipment tracked with reference <strong>${trackedOrder.trackingId}</strong>.</p>
+                                              <div style="background-color: #f8fafc; border-left: 4px solid #0f172a; padding: 12px; margin: 15px 0;">
                                                 <strong>Current Status:</strong> ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'DELIVERED & SIGNED' : 'IN TRANSIT'}<br/>
                                                 <strong>Scan Location:</strong> ${trackedOrder.trackingHistory && trackedOrder.trackingHistory[0] ? trackedOrder.trackingHistory[0].location : 'En Route'}
                                               </div>
@@ -1474,7 +1474,7 @@ export default function CustomerAccount({
                                         localStorage.setItem('ps_simulated_emails', JSON.stringify([notificationEmail, ...emails]));
                                         window.dispatchEvent(new CustomEvent('ps-emails-updated'));
                                       } catch (e) {}
-                                      alert("Simulated Royal Mail email update alert sent!");
+                                      alert("Simulated email update alert sent!");
                                     }}
                                     className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9.5px] font-black uppercase tracking-widest py-2 px-4 rounded-lg cursor-pointer flex items-center gap-1 transition-all"
                                   >

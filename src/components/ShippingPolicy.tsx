@@ -243,7 +243,7 @@ export default function ShippingPolicy({ onNavigate }: ShippingPolicyProps) {
           </div>
 
           <p className="text-indigo-200 text-xs leading-relaxed font-medium">
-            Our dispatch managers maintain direct communications with Royal Mail, DPD, DHL and regional carrier depots to fast-track package issues.
+            Our dispatch managers maintain direct communications with DPD, DHL and regional carrier depots to fast-track package issues.
           </p>
           
           <div className="text-xs font-bold text-indigo-300">

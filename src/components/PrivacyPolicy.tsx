@@ -145,7 +145,7 @@ export default function PrivacyPolicy({ onNavigate }: PrivacyPolicyProps) {
           <div className="space-y-2">
             {[
               { party: 'Payment Gateway Providers', details: 'Stripe & relevant encrypted modules processing secure token checkouts.' },
-              { party: 'Shipping & Delivery Couriers', details: 'Royal Mail & regional priority couriers to dispatch white canisters.' },
+              { party: 'Shipping & Delivery Couriers', details: 'Regional priority couriers to dispatch white canisters.' },
               { party: 'Analytics Platforms', details: 'Privacy-first analytics suites evaluating system traffic indicators.' }
             ].map((p, idx) => (
               <div key={idx} className="flex gap-3 p-3 bg-[#FAF9F5] border border-slate-150 rounded-xl items-start">

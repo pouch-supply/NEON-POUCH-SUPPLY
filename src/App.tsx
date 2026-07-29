@@ -24,7 +24,7 @@ import TermsConditions from './components/TermsConditions';
 import ProductDetailView from './components/ProductDetailView';
 import CollectionDetailView from './components/CollectionDetailView';
 import CheckoutView from './components/CheckoutView';
-import { WorldpayGatewaySimulator, PaymentSuccessScreen, PaymentFailedScreen, PaymentCancelledScreen } from './components/PaymentStatusScreens';
+import { SecureGatewaySimulator, PaymentSuccessScreen, PaymentFailedScreen, PaymentCancelledScreen } from './components/PaymentStatusScreens';
 import { 
   Sparkles, ShieldCheck, Truck, RefreshCw, Star, ArrowRight, Package, ShoppingCart, Check, Heart, User, CheckCircle2, Save, AlertTriangle, Search, Undo, Mail, X
 } from 'lucide-react';
@@ -524,7 +524,7 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [emailToast, setEmailToast] = useState<{ to: string; subject: string; refund: number } | null>(null);
 
-  // Worldpay checkout persistent states
+  // Gateway checkout persistent states
   const [checkoutDiscount, setCheckoutDiscount] = useState<Discount | null>(null);
   const [checkoutTotal, setCheckoutTotal] = useState<number>(0);
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState<boolean>(false);
@@ -665,8 +665,8 @@ export default function App() {
 
       if (path.startsWith('/payment/')) {
         const sub = path.replace('/payment/', '');
-        if (sub.startsWith('worldpay-gateway')) {
-          setCurrentTab('payment-worldpay-gateway');
+        if (sub.startsWith('gateway')) {
+          setCurrentTab('payment-gateway');
         } else if (sub.startsWith('success')) {
           setCartItems([]);
           localStorage.removeItem('ps_cart');
@@ -1197,13 +1197,13 @@ export default function App() {
     total: number;
     discountApplied: Discount | null;
     items: { productId: string; productTitle: string; price: number; quantity: number; image?: string; }[];
-    worldpayTxId: string;
-    worldpayAuthCode: string;
+    paymentTxId?: string;
+    paymentAuthCode?: string;
     cardBrand: string;
     storeCreditApplied?: number;
   }) => {
-    // Generate Royal Mail Track & Trace ID
-    const generatedTrackingId = 'RN' + Math.floor(100000000 + Math.random() * 900000000) + 'GB';
+    // Generate Express Courier Track & Trace ID
+    const generatedTrackingId = 'EC' + Math.floor(100000000 + Math.random() * 900000000) + 'GB';
 
     // Construct order
     const newOrder: Order = {
@@ -1213,22 +1213,22 @@ export default function App() {
       tags: paymentDetails.discountApplied ? ['coupon', paymentDetails.discountApplied.title] : [],
       fulfillmentStatus: 'Unfulfilled',
       paymentStatus: 'Paid',
-      worldpayTxId: paymentDetails.worldpayTxId,
-      worldpayAuthCode: paymentDetails.worldpayAuthCode,
+      gatewayTxId: (paymentDetails as any).gatewayTxId || paymentDetails.paymentTxId || 'TX-GENERIC-AUTH',
+      gatewayAuthCode: (paymentDetails as any).gatewayAuthCode || paymentDetails.paymentAuthCode || 'AUTH-OK',
       cardBrand: paymentDetails.cardBrand,
       total: paymentDetails.total,
       destination: paymentDetails.address,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      deliveryMethod: 'Priority Courier Shipping via Worldpay | Tracked',
+      deliveryMethod: 'Priority Express Courier Shipping | Tracked',
       items: paymentDetails.items,
       trackingId: generatedTrackingId,
-      carrier: 'Royal Mail',
+      carrier: 'Express Courier',
       trackingHistory: [
         {
           status: 'Sender dispatching item',
           date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           location: 'Pouch Supply Hub, London MC',
-          description: 'We have received sender advice. Royal Mail is awaiting receipt of the physical package.'
+          description: 'We have received sender advice. Express Courier is awaiting receipt of the physical package.'
         }
       ]
     };
@@ -1245,32 +1245,32 @@ export default function App() {
 
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 550px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #334155;">
-        <div style="background-color: #e1192e; padding: 25px 20px; text-align: center;">
-          <span style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">ROYAL MAIL TRACK & TRACE</span>
-          <div style="font-size: 10px; font-weight: bold; color: #ffd6d9; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Pouch Supply Order Confirmation Advice</div>
+        <div style="background-color: #0f172a; padding: 25px 20px; text-align: center;">
+          <span style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">EXPRESS COURIER TRACK & TRACE</span>
+          <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Pouch Supply Order Confirmation Advice</div>
         </div>
         
         <div style="padding: 24px; text-align: left;">
           <p style="font-size: 14px; font-weight: bold; color: #0f172a; margin-top: 0;">Dear ${paymentDetails.customerName || 'Customer'},</p>
           <p style="font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 20px;">
-            Thank you for shopping with <strong>Pouch Supply</strong>. Your order has been securely processed via <strong>Worldpay Secure Gateway</strong> and is preparing for immediate delivery partner handoff.
+            Thank you for shopping with <strong>Pouch Supply</strong>. Your order has been securely processed and is preparing for immediate delivery partner handoff.
           </p>
 
-          <!-- Royal Mail Tracking Box -->
-          <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #fecaca; padding-bottom: 8px;">
-              <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #dc2626; letter-spacing: 0.5px;">Delivery Partner Integration</span>
-              <span style="font-size: 10px; font-weight: bold; color: #991b1b; background-color: #fca5a5; padding: 2px 8px; border-radius: 4px;">ROYAL MAIL TRACKED</span>
+          <!-- Express Courier Tracking Box -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">Delivery Partner Integration</span>
+              <span style="font-size: 10px; font-weight: bold; color: #1e293b; background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px;">EXPRESS COURIER TRACKED</span>
             </div>
             
             <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
               <tr>
                 <td style="color: #64748b; padding: 4px 0;">Carrier service:</td>
-                <td style="font-weight: bold; color: #0f172a; text-align: right; padding: 4px 0;">Royal Mail 1st Class Tracked</td>
+                <td style="font-weight: bold; color: #0f172a; text-align: right; padding: 4px 0;">Express Courier 1st Class Tracked</td>
               </tr>
               <tr>
                 <td style="color: #64748b; padding: 4px 0;">Tracking reference number:</td>
-                <td style="font-family: monospace; font-weight: 900; color: #dc2626; text-align: right; padding: 4px 0; font-size: 13px; letter-spacing: 0.5px;">${generatedTrackingId}</td>
+                <td style="font-family: monospace; font-weight: 900; color: #0f172a; text-align: right; padding: 4px 0; font-size: 13px; letter-spacing: 0.5px;">${generatedTrackingId}</td>
               </tr>
               <tr>
                 <td style="color: #64748b; padding: 4px 0;">Parcel Status:</td>
@@ -1279,8 +1279,8 @@ export default function App() {
             </table>
 
             <div style="margin-top: 15px; text-align: center;">
-              <span style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; letter-spacing: 1px;">
-                Royal Mail Tracked 24
+              <span style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; letter-spacing: 1px;">
+                Express Tracked 24
               </span>
             </div>
           </div>
@@ -1299,13 +1299,13 @@ export default function App() {
           </div>
 
           <div style="font-size: 11.5px; color: #64748b; line-height: 1.5; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-            <strong>Secure Worldpay Reference:</strong><br/>
-            Tx ID: <span style="font-family: monospace;">${paymentDetails.worldpayTxId}</span><br/>
-            Auth Code: <span style="font-family: monospace;">${paymentDetails.worldpayAuthCode}</span>
+            <strong>Secure Payment Reference:</strong><br/>
+            Tx ID: <span style="font-family: monospace;">${(paymentDetails as any).gatewayTxId || paymentDetails.paymentTxId || 'TX-GENERIC-AUTH'}</span><br/>
+            Auth Code: <span style="font-family: monospace;">${(paymentDetails as any).gatewayAuthCode || paymentDetails.paymentAuthCode || 'AUTH-OK'}</span>
           </div>
 
           <p style="font-size: 11.5px; color: #64748b; line-height: 1.5; margin-bottom: 0;">
-            If you have any questions, please contact our helpline or reach us directly at <a href="mailto:scott@pouch-supply.com" style="color: #dc2626; font-weight: bold; text-decoration: none;">scott@pouch-supply.com</a>.
+            If you have any questions, please contact our helpline or reach us directly at <a href="mailto:scott@pouch-supply.com" style="color: #0f172a; font-weight: bold; text-decoration: none;">scott@pouch-supply.com</a>.
           </p>
         </div>
         
@@ -1317,16 +1317,16 @@ export default function App() {
 
     const customerEmailObj = {
       to: paymentDetails.customerEmail,
-      subject: `Your Pouch Supply Order Despatch Advice [Royal Mail: ${generatedTrackingId}]`,
-      preview: `Your order #${paymentDetails.orderId} is being prepared. Royal Mail tracking reference: ${generatedTrackingId}.`,
+      subject: `Your Pouch Supply Order Despatch Advice [Express Courier: ${generatedTrackingId}]`,
+      preview: `Your order #${paymentDetails.orderId} is being prepared. Express Courier tracking reference: ${generatedTrackingId}.`,
       body: emailHtml,
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     const adminEmailObj = {
       to: 'scott@pouch-supply.com',
-      subject: `[Copy] Pouch Supply Order Dispatch Reference #${paymentDetails.orderId} [Royal Mail: ${generatedTrackingId}]`,
-      preview: `Dispatched notification for customer ${paymentDetails.customerName} (${paymentDetails.customerEmail}) with RM ID: ${generatedTrackingId}.`,
+      subject: `[Copy] Pouch Supply Order Dispatch Reference #${paymentDetails.orderId} [Express Courier: ${generatedTrackingId}]`,
+      preview: `Dispatched notification for customer ${paymentDetails.customerName} (${paymentDetails.customerEmail}) with Express Courier ID: ${generatedTrackingId}.`,
       body: emailHtml,
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -2066,7 +2066,7 @@ export default function App() {
               />
             )}
 
-            {/* FRONTEND VIEW - SECURE WORLDPAY CHECKOUT */}
+            {/* FRONTEND VIEW - SECURE CHECKOUT */}
             {currentTab === 'frontend-checkout' && (
               <CheckoutView
                 cartItems={cartItems}
@@ -2081,9 +2081,9 @@ export default function App() {
               />
             )}
 
-            {/* FRONTEND VIEW - WORLDPAY SECURE GATEWAY */}
-            {currentTab === 'payment-worldpay-gateway' && (
-              <WorldpayGatewaySimulator 
+            {/* FRONTEND VIEW - SECURE GATEWAY */}
+            {currentTab === 'payment-gateway' && (
+              <SecureGatewaySimulator 
                 onReturnToShop={() => {
                   window.history.pushState({}, '', '/collections/all');
                   window.dispatchEvent(new Event('popstate'));
@@ -2540,7 +2540,7 @@ export default function App() {
             )}
 
             {/* FRONTEND VIEW - 404 NOT FOUND FOR NONEXISTENT PAGES */}
-            {!['frontend-home', 'frontend-shop', 'frontend-brands', 'frontend-subscribe', 'frontend-account', 'product-detail', 'collection-detail', 'blogs', 'blog-detail', 'privacy-policy', 'shipping-policy', 'refund-policy', 'terms-conditions', 'frontend-checkout', 'payment-worldpay-gateway', 'payment-success', 'payment-failed', 'payment-cancelled'].includes(currentTab) && !customPages.some(p => p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, '')) && (
+            {!['frontend-home', 'frontend-shop', 'frontend-brands', 'frontend-subscribe', 'frontend-account', 'product-detail', 'collection-detail', 'blogs', 'blog-detail', 'privacy-policy', 'shipping-policy', 'refund-policy', 'terms-conditions', 'frontend-checkout', 'payment-gateway', 'payment-success', 'payment-failed', 'payment-cancelled'].includes(currentTab) && !customPages.some(p => p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, '')) && (
               <div className="max-w-6xl mx-auto py-24 px-4 text-center space-y-6">
                 <span className="text-7xl block">🔍</span>
                 <div className="space-y-1.5">
@@ -2697,7 +2697,7 @@ export default function App() {
       )}
 
       {/* Universal Footer layout */}
-      {!isAdminActive && !['payment-worldpay-gateway', 'payment-success', 'payment-failed', 'payment-cancelled', 'frontend-checkout'].includes(currentTab) && (
+      {!isAdminActive && !['payment-gateway', 'payment-success', 'payment-failed', 'payment-cancelled', 'frontend-checkout'].includes(currentTab) && (
         <Footer onNavigate={navigateToTab} layoutSettings={layoutSettings} />
       )}
 

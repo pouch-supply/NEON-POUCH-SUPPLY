@@ -151,7 +151,7 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Secure Direct Card Gateway</span>
                 <span className="text-[9px] font-semibold text-emerald-400">● 256-BIT SSL ENCRYPTED</span>
               </div>
-              <p className="text-[10px] text-slate-400">Enter your debit/credit card details below to complete your order securely through Worldpay.</p>
+              <p className="text-[10px] text-slate-400">Enter your debit/credit card details below to complete your order securely.</p>
             </div>
 
             {/* Real-looking form inputs */}
@@ -247,7 +247,7 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
 
             <div className="text-center">
               <p className="text-[9.5px] text-slate-500 leading-normal">
-                By completing this checkout, you authorize Worldpay secure payment processing. All customer card payloads are hashed securely over transport layer SSL protocols.
+                By completing this checkout, you authorize secure payment processing. All customer card payloads are hashed securely over transport layer SSL protocols.
               </p>
             </div>
           </>
@@ -265,7 +265,7 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
             <div className="space-y-1.5">
               <h4 className="text-sm font-black uppercase tracking-wider text-slate-100">3D-Secure Verification</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Worldpay 3DS Engine requires card issuer authorization. Enter the OTP code sent to your registered mobile number ending in <strong className="text-slate-200">****204</strong>.
+                The 3DS Engine requires card issuer authorization. Enter the OTP code sent to your registered mobile number ending in <strong className="text-slate-200">****204</strong>.
               </p>
             </div>
 
@@ -375,7 +375,7 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
           </div>
           <div className="text-right">
             <span className="text-slate-400 font-extrabold text-[9px] uppercase tracking-wider block">Payment Provider</span>
-            <span className="text-rose-600 font-black text-xs uppercase tracking-widest block font-mono">Worldpay Secure</span>
+            <span className="text-indigo-600 font-black text-xs uppercase tracking-widest block font-mono">Secure Card Gateway</span>
           </div>
         </div>
 
@@ -482,7 +482,7 @@ export function PaymentFailedScreen({ onReturnToCheckout }: PaymentFailedScreenP
             const params = new URLSearchParams(window.location.search);
             const orderId = params.get('orderId') || '';
             const amount = '29.99'; // Default fallback
-            window.history.pushState({}, '', `/payment/worldpay-gateway?orderId=${orderId}&amount=${amount}`);
+            window.history.pushState({}, '', `/payment/gateway?orderId=${orderId}&amount=${amount}`);
             window.dispatchEvent(new Event('popstate'));
           }}
           className="flex-1 py-4 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-xl transition cursor-pointer shadow-md"
@@ -539,4 +539,3 @@ export function PaymentCancelledScreen({ onReturnToCheckout }: PaymentCancelledS
   );
 }
 
-export const WorldpayGatewaySimulator = SecureGatewaySimulator;

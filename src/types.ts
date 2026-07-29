@@ -69,8 +69,8 @@ export interface Order {
   tags: string[];
   fulfillmentStatus: 'Unfulfilled' | 'Fulfilled' | 'Delivered';
   paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
-  worldpayTxId?: string;
-  worldpayAuthCode?: string;
+  gatewayTxId?: string;
+  gatewayAuthCode?: string;
   cardBrand?: string;
   total: number;
   storeCreditApplied?: number;

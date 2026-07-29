@@ -517,7 +517,7 @@ export default function Header({
             <span className="h-3 w-px bg-slate-200 hidden md:block" />
             <span className="hidden md:inline-flex items-center gap-1.5 text-slate-500">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>UK Tracked Courier Shipping via Royal Mail</span>
+              <span>UK Tracked Courier Shipping</span>
             </span>
           </div>
           <div className="flex items-center gap-5">

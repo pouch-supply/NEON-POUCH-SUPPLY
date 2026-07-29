@@ -481,7 +481,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
             </div>
             <div className="flex flex-col items-center gap-1.5">
               <Truck className="w-5 h-5 text-[#dfb55a]" />
-              <span>ROYAL MAIL TRACKED</span>
+              <span>EXPRESS TRACKED</span>
             </div>
             <div className="flex flex-col items-center gap-1.5">
               <Gift className="w-5 h-5 text-[#dfb55a]" />
