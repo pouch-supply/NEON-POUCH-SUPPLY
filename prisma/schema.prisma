@@ -129,6 +129,8 @@ model Order {
   tags               String[] @default([])
   fulfillmentStatus  String   @default("Unfulfilled")
   paymentStatus      String?  @default("Paid")
+  worldpayTxId       String?
+  worldpayAuthCode   String?
   gatewayTxId        String?
   gatewayAuthCode    String?
   cardBrand          String?

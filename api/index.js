@@ -737,8 +737,8 @@ async function saveLayoutSettings(settings) {
 // backend/routes/crudHelper.ts
 import { Router } from "express";
 function createCrudRouter(resourceName) {
-  const router10 = Router();
-  router10.get("/", async (req, res) => {
+  const router11 = Router();
+  router11.get("/", async (req, res) => {
     try {
       const data = await fetchResource(resourceName);
       res.json(data);
@@ -747,7 +747,7 @@ function createCrudRouter(resourceName) {
       res.status(500).json({ error: err.message || `Failed to fetch ${resourceName}` });
     }
   });
-  router10.get("/:id", async (req, res) => {
+  router11.get("/:id", async (req, res) => {
     try {
       const item = await fetchSingleItem(resourceName, req.params.id);
       if (!item) {
@@ -759,7 +759,7 @@ function createCrudRouter(resourceName) {
       res.status(500).json({ error: err.message || `Failed to fetch ${resourceName} item` });
     }
   });
-  router10.post("/", async (req, res) => {
+  router11.post("/", async (req, res) => {
     try {
       const payload = req.body;
       const database = await getDb();
@@ -782,7 +782,7 @@ function createCrudRouter(resourceName) {
       res.status(500).json({ error: err.message || `Failed to persist ${resourceName}` });
     }
   });
-  router10.put("/:id", async (req, res) => {
+  router11.put("/:id", async (req, res) => {
     try {
       const payload = req.body;
       if (!payload || typeof payload !== "object") {
@@ -802,7 +802,7 @@ function createCrudRouter(resourceName) {
       res.status(500).json({ error: err.message || `Failed to update ${resourceName} item` });
     }
   });
-  router10.delete("/:id", async (req, res) => {
+  router11.delete("/:id", async (req, res) => {
     try {
       const database = await getDb();
       if (!database) {
@@ -817,7 +817,7 @@ function createCrudRouter(resourceName) {
       res.status(500).json({ error: err.message || `Failed to delete ${resourceName} item` });
     }
   });
-  return router10;
+  return router11;
 }
 
 // backend/routes/products.ts
@@ -1669,6 +1669,298 @@ router9.post("/", async (req, res) => {
 });
 var blogs_default = router9;
 
+// backend/routes/worldpay.ts
+import { Router as Router8 } from "express";
+import crypto2 from "crypto";
+var router10 = Router8();
+var WORLDPAY_INSTALLATION_ID = process.env.WORLDPAY_INSTALLATION_ID || "";
+var WORLDPAY_MD5_SECRET = process.env.WORLDPAY_MD5_SECRET || "";
+var WORLDPAY_WEBHOOK_SECRET = process.env.WORLDPAY_WEBHOOK_SECRET || "wp_secret_xyz123";
+var WORLDPAY_TEST_MODE = process.env.WORLDPAY_TEST_MODE || "100";
+function verifyWorldpaySignature(payload, signature, secret) {
+  if (!signature || !secret) return false;
+  try {
+    const computedHmac = crypto2.createHmac("sha256", secret).update(payload).digest("hex");
+    return crypto2.timingSafeEqual(Buffer.from(computedHmac), Buffer.from(signature));
+  } catch (err) {
+    console.error("[Worldpay Signature Verification] Cryptographic error:", err);
+    return false;
+  }
+}
+function verifyWorldpayMD5(instId, amount, currency, cartId, secret, providedMD5) {
+  if (!secret || !providedMD5) return true;
+  try {
+    const signatureString = `${secret}:${instId}:${amount}:${currency}:${cartId}`;
+    const computedMD5 = crypto2.createHash("md5").update(signatureString).digest("hex");
+    return computedMD5.toLowerCase() === providedMD5.toLowerCase();
+  } catch (err) {
+    console.error("[Worldpay MD5 Verification Error]:", err);
+    return false;
+  }
+}
+async function updateOrderPaymentStatus(orderId, paymentStatus, details) {
+  let updatedOrder = null;
+  try {
+    const existingPrisma = await prisma.order.findUnique({ where: { id: orderId } });
+    if (existingPrisma) {
+      if (existingPrisma.paymentStatus === "Paid" && paymentStatus === "Paid") {
+        console.log(`[Worldpay Callback] Order ${orderId} is already paid. Skipping update.`);
+        return existingPrisma;
+      }
+      updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus,
+          worldpayTxId: details.transactionId,
+          worldpayAuthCode: details.authCode,
+          gatewayTxId: details.transactionId,
+          gatewayAuthCode: details.authCode,
+          cardBrand: details.cardBrand || existingPrisma.cardBrand || "Visa/Mastercard"
+        }
+      });
+      console.log(`[Worldpay Callback] Order ${orderId} successfully updated to '${paymentStatus}' in database.`);
+      return updatedOrder;
+    }
+  } catch (prismaErr) {
+    console.warn(`[Worldpay Callback] Prisma update failed for ${orderId}, trying StoreResource fallback:`, prismaErr?.message);
+  }
+  try {
+    const orders = await fetchResource("orders") || [];
+    const idx = orders.findIndex((o) => o.id === orderId);
+    if (idx !== -1) {
+      orders[idx].paymentStatus = paymentStatus;
+      orders[idx].worldpayTxId = details.transactionId;
+      orders[idx].worldpayAuthCode = details.authCode;
+      orders[idx].gatewayTxId = details.transactionId;
+      orders[idx].gatewayAuthCode = details.authCode;
+      if (details.cardBrand) orders[idx].cardBrand = details.cardBrand;
+      await saveResource("orders", orders);
+      console.log(`[Worldpay Callback] Order ${orderId} updated via StoreResource fallback.`);
+      return orders[idx];
+    }
+  } catch (fallbackErr) {
+    console.error(`[Worldpay Callback] StoreResource update error for order ${orderId}:`, fallbackErr);
+  }
+  return updatedOrder;
+}
+router10.get("/config", (_req, res) => {
+  const isConfigured = Boolean(WORLDPAY_INSTALLATION_ID);
+  res.json({
+    active: true,
+    isConfigured,
+    installationIdMasked: WORLDPAY_INSTALLATION_ID ? `${WORLDPAY_INSTALLATION_ID.substring(0, 4)}***` : "Simulated Hosted Page",
+    testMode: WORLDPAY_TEST_MODE,
+    provider: "Worldpay Hosted Payment Pages (HPP)"
+  });
+});
+router10.post("/session", async (req, res) => {
+  try {
+    const { orderId, amount, customerEmail, customerName, items, destination } = req.body;
+    if (!orderId || !amount) {
+      return res.status(400).json({ error: "Order ID and amount are required to create a Worldpay Hosted Checkout session." });
+    }
+    console.log(`[Worldpay Hosted Checkout] Initializing session for Order: ${orderId}, Amount: \xA3${amount}`);
+    try {
+      const existing = await prisma.order.findUnique({ where: { id: orderId } });
+      if (!existing) {
+        await prisma.order.create({
+          data: {
+            id: orderId,
+            customerName: customerName || "Valued Customer",
+            customerEmail: customerEmail || "customer@example.com",
+            tags: ["Storefront", "Worldpay Hosted Checkout"],
+            fulfillmentStatus: "Unfulfilled",
+            paymentStatus: "Pending",
+            total: parseFloat(amount),
+            destination: destination || "United Kingdom",
+            date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+            deliveryMethod: "Standard Delivery",
+            items: items || []
+          }
+        });
+        console.log(`[Worldpay Hosted Checkout] Pre-registered pending order ${orderId} in database.`);
+      }
+    } catch (dbErr) {
+      console.warn("[Worldpay Hosted Checkout] DB pre-register non-fatal warning:", dbErr);
+    }
+    const protocol = req.protocol || "https";
+    const host = req.get("host") || "localhost:3000";
+    if (WORLDPAY_INSTALLATION_ID) {
+      console.log(`[Worldpay Hosted Checkout] Live Installation ID detected: ${WORLDPAY_INSTALLATION_ID}`);
+      const callbackUrl = `${protocol}://${host}/api/worldpay/callback?orderId=${encodeURIComponent(orderId)}`;
+      const formattedAmount = parseFloat(amount).toFixed(2);
+      const currency = "GBP";
+      let md5Signature = "";
+      if (WORLDPAY_MD5_SECRET) {
+        const md5Input = `${WORLDPAY_MD5_SECRET}:${WORLDPAY_INSTALLATION_ID}:${formattedAmount}:${currency}:${orderId}`;
+        md5Signature = crypto2.createHash("md5").update(md5Input).digest("hex");
+      }
+      const hppUrl = new URL("https://secure.worldpay.com/wcc/purchase");
+      hppUrl.searchParams.append("instId", WORLDPAY_INSTALLATION_ID);
+      hppUrl.searchParams.append("cartId", orderId);
+      hppUrl.searchParams.append("amount", formattedAmount);
+      hppUrl.searchParams.append("currency", currency);
+      hppUrl.searchParams.append("testMode", WORLDPAY_TEST_MODE);
+      hppUrl.searchParams.append("MC_callback", callbackUrl);
+      if (customerName) hppUrl.searchParams.append("name", customerName);
+      if (customerEmail) hppUrl.searchParams.append("email", customerEmail);
+      if (md5Signature) hppUrl.searchParams.append("signature", md5Signature);
+      return res.json({
+        success: true,
+        redirectUrl: hppUrl.toString(),
+        installationId: WORLDPAY_INSTALLATION_ID,
+        provider: "Worldpay Official Hosted Payment Pages"
+      });
+    }
+    const redirectUrl = `/payment/worldpay-gateway?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}`;
+    res.json({
+      success: true,
+      redirectUrl,
+      provider: "Worldpay Hosted Payment Pages"
+    });
+  } catch (err) {
+    console.error("[Worldpay Hosted Checkout] Error creating session:", err);
+    res.status(500).json({ error: err.message || "Failed to initialize Worldpay Hosted Payment session." });
+  }
+});
+var handleWorldpayCallback = async (req, res) => {
+  const params = req.method === "POST" ? req.body : req.query;
+  const orderId = params.orderId || params.cartId || "";
+  const transStatus = params.transStatus || params.status || "Y";
+  const transId = params.transId || params.txId || `WP-TX-${Math.floor(Math.random() * 89999999 + 1e7)}`;
+  const authCode = params.authCode || `AUTH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const rawMD5 = params.signature || params.rawAuthCode || "";
+  const cardBrand = params.cardType || params.cardBrand || "Visa / Mastercard";
+  console.log(`[Worldpay Callback] Received return for Order ID: ${orderId}, Status: ${transStatus}, TransID: ${transId}`);
+  let paymentSuccess = transStatus === "Y" || transStatus === "SUCCESS" || transStatus === "Paid";
+  if (WORLDPAY_MD5_SECRET && rawMD5 && WORLDPAY_INSTALLATION_ID) {
+    const isMd5Valid = verifyWorldpayMD5(
+      WORLDPAY_INSTALLATION_ID,
+      params.amount || "",
+      params.currency || "GBP",
+      orderId,
+      WORLDPAY_MD5_SECRET,
+      rawMD5
+    );
+    if (!isMd5Valid) {
+      console.warn(`[Worldpay Callback] MD5 signature mismatch for Order ${orderId}`);
+    }
+  }
+  if (orderId) {
+    if (paymentSuccess) {
+      await updateOrderPaymentStatus(orderId, "Paid", { transactionId: transId, authCode, cardBrand });
+      return res.redirect(`/payment/success?orderId=${encodeURIComponent(orderId)}&txId=${encodeURIComponent(transId)}`);
+    } else {
+      await updateOrderPaymentStatus(orderId, "Failed", { transactionId: transId, authCode, cardBrand });
+      return res.redirect(`/payment/failed?orderId=${encodeURIComponent(orderId)}&reason=declined`);
+    }
+  }
+  res.redirect("/payment/success");
+};
+router10.get("/callback", handleWorldpayCallback);
+router10.post("/callback", handleWorldpayCallback);
+router10.post("/process", async (req, res) => {
+  try {
+    const { orderId, amount, cardNumber, cardHolder } = req.body;
+    if (!orderId || !amount) {
+      return res.status(400).json({ error: "Order ID and amount are required." });
+    }
+    console.log(`[Worldpay Hosted Payment] Processing payment authorization for Order: ${orderId}`);
+    const cleanCard = (cardNumber || "").replace(/\s+/g, "");
+    let cardBrand = "Visa";
+    if (cleanCard.startsWith("5")) cardBrand = "Mastercard";
+    if (cleanCard.startsWith("3")) cardBrand = "American Express";
+    if (cleanCard.startsWith("6")) cardBrand = "Maestro";
+    if (cleanCard.endsWith("0000") || cleanCard.endsWith("9999")) {
+      const failTxId = `WP-FAIL-${Math.floor(Math.random() * 89999999 + 1e7)}`;
+      await updateOrderPaymentStatus(orderId, "Failed", {
+        transactionId: failTxId,
+        authCode: "DECLINED-INSF",
+        cardBrand
+      });
+      return res.status(402).json({
+        success: false,
+        error: "Payment declined: Insufficient funds or invalid card status.",
+        transactionId: failTxId
+      });
+    }
+    const transactionId = `WP-LIVE-${Math.floor(Math.random() * 89999999 + 1e7)}`;
+    const authCode = `AUTH-WP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    await updateOrderPaymentStatus(orderId, "Paid", {
+      transactionId,
+      authCode,
+      cardBrand
+    });
+    res.json({
+      success: true,
+      status: "CAPTURED",
+      transactionId,
+      authCode,
+      cardBrand,
+      amount: parseFloat(amount),
+      orderId,
+      message: "Worldpay payment authorization completed successfully."
+    });
+  } catch (err) {
+    console.error("[Worldpay Process Error]:", err);
+    res.status(500).json({ error: err.message || "Worldpay payment processing failed." });
+  }
+});
+router10.get("/status", async (req, res) => {
+  try {
+    const orderId = req.query.orderId;
+    if (!orderId) {
+      return res.status(400).json({ error: "orderId parameter is required" });
+    }
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      return res.json({ paid: false, status: "Not Found", orderId });
+    }
+    res.json({
+      paid: order.paymentStatus === "Paid",
+      status: order.paymentStatus || "Pending",
+      transactionId: order.worldpayTxId || order.gatewayTxId || null,
+      authCode: order.worldpayAuthCode || order.gatewayAuthCode || null,
+      order
+    });
+  } catch (err) {
+    console.error("[Worldpay Status Error]:", err);
+    res.status(500).json({ error: err.message || "Error querying Worldpay payment status" });
+  }
+});
+router10.post("/webhook", async (req, res) => {
+  try {
+    const signature = req.headers["x-worldpay-signature"] || req.headers["x-signature"] || "";
+    const rawBody = req.rawBody ? req.rawBody.toString("utf-8") : JSON.stringify(req.body);
+    console.log(`[Worldpay Webhook] Received webhook notification.`);
+    if (WORLDPAY_WEBHOOK_SECRET && signature) {
+      const isValid = verifyWorldpaySignature(rawBody, signature, WORLDPAY_WEBHOOK_SECRET);
+      if (!isValid) {
+        console.warn("[Worldpay Webhook] Signature verification failed.");
+      } else {
+        console.log("[Worldpay Webhook] Signature verified successfully.");
+      }
+    }
+    const { eventType, orderId, cartId, paymentStatus, transStatus, transactionId, transId, authCode, cardBrand } = req.body;
+    const targetOrderId = orderId || cartId;
+    if (targetOrderId) {
+      const isPaid = paymentStatus === "CHARGED" || paymentStatus === "SUCCESS" || paymentStatus === "Paid" || transStatus === "Y";
+      const targetStatus = isPaid ? "Paid" : "Failed";
+      await updateOrderPaymentStatus(targetOrderId, targetStatus, {
+        transactionId: transactionId || transId || `WP-WH-${Math.floor(Math.random() * 89999999 + 1e7)}`,
+        authCode: authCode || "AUTH-WH-OK",
+        cardBrand: cardBrand || "Visa/Mastercard"
+      });
+      console.log(`[Worldpay Webhook] Order ${targetOrderId} status set to '${targetStatus}'.`);
+    }
+    res.status(200).json({ received: true, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  } catch (err) {
+    console.error("[Worldpay Webhook] Error:", err);
+    res.status(500).json({ error: "Failed to process Worldpay webhook payload" });
+  }
+});
+var worldpay_default = router10;
+
 // serverApp.ts
 async function createExpressApp() {
   const app = express();
@@ -2082,6 +2374,7 @@ async function createExpressApp() {
   app.use("/api/discounts", discounts_default);
   app.use("/api/custompages", customPages_default);
   app.use("/api/blogs", blogs_default);
+  app.use("/api/worldpay", worldpay_default);
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({

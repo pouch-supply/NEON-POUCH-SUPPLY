@@ -16,6 +16,7 @@ import customersRouter from "./backend/routes/customers";
 import discountsRouter from "./backend/routes/discounts";
 import customPagesRouter from "./backend/routes/customPages";
 import blogsRouter from "./backend/routes/blogs";
+import worldpayRouter from "./backend/routes/worldpay";
 
 import mediaRouter from "./backend/routes/media";
 import { uploadToCloudinary, isCloudinaryConfigured } from "./backend/services/cloudinary";
@@ -492,6 +493,7 @@ export async function createExpressApp() {
   app.use("/api/discounts", discountsRouter);
   app.use("/api/custompages", customPagesRouter);
   app.use("/api/blogs", blogsRouter);
+  app.use("/api/worldpay", worldpayRouter);
 
   // Vite middleware for development or static serving for production
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {

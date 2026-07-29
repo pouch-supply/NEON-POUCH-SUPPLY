@@ -275,11 +275,63 @@ export default function CheckoutView({
     // Generate clean Order ID
     const generatedOrderId = `PS${Math.floor(Math.random() * 90000 + 10000)}`;
 
-    setTimeout(() => {
+    try {
+      // Save order record first
+      onCompleteCheckout({
+        orderId: generatedOrderId,
+        customerName: fullName,
+        customerEmail: email,
+        address: `${addressLine}, ${city}, ${postcode}, ${country}`,
+        total: finalTotalToPay,
+        discountApplied: currentDiscount,
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          productTitle: item.productTitle,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image
+        })),
+        gatewayTxId: `WP-PENDING-${generatedOrderId}`,
+        gatewayAuthCode: 'PENDING-AUTH',
+        cardBrand: 'Worldpay Hosted Checkout',
+        storeCreditApplied: storeCreditApplied
+      });
+
+      // Initialize Worldpay Hosted Session
+      const sessionRes = await fetch('/api/worldpay/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: generatedOrderId,
+          amount: finalTotalToPay.toFixed(2),
+          customerName: fullName,
+          customerEmail: email,
+          destination: `${addressLine}, ${city}, ${postcode}, ${country}`,
+          items: cartItems.map(item => ({
+            productId: item.productId,
+            productTitle: item.productTitle,
+            price: item.price,
+            quantity: item.quantity
+          }))
+        })
+      });
+
+      const sessionData = await sessionRes.json();
+      setIsProcessing(false);
+
+      if (sessionRes.ok && sessionData.redirectUrl) {
+        window.history.pushState({}, '', sessionData.redirectUrl);
+        window.dispatchEvent(new Event('popstate'));
+      } else {
+        window.history.pushState({}, '', `/payment/gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
+        window.dispatchEvent(new Event('popstate'));
+      }
+    } catch (err: any) {
+      console.error('[Worldpay Checkout Session Error]', err);
       setIsProcessing(false);
       window.history.pushState({}, '', `/payment/gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
       window.dispatchEvent(new Event('popstate'));
-    }, 800);
+    }
   };
 
   // Process 3DS validation code

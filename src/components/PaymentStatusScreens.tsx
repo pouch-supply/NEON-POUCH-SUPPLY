@@ -6,21 +6,22 @@ import {
 import { Order } from '../types';
 
 // ==========================================
-// 1. SECURE PAYMENT GATEWAY SIMULATOR
+// 1. WORLDPAY SECURE PAYMENT GATEWAY SIMULATOR
 // ==========================================
 interface SecureGatewaySimulatorProps {
   onReturnToShop: () => void;
 }
 
-export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulatorProps) {
+export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimulatorProps) {
   const [orderId, setOrderId] = useState('');
   const [amount, setAmount] = useState('0.00');
+  const [checkoutId, setCheckoutId] = useState('');
   const [cardHolder, setCardHolder] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   
-  const [simulationMode, setSimulationMode] = useState<'SUCCESS' | 'DECLINED' | '3DS_REQUIRED' | 'GATEWAY_ERROR'>('SUCCESS');
+  const [simulationMode, setSimulationMode] = useState<'SUCCESS' | 'DECLINED' | '3DS_REQUIRED'>('SUCCESS');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -30,10 +31,18 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
   const [threeDsError, setThreeDsError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
 
+  const [worldpayConfig, setWorldpayConfig] = useState<{ active: boolean; isConfigured: boolean; checkoutId: string; provider: string } | null>(null);
+
   useEffect(() => {
+    fetch('/api/worldpay/config')
+      .then(res => res.json())
+      .then(data => setWorldpayConfig(data))
+      .catch(() => null);
+
     const params = new URLSearchParams(window.location.search);
     setOrderId(params.get('orderId') || `PS${Math.floor(Math.random() * 90000 + 10000)}`);
     setAmount(params.get('amount') || '29.99');
+    setCheckoutId(params.get('checkoutId') || '');
   }, []);
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,54 +62,120 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
     }
   };
 
+  const getCardBrand = (num: string) => {
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('4')) return 'Visa';
+    if (clean.startsWith('5')) return 'Mastercard';
+    if (clean.startsWith('3')) return 'American Express';
+    if (clean.startsWith('6')) return 'Maestro';
+    return 'Visa/Mastercard';
+  };
+
   const handlePaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cardHolder.trim() || !cardNumber || cardNumber.replace(/\s/g, '').length < 15 || !expiry || !cvv || cvv.length < 3) {
-      setPaymentError('Please enter valid credit card authorization fields.');
+      setPaymentError('Please enter valid credit card details.');
       return;
     }
 
     setIsProcessing(true);
     setPaymentError(null);
 
-    setTimeout(() => {
-      if (simulationMode === '3DS_REQUIRED') {
-        setTransactionId(`TX-${Math.floor(Math.random() * 1000000)}`);
+    if (simulationMode === 'DECLINED') {
+      setTimeout(() => {
+        setIsProcessing(false);
+        window.history.pushState({}, '', `/payment/failed?orderId=${orderId}&reason=Card declined by Worldpay risk analyzer`);
+        window.dispatchEvent(new Event('popstate'));
+      }, 1000);
+      return;
+    }
+
+    if (simulationMode === '3DS_REQUIRED') {
+      setTimeout(() => {
+        setTransactionId(`WP-3DS-${Math.floor(Math.random() * 89999999 + 10000000)}`);
         setShow3ds(true);
         setIsProcessing(false);
-      } else if (simulationMode === 'SUCCESS') {
-        setIsProcessing(false);
-        window.history.pushState({}, '', `/payment/success?orderId=${orderId}&amount=${amount}`);
+      }, 1000);
+      return;
+    }
+
+    // Call Worldpay backend API to process payment and record transaction
+    try {
+      const res = await fetch('/api/worldpay/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount,
+          cardNumber,
+          cardExpiry: expiry,
+          cvc: cvv,
+          cardHolder,
+          cardBrand: getCardBrand(cardNumber)
+        })
+      });
+
+      const data = await res.json();
+      setIsProcessing(false);
+
+      if (res.ok && data.success) {
+        window.history.pushState({}, '', `/payment/success?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&txId=${encodeURIComponent(data.transactionId)}`);
         window.dispatchEvent(new Event('popstate'));
       } else {
-        setIsProcessing(false);
-        window.history.pushState({}, '', `/payment/failed?orderId=${orderId}&reason=Card declined by issuer`);
-        window.dispatchEvent(new Event('popstate'));
+        setPaymentError(data.error || 'Payment authorization failed.');
       }
-    }, 1000);
+    } catch (err: any) {
+      setIsProcessing(false);
+      setPaymentError(err.message || 'Error communicating with Worldpay backend.');
+    }
   };
 
-  const handleVerify3ds = () => {
+  const handleVerify3ds = async () => {
     if (!threeDsOtp.trim()) {
-      setThreeDsError('Please enter the OTP verification code.');
+      setThreeDsError('Please enter the 3D-Secure passcode.');
       return;
     }
 
     setIsProcessing(true);
     setThreeDsError(null);
 
-    // Any code is accepted except 0000 for simulation failure
-    setTimeout(() => {
-      if (threeDsOtp === '0000') {
-        setThreeDsError('Incorrect authorization password. 3D-Secure authentication failed.');
+    if (threeDsOtp === '0000') {
+      setTimeout(() => {
+        setThreeDsError('Incorrect authorization password. Worldpay 3D-Secure authentication failed.');
         setIsProcessing(false);
-      } else {
-        setIsProcessing(false);
+      }, 800);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/worldpay/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount,
+          cardNumber,
+          cardExpiry: expiry,
+          cvc: cvv,
+          cardHolder,
+          cardBrand: getCardBrand(cardNumber)
+        })
+      });
+
+      const data = await res.json();
+      setIsProcessing(false);
+
+      if (res.ok && data.success) {
         setShow3ds(false);
-        window.history.pushState({}, '', `/payment/success?orderId=${orderId}&amount=${amount}&verified=3ds`);
+        window.history.pushState({}, '', `/payment/success?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&txId=${encodeURIComponent(data.transactionId)}`);
         window.dispatchEvent(new Event('popstate'));
+      } else {
+        setThreeDsError(data.error || '3DS Verification rejected by issuer.');
       }
-    }, 1200);
+    } catch (err: any) {
+      setIsProcessing(false);
+      setThreeDsError(err.message || 'Connection error during 3DS verification.');
+    }
   };
 
   const handleCancel = () => {
@@ -111,150 +186,169 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
   return (
     <div className="max-w-xl mx-auto my-12 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 overflow-hidden relative font-sans">
       
-      {/* Secure Brand Bar */}
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 py-4 px-6 flex justify-between items-center border-b border-slate-700">
+      {/* Worldpay Header */}
+      <div className="bg-gradient-to-r from-red-900 via-rose-950 to-slate-900 py-4 px-6 flex justify-between items-center border-b border-red-900/40">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black tracking-widest text-white font-mono uppercase">SECURE PAYMENT</span>
+          <span className="text-sm font-black tracking-widest text-white font-mono uppercase">WORLDPAY</span>
           <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
             PCI-DSS Encrypted
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/90">
-          <ShieldCheck className="h-4 w-4 text-emerald-400 animate-pulse" /> Encrypted Vault
+        <div className="flex items-center gap-1 text-slate-300 text-xs font-bold">
+          <Lock className="h-3.5 w-3.5 text-rose-400" />
+          <span>Hosted Checkout</span>
         </div>
       </div>
 
-      <div className="p-6 sm:p-8 space-y-6">
+      <div className="p-6 space-y-6">
         
-        {/* Merchant details */}
-        <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:justify-between gap-3 text-xs">
-          <div className="space-y-1">
-            <span className="text-slate-550 text-[10px] block uppercase tracking-wider font-extrabold">MERCHANT NAME</span>
-            <span className="font-extrabold text-slate-200">Pouch Supply UK Ltd</span>
+        {/* Order details banner */}
+        <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex justify-between items-center text-xs">
+          <div>
+            <span className="text-slate-400 font-extrabold text-[10px] uppercase block">Order Reference</span>
+            <span className="font-mono font-bold text-white text-sm">{orderId}</span>
           </div>
-          <div className="space-y-1">
-            <span className="text-slate-550 text-[10px] block uppercase tracking-wider font-extrabold">ORDER REFERENCE</span>
-            <span className="font-mono text-slate-300 font-bold">{orderId}</span>
-          </div>
-          <div className="space-y-1 sm:text-right">
-            <span className="text-slate-550 text-[10px] block uppercase tracking-wider font-extrabold">TOTAL CHARGE</span>
-            <span className="font-black text-rose-450 text-sm">£{amount} GBP</span>
+          <div className="text-right">
+            <span className="text-slate-400 font-extrabold text-[10px] uppercase block">Amount Due</span>
+            <span className="text-emerald-400 font-black text-lg">£{amount}</span>
           </div>
         </div>
 
-        {false ? (
-          <div />
-        ) : (
-          <>
-            <div className="bg-slate-850/50 border border-slate-800 rounded-xl p-3.5 space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Secure Direct Card Gateway</span>
-                <span className="text-[9px] font-semibold text-emerald-400">● 256-BIT SSL ENCRYPTED</span>
-              </div>
-              <p className="text-[10px] text-slate-400">Enter your debit/credit card details below to complete your order securely.</p>
+        {/* Simulation Controls */}
+        <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">
+              Worldpay Gateway Sandbox Mode
+            </span>
+            <span className="text-[9.5px] text-slate-400">
+              {worldpayConfig?.isConfigured ? 'Live Credentials Connected' : 'Simulated Gateway active'}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-[10px]">
+            <button
+              type="button"
+              onClick={() => setSimulationMode('SUCCESS')}
+              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === 'SUCCESS' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+            >
+              Pass (200 OK)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSimulationMode('3DS_REQUIRED')}
+              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === '3DS_REQUIRED' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+            >
+              Trigger 3DS
+            </button>
+            <button
+              type="button"
+              onClick={() => setSimulationMode('DECLINED')}
+              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === 'DECLINED' ? 'bg-rose-600 border-rose-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+            >
+              Force Decline
+            </button>
+          </div>
+        </div>
+
+        {/* Payment Form */}
+        <form onSubmit={handlePaySubmit} className="space-y-4">
+          <div>
+            <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Cardholder Name</label>
+            <input
+              type="text"
+              required
+              placeholder="Full name as printed on card"
+              value={cardHolder}
+              onChange={(e) => setCardHolder(e.target.value)}
+              className="w-full text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-medium"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Card Number</label>
+              <span className="text-[10px] font-bold text-rose-400 font-mono">{getCardBrand(cardNumber)}</span>
             </div>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                placeholder="4000 0000 0000 0000"
+                value={cardNumber}
+                onChange={handleCardNumberChange}
+                className="w-full text-xs font-mono p-3 pl-10 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold tracking-wider"
+              />
+              <CreditCard className="h-4 w-4 text-slate-500 absolute left-3 top-3.5" />
+            </div>
+          </div>
 
-            {/* Real-looking form inputs */}
-            <form onSubmit={handlePaySubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450 block">Name on Credit Card</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. ALEXANDER STERLING"
-                  value={cardHolder}
-                  onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                  className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Expiry Date</label>
+              <input
+                type="text"
+                required
+                placeholder="MM/YY"
+                value={expiry}
+                onChange={handleExpiryChange}
+                className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">CVC / CVV</label>
+              <input
+                type="password"
+                required
+                maxLength={4}
+                placeholder="123"
+                value={cvv}
+                onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
+              />
+            </div>
+          </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450 block">16-Digit Card Number</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="4444 3333 2222 1111"
-                    value={cardNumber}
-                    onChange={handleCardNumberChange}
-                    className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold pl-10"
-                  />
-                  <CreditCard className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                </div>
-              </div>
+          {paymentError && (
+            <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-3 text-[11px] text-red-300 font-bold flex items-center gap-2">
+              <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-400" />
+              <span>{paymentError}</span>
+            </div>
+          )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450 block">Expiration (MM/YY)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="12/28"
-                    value={expiry}
-                    onChange={handleExpiryChange}
-                    className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450 block">Security Code (CVV)</label>
-                  <input
-                    type="password"
-                    required
-                    maxLength={4}
-                    placeholder="e.g. 123"
-                    value={cvv}
-                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                    className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
-                  />
-                </div>
-              </div>
-
-              {paymentError && (
-                <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-3 text-[11px] text-red-300 font-bold flex items-center gap-2">
-                  <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-400" />
-                  <span>{paymentError}</span>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isProcessing}
+              className="py-3.5 bg-slate-800 hover:bg-slate-750 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 text-slate-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isProcessing}
+              className="py-3.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 text-white shadow-lg disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Processing Worldpay...
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" /> Pay £{amount}
+                </>
               )}
+            </button>
+          </div>
+        </form>
 
-              {/* Action buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isProcessing}
-                  className="py-3.5 bg-slate-800 hover:bg-slate-750 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 text-slate-300"
-                >
-                  Cancel Payment
-                </button>
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="py-3.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 text-white shadow-lg disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Authorising...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="h-4 w-4" /> Submit Secure Payment
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            <div className="text-center">
-              <p className="text-[9.5px] text-slate-500 leading-normal">
-                By completing this checkout, you authorize secure payment processing. All customer card payloads are hashed securely over transport layer SSL protocols.
-              </p>
-            </div>
-          </>
-        )}
+        <div className="text-center">
+          <p className="text-[9.5px] text-slate-500 leading-normal">
+            Secured by Worldpay (FIS Global) Merchant Gateway. All payment payloads are encrypted and stored in PostgreSQL database.
+          </p>
+        </div>
       </div>
 
-      {/* 3D SECURE INTERACTION DIALOG OVERLAY */}
+      {/* 3D SECURE MODAL */}
       {show3ds && (
         <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-6 z-30 animate-fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-6 text-center shadow-2xl">
@@ -263,24 +357,24 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
             </div>
             
             <div className="space-y-1.5">
-              <h4 className="text-sm font-black uppercase tracking-wider text-slate-100">3D-Secure Verification</h4>
+              <h4 className="text-sm font-black uppercase tracking-wider text-slate-100">Worldpay 3D-Secure Verification</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                The 3DS Engine requires card issuer authorization. Enter the OTP code sent to your registered mobile number ending in <strong className="text-slate-200">****204</strong>.
+                Card issuer authorization required. Enter the passcode sent to your registered phone.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 block tracking-widest uppercase">SMS OTP Password</label>
+              <label className="text-[10px] font-bold text-slate-400 block tracking-widest uppercase">3DS Code</label>
               <input
                 type="text"
                 maxLength={6}
-                placeholder="e.g. 1234"
+                placeholder="1234"
                 value={threeDsOtp}
                 onChange={(e) => setThreeDsOtp(e.target.value)}
                 className="w-full text-center text-sm font-mono tracking-widest p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-slate-100 font-bold"
               />
               <span className="text-[9px] text-slate-500 font-bold block">
-                Simulator Hint: Type <strong className="text-rose-400">1234</strong> (Type <strong className="text-rose-400">0000</strong> to trigger fail)
+                Hint: Enter <strong className="text-rose-400">1234</strong> (or <strong className="text-rose-400">0000</strong> to fail)
               </span>
             </div>
 
@@ -302,7 +396,7 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
                   <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Verifying...
                 </>
               ) : (
-                'Verify & Complete Checkout'
+                'Verify & Authorize'
               )}
             </button>
           </div>
@@ -312,6 +406,8 @@ export function SecureGatewaySimulator({ onReturnToShop }: SecureGatewaySimulato
     </div>
   );
 }
+
+export const SecureGatewaySimulator = WorldpayGatewaySimulator;
 
 // ==========================================
 // 2. PAYMENT SUCCESS RECEIPT SCREEN
