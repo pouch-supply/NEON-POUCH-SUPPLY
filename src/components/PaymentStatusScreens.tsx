@@ -184,203 +184,253 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
   };
 
   return (
-    <div className="max-w-xl mx-auto my-12 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 overflow-hidden relative font-sans">
+    <div className="min-h-screen bg-[#f4f4f2] py-8 px-4 font-sans text-slate-800 flex flex-col items-center">
       
-      {/* Worldpay Header */}
-      <div className="bg-gradient-to-r from-red-900 via-rose-950 to-slate-900 py-4 px-6 flex justify-between items-center border-b border-red-900/40">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-black tracking-widest text-white font-mono uppercase">WORLDPAY</span>
-          <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-            PCI-DSS Encrypted
-          </span>
-        </div>
-        <div className="flex items-center gap-1 text-slate-300 text-xs font-bold">
-          <Lock className="h-3.5 w-3.5 text-rose-400" />
-          <span>Hosted Checkout</span>
+      {/* Brand Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex flex-col items-center">
+          <div className="text-4xl sm:text-5xl font-black tracking-tight text-[#0f2347] font-serif flex items-baseline gap-2">
+            <span>Pouch</span>
+            <span className="font-sans font-black tracking-widest text-xs uppercase text-[#0f2347]">SUPPLY</span>
+          </div>
+          <div className="flex gap-1.5 mt-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d9a036]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d9a036]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d9a036]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d9a036]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#d9a036]"></span>
+          </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="max-w-3xl w-full space-y-5">
         
-        {/* Order details banner */}
-        <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex justify-between items-center text-xs">
-          <div>
-            <span className="text-slate-400 font-extrabold text-[10px] uppercase block">Order Reference</span>
-            <span className="font-mono font-bold text-white text-sm">{orderId}</span>
-          </div>
-          <div className="text-right">
-            <span className="text-slate-400 font-extrabold text-[10px] uppercase block">Amount Due</span>
-            <span className="text-emerald-400 font-black text-lg">£{amount}</span>
+        {/* Order Summary Box */}
+        <div className="bg-white border-2 border-slate-200/90 rounded-xl p-6 sm:p-7 shadow-xs space-y-3">
+          <h2 className="text-lg font-bold text-slate-800">Order summary</h2>
+          
+          <div className="space-y-1.5 text-xs text-slate-700 font-medium">
+            <div>
+              <span className="font-bold text-slate-900 block text-[13px]">Payment reference:</span>
+              <span className="font-mono text-slate-800 text-sm">{orderId}</span>
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-[13px]">Description:</span>
+              <span className="text-slate-600">Pouch Supply Merchandise & Fast Delivery</span>
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-[13px]">Amount (GBP):</span>
+              <span className="text-base font-extrabold text-slate-900">£{amount}</span>
+            </div>
           </div>
         </div>
 
-        {/* Simulation Controls */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">
-              Worldpay Gateway Sandbox Mode
-            </span>
-            <span className="text-[9.5px] text-slate-400">
-              {worldpayConfig?.isConfigured ? 'Live Credentials Connected' : 'Simulated Gateway active'}
-            </span>
+        {/* Sandbox Mode Switcher (For testing) */}
+        <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5">
+          <div className="flex justify-between items-center text-[11px] font-bold text-amber-900">
+            <span>Worldpay HPP Gateway Sandbox Mode</span>
+            <span className="text-amber-700">{worldpayConfig?.isConfigured ? 'Live Credentials Configured' : 'Simulated Gateway Active'}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-[10px]">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setSimulationMode('SUCCESS')}
-              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === 'SUCCESS' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+              className={`px-3 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${simulationMode === 'SUCCESS' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-300'}`}
             >
               Pass (200 OK)
             </button>
             <button
               type="button"
               onClick={() => setSimulationMode('3DS_REQUIRED')}
-              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === '3DS_REQUIRED' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+              className={`px-3 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${simulationMode === '3DS_REQUIRED' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-300'}`}
             >
               Trigger 3DS
             </button>
             <button
               type="button"
               onClick={() => setSimulationMode('DECLINED')}
-              className={`py-1.5 rounded-lg font-bold border transition ${simulationMode === 'DECLINED' ? 'bg-rose-600 border-rose-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+              className={`px-3 py-1 rounded text-[11px] font-bold border transition cursor-pointer ${simulationMode === 'DECLINED' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-300'}`}
             >
               Force Decline
             </button>
           </div>
         </div>
 
-        {/* Payment Form */}
-        <form onSubmit={handlePaySubmit} className="space-y-4">
-          <div>
-            <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Cardholder Name</label>
-            <input
-              type="text"
-              required
-              placeholder="Full name as printed on card"
-              value={cardHolder}
-              onChange={(e) => setCardHolder(e.target.value)}
-              className="w-full text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-medium"
-            />
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Card Number</label>
-              <span className="text-[10px] font-bold text-rose-400 font-mono">{getCardBrand(cardNumber)}</span>
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                placeholder="4000 0000 0000 0000"
-                value={cardNumber}
-                onChange={handleCardNumberChange}
-                className="w-full text-xs font-mono p-3 pl-10 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold tracking-wider"
-              />
-              <CreditCard className="h-4 w-4 text-slate-500 absolute left-3 top-3.5" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        {/* Payment Details Box */}
+        <div className="bg-white border-2 border-slate-200/90 rounded-xl p-6 sm:p-7 shadow-xs space-y-5">
+          
+          <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-150 pb-3">
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Expiry Date</label>
-              <input
-                type="text"
-                required
-                placeholder="MM/YY"
-                value={expiry}
-                onChange={handleExpiryChange}
-                className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
-              />
+              <h2 className="text-lg font-bold text-slate-800">Payment details</h2>
+              <span className="text-[11px] text-red-500 font-medium">* Indicates a required field</span>
             </div>
-            <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">CVC / CVV</label>
-              <input
-                type="password"
-                required
-                maxLength={4}
-                placeholder="123"
-                value={cvv}
-                onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                className="w-full text-xs font-mono p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-white font-bold text-center"
-              />
+            
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-2 py-1">
+                <span className="text-[10px] font-bold text-slate-600">MAESTRO</span>
+                <span className="text-[10px] font-bold text-blue-700">VISA</span>
+                <span className="text-[10px] font-bold text-amber-600">MC</span>
+                <span className="text-[10px] font-bold text-indigo-700">AMEX</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-3 py-1 bg-slate-200 hover:bg-slate-300 rounded text-xs font-bold text-slate-700 transition cursor-pointer"
+              >
+                Back
+              </button>
             </div>
           </div>
 
-          {paymentError && (
-            <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-3 text-[11px] text-red-300 font-bold flex items-center gap-2">
-              <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-red-400" />
-              <span>{paymentError}</span>
+          {/* Payment Form */}
+          <form onSubmit={handlePaySubmit} className="space-y-4 text-xs">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Card number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Card Number"
+                  value={cardNumber}
+                  onChange={handleCardNumberChange}
+                  className="w-full text-xs p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-600 bg-white text-slate-900 font-mono tracking-wider"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Cardholder's name<span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Cardholder name"
+                  value={cardHolder}
+                  onChange={(e) => setCardHolder(e.target.value)}
+                  className="w-full text-xs p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-600 bg-white text-slate-900"
+                />
+              </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isProcessing}
-              className="py-3.5 bg-slate-800 hover:bg-slate-750 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50 text-slate-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="py-3.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 text-white shadow-lg disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Processing Worldpay...
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4" /> Pay £{amount}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Expiry date <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    value={expiry}
+                    onChange={handleExpiryChange}
+                    className="w-28 text-xs p-2.5 border border-slate-300 rounded text-center focus:outline-none focus:border-slate-600 bg-white text-slate-900 font-mono"
+                  />
+                  <span className="text-slate-400 text-xs">MM / YY</span>
+                </div>
+              </div>
 
-        <div className="text-center">
-          <p className="text-[9.5px] text-slate-500 leading-normal">
-            Secured by Worldpay (FIS Global) Merchant Gateway. All payment payloads are encrypted and stored in PostgreSQL database.
-          </p>
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Security code<span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-start gap-2">
+                  <input
+                    type="password"
+                    required
+                    maxLength={4}
+                    placeholder="CVV"
+                    value={cvv}
+                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                    className="w-20 text-xs p-2.5 border border-slate-300 rounded text-center focus:outline-none focus:border-slate-600 bg-white text-slate-900 font-mono"
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 h-8 border border-slate-300 rounded bg-slate-100 flex items-center justify-end pr-1 text-[9px] font-mono text-red-600 font-bold border-r-2 border-r-red-500">
+                      123
+                    </div>
+                    <span className="text-[10px] text-slate-500 max-w-[160px] leading-tight">
+                      3 digits on the back of the card or 4 digits on front of card
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {paymentError && (
+              <div className="bg-red-50 border border-red-200 rounded p-3 text-xs text-red-700 font-medium flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+                <span>{paymentError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4 border-t border-slate-150">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isProcessing}
+                className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 rounded text-xs font-bold text-slate-700 transition cursor-pointer border border-slate-300"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="px-8 py-2.5 bg-[#0f2347] hover:bg-[#163366] text-white rounded text-xs font-bold transition cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Processing Worldpay...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-3.5 w-3.5" /> Pay Now
+                  </>
+                )}
+              </button>
+            </div>
+
+          </form>
         </div>
+
       </div>
 
       {/* 3D SECURE MODAL */}
       {show3ds && (
-        <div className="absolute inset-0 bg-slate-950/95 flex items-center justify-center p-6 z-30 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-6 text-center shadow-2xl">
-            <div className="mx-auto w-12 h-12 bg-rose-950/60 border border-rose-800 rounded-full flex items-center justify-center">
-              <ShieldCheck className="h-6 w-6 text-rose-500 animate-pulse" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 max-w-sm w-full space-y-5 text-center shadow-2xl">
+            <div className="mx-auto w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6 text-indigo-600 animate-pulse" />
             </div>
             
-            <div className="space-y-1.5">
-              <h4 className="text-sm font-black uppercase tracking-wider text-slate-100">Worldpay 3D-Secure Verification</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Card issuer authorization required. Enter the passcode sent to your registered phone.
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900">Worldpay 3D-Secure Authentication</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Card issuer verification required. Enter the passcode sent to your phone.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 block tracking-widest uppercase">3DS Code</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 block uppercase">Passcode</label>
               <input
                 type="text"
                 maxLength={6}
                 placeholder="1234"
                 value={threeDsOtp}
                 onChange={(e) => setThreeDsOtp(e.target.value)}
-                className="w-full text-center text-sm font-mono tracking-widest p-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-rose-500 text-slate-100 font-bold"
+                className="w-full text-center text-sm font-mono tracking-widest p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-600 text-slate-900 font-bold"
               />
-              <span className="text-[9px] text-slate-500 font-bold block">
-                Hint: Enter <strong className="text-rose-400">1234</strong> (or <strong className="text-rose-400">0000</strong> to fail)
+              <span className="text-[10px] text-slate-500 block">
+                Hint: Enter <strong className="text-indigo-600">1234</strong> (or <strong className="text-red-500">0000</strong> to fail)
               </span>
             </div>
 
             {threeDsError && (
-              <div className="bg-red-950/40 border border-red-800/60 rounded-lg p-2.5 text-[10px] text-red-300 font-bold text-left flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+              <div className="bg-red-50 border border-red-200 rounded p-2 text-xs text-red-600 font-medium text-left flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
                 <span>{threeDsError}</span>
               </div>
             )}
@@ -389,11 +439,11 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
               type="button"
               onClick={handleVerify3ds}
               disabled={isProcessing}
-              className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-[#0f2347] hover:bg-[#163366] text-white font-bold text-xs uppercase tracking-wider rounded transition cursor-pointer flex items-center justify-center gap-2"
             >
               {isProcessing ? (
                 <>
-                  <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Verifying...
+                  <RefreshCw className="h-4 w-4 animate-spin" /> Verifying...
                 </>
               ) : (
                 'Verify & Authorize'

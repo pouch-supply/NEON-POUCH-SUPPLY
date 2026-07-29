@@ -320,10 +320,15 @@ export default function CheckoutView({
       setIsProcessing(false);
 
       if (sessionRes.ok && sessionData.redirectUrl) {
-        window.history.pushState({}, '', sessionData.redirectUrl);
-        window.dispatchEvent(new Event('popstate'));
+        const url = sessionData.redirectUrl;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          window.location.href = url;
+        } else {
+          window.history.pushState({}, '', url);
+          window.dispatchEvent(new Event('popstate'));
+        }
       } else {
-        window.history.pushState({}, '', `/payment/gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
+        window.history.pushState({}, '', `/payment/worldpay-gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
         window.dispatchEvent(new Event('popstate'));
       }
     } catch (err: any) {

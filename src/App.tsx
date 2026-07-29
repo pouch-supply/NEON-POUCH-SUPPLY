@@ -665,7 +665,7 @@ export default function App() {
 
       if (path.startsWith('/payment/')) {
         const sub = path.replace('/payment/', '');
-        if (sub.startsWith('gateway')) {
+        if (sub.startsWith('gateway') || sub.startsWith('worldpay') || sub.startsWith('hpp')) {
           setCurrentTab('payment-gateway');
         } else if (sub.startsWith('success')) {
           setCartItems([]);
