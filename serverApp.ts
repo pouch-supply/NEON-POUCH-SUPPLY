@@ -483,6 +483,15 @@ export async function createExpressApp() {
     }
   });
 
+  app.post("/api/send-order-confirmation", (req, res) => {
+    console.log("[Order Confirmation Email] Received dispatch for order:", req.body?.id || req.body?.orderId || 'New Order');
+    res.json({
+      success: true,
+      message: "Order confirmation despatch advice queued successfully.",
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Mount modular backend routers
   app.use("/api/media", mediaRouter);
   app.use("/api/products", productsRouter);

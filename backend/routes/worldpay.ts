@@ -153,12 +153,12 @@ router.post('/session', async (req: Request, res: Response) => {
       const authHeader = 'Basic ' + Buffer.from(`${WORLDPAY_API_USERNAME}:${WORLDPAY_API_PASSWORD}`).toString('base64');
 
       try {
-        const response = await fetch(`${baseUrl}/verifiedTokens/sessions`, {
+        let response = await fetch(`${baseUrl}/verifiedTokens/sessions`, {
           method: 'POST',
           headers: {
             'Authorization': authHeader,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Content-Type': 'application/vnd.worldpay.verified-tokens-v1.hal+json',
+            'Accept': 'application/vnd.worldpay.verified-tokens-v1.hal+json'
           },
           body: JSON.stringify({
             entity: WORLDPAY_ENTITY_ID,
@@ -173,14 +173,37 @@ router.post('/session', async (req: Request, res: Response) => {
           })
         });
 
-        const data: any = await response.json();
+        // Try fallback content-type if 415 or non-ok
+        if (response.status === 415) {
+          response = await fetch(`${baseUrl}/verifiedTokens/sessions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': authHeader,
+              'Content-Type': 'application/vnd.worldpay.sessions-v1.hal+json',
+              'Accept': 'application/vnd.worldpay.sessions-v1.hal+json'
+            },
+            body: JSON.stringify({
+              entity: WORLDPAY_ENTITY_ID,
+              checkoutId: WORLDPAY_CHECKOUT_ID,
+              transaction: {
+                reference: orderId,
+                value: {
+                  amount: Math.round(parseFloat(amount) * 100),
+                  currency: 'GBP'
+                }
+              }
+            })
+          });
+        }
+
+        const data: any = await response.json().catch(() => ({}));
         console.log(`[Worldpay Access API] Response Status ${response.status}:`, JSON.stringify(data));
 
-        if (response.ok && data._links?.checkout?.href) {
+        if (response.ok && (data._links?.checkout?.href || data._links?.self?.href)) {
           return res.json({
             success: true,
             sessionId: data.id || `WP-ACC-${orderId}`,
-            redirectUrl: data._links.checkout.href,
+            redirectUrl: data._links?.checkout?.href || data._links?.self?.href,
             checkoutId: WORLDPAY_CHECKOUT_ID,
             provider: 'Worldpay Access Checkout'
           });
