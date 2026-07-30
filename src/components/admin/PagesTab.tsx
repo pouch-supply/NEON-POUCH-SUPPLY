@@ -541,6 +541,12 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                       };
                       const isFocused = selectedBuilderSectionId === sec.id;
 
+                      const sectionClassName = (sec.type || sec.name || 'section')
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+
                       const customStyles = `
                         #sec-${sec.id} {
                           ${sec.settings.paddingTop !== undefined ? `padding-top: ${sec.settings.paddingTop}px !important;` : ''}
@@ -548,7 +554,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                           ${sec.settings.paddingSide !== undefined ? `padding-left: ${sec.settings.paddingSide}px !important; padding-right: ${sec.settings.paddingSide}px !important;` : ''}
                           ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
                         }
-                        #sec-${sec.id} h1, #sec-${sec.id} h2, #sec-${sec.id} h3, #sec-${sec.id} h4, #sec-${sec.id} .section-title {
+                        #sec-${sec.id} h1, #sec-${sec.id} h2, #sec-${sec.id} .section-title, #sec-${sec.id} h3:not(.brand-card-title):not(.card-title):not(.overlay-heading), #sec-${sec.id} h4:not(.brand-card-title):not(.card-title):not(.overlay-heading) {
                           ${sec.settings.titleFontSize ? `font-size: ${sec.settings.titleFontSize}px !important;` : ''}
                           ${sec.settings.headingColor ? `color: ${sec.settings.headingColor} !important;` : ''}
                           ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
@@ -565,8 +571,8 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                         #sec-${sec.id} .subheading, #sec-${sec.id} .section-subheading, #sec-${sec.id} .subtitle {
                           ${sec.settings.subheadingColor ? `color: ${sec.settings.subheadingColor} !important;` : ''}
                         }
-                        #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading {
-                          ${sec.settings.cardTitleColor ? `color: ${sec.settings.cardTitleColor} !important;` : ''}
+                        #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading, #sec-${sec.id} .brand-card-title, #sec-${sec.id} .overlay-heading {
+                          ${(sec.settings.overlayHeadingColor || sec.settings.cardTitleColor) ? `color: ${sec.settings.overlayHeadingColor || sec.settings.cardTitleColor} !important;` : (sec.type === 'Brand list' ? 'color: #FFFFFF !important;' : '')}
                         }
                         #sec-${sec.id} .card-desc, #sec-${sec.id} .card-text {
                           ${sec.settings.cardTextColor ? `color: ${sec.settings.cardTextColor} !important;` : ''}
@@ -613,7 +619,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                               handleMoveSectionTo(dragIdx, sIdx);
                             }
                           }}
-                          className={`relative group p-6 rounded-2xl border transition-all cursor-grab active:cursor-grabbing ${
+                          className={`relative group p-6 rounded-2xl border transition-all cursor-grab active:cursor-grabbing ${sectionClassName} ${
                             isFocused 
                               ? 'ring-2 ring-indigo-600 border-indigo-600 bg-white shadow-md scale-[1.01]' 
                               : 'border-slate-200/55 hover:border-slate-400 bg-slate-50/20 hover:bg-white shadow-2xs'
@@ -2438,20 +2444,30 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Card / Item Title</label>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">
+                            {(currentlyEditingSection.type === 'Brand list' || currentlyEditingSection.type === 'Brands we offer')
+                              ? 'Brand Image Overlay Heading Color'
+                              : 'Card / Item Title'}
+                          </label>
                           <div className="flex items-center gap-1.5">
                             <input
                               type="color"
-                              value={currentlyEditingSection.settings.cardTitleColor || '#0F172A'}
-                              onChange={(e) => handleUpdateSectionSettings('cardTitleColor', e.target.value)}
+                              value={currentlyEditingSection.settings.overlayHeadingColor || currentlyEditingSection.settings.cardTitleColor || ((currentlyEditingSection.type === 'Brand list' || currentlyEditingSection.type === 'Brands we offer') ? '#FFFFFF' : '#0F172A')}
+                              onChange={(e) => {
+                                handleUpdateSectionSettings('overlayHeadingColor', e.target.value);
+                                handleUpdateSectionSettings('cardTitleColor', e.target.value);
+                              }}
                               className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
                             />
                             <input
                               type="text"
-                              value={currentlyEditingSection.settings.cardTitleColor || ''}
-                              onChange={(e) => handleUpdateSectionSettings('cardTitleColor', e.target.value)}
+                              value={currentlyEditingSection.settings.overlayHeadingColor || currentlyEditingSection.settings.cardTitleColor || ''}
+                              onChange={(e) => {
+                                handleUpdateSectionSettings('overlayHeadingColor', e.target.value);
+                                handleUpdateSectionSettings('cardTitleColor', e.target.value);
+                              }}
                               className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
-                              placeholder="#0F172A"
+                              placeholder={(currentlyEditingSection.type === 'Brand list' || currentlyEditingSection.type === 'Brands we offer') ? '#FFFFFF' : '#0F172A'}
                             />
                           </div>
                         </div>

@@ -1458,6 +1458,12 @@ export default function PageRenderer({
     <div className="space-y-0 pb-24 font-sans">
       {page.sections && page.sections.length > 0 ? (
         page.sections.map((sec, idx) => {
+          const sectionClassName = (sec.type || sec.name || 'section')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
           const sStyle = {
             backgroundColor: sec.settings.backgroundColor || '#FFFFFF',
             color: sec.settings.textColor || '#475569'
@@ -1476,7 +1482,7 @@ export default function PageRenderer({
               ${sec.settings.paddingSide !== undefined ? `padding-left: ${sec.settings.paddingSide}px !important; padding-right: ${sec.settings.paddingSide}px !important;` : ''}
               ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
             }
-            #sec-${sec.id} h1, #sec-${sec.id} h2, #sec-${sec.id} h3, #sec-${sec.id} h4, #sec-${sec.id} .section-title {
+            #sec-${sec.id} h1, #sec-${sec.id} h2, #sec-${sec.id} .section-title, #sec-${sec.id} h3:not(.brand-card-title):not(.card-title):not(.overlay-heading), #sec-${sec.id} h4:not(.brand-card-title):not(.card-title):not(.overlay-heading) {
               ${sec.settings.titleFontSize ? `font-size: ${sec.settings.titleFontSize}px !important;` : ''}
               ${sec.settings.headingColor ? `color: ${sec.settings.headingColor} !important;` : ''}
               ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
@@ -1493,8 +1499,8 @@ export default function PageRenderer({
             #sec-${sec.id} .subheading, #sec-${sec.id} .section-subheading, #sec-${sec.id} .subtitle {
               ${sec.settings.subheadingColor ? `color: ${sec.settings.subheadingColor} !important;` : ''}
             }
-            #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading {
-              ${sec.settings.cardTitleColor ? `color: ${sec.settings.cardTitleColor} !important;` : ''}
+            #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading, #sec-${sec.id} .brand-card-title, #sec-${sec.id} .overlay-heading {
+              ${(sec.settings.overlayHeadingColor || sec.settings.cardTitleColor) ? `color: ${sec.settings.overlayHeadingColor || sec.settings.cardTitleColor} !important;` : (sec.type === 'Brand list' ? 'color: #FFFFFF !important;' : '')}
             }
             #sec-${sec.id} .card-desc, #sec-${sec.id} .card-text {
               ${sec.settings.cardTextColor ? `color: ${sec.settings.cardTextColor} !important;` : ''}
@@ -1528,7 +1534,7 @@ export default function PageRenderer({
               id={`sec-${sec.id}`}
               key={sec.id || idx}
               style={sStyle}
-              className={`${paddingClass} relative transition-all duration-300 w-full overflow-hidden`}
+              className={`${sectionClassName} ${paddingClass} relative transition-all duration-300 w-full overflow-hidden`}
             >
               <style dangerouslySetInnerHTML={{ __html: customStyles }} />
               <div className={containerClass}>
@@ -2583,7 +2589,10 @@ export default function PageRenderer({
                             <span className="block text-[9px] font-bold text-indigo-400 uppercase tracking-widest font-mono mb-1">
                               Collection #{bidx + 1}
                             </span>
-                            <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight uppercase font-sans tracking-tight">
+                            <h3 
+                              className="brand-card-title overlay-heading text-lg sm:text-xl md:text-2xl font-black leading-tight uppercase font-sans tracking-tight"
+                              style={{ color: sec.settings.overlayHeadingColor || sec.settings.cardTitleColor || '#FFFFFF' }}
+                            >
                               {b.title || 'Brand'}
                             </h3>
                             
