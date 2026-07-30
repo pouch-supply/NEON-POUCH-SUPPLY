@@ -336,7 +336,7 @@ export default function CheckoutView({
       }
 
       // Direct fallback to official Worldpay HPP Launcher
-      const fallbackHppUrl = `https://select.worldpay.com/wcc/purchase?instId=1000000&cartId=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(finalTotalToPay.toFixed(2))}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&email=${encodeURIComponent(email)}`;
+      const fallbackHppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=1000000&orderCode=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(Math.round(finalTotalToPay * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&customerEmail=${encodeURIComponent(email)}`;
       try {
         if (window.top && window.top !== window) {
           window.top.location.href = fallbackHppUrl;
@@ -349,7 +349,7 @@ export default function CheckoutView({
     } catch (err: any) {
       console.error('[Worldpay Checkout Session Error]', err);
       setIsProcessing(false);
-      const fallbackHppUrl = `https://select.worldpay.com/wcc/purchase?instId=1000000&cartId=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(finalTotalToPay.toFixed(2))}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&email=${encodeURIComponent(email)}`;
+      const fallbackHppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=1000000&orderCode=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(Math.round(finalTotalToPay * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&customerEmail=${encodeURIComponent(email)}`;
       try {
         if (window.top && window.top !== window) {
           window.top.location.href = fallbackHppUrl;

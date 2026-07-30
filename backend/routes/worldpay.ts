@@ -213,19 +213,20 @@ router.post('/session', async (req: Request, res: Response) => {
       }
     }
 
-    // Build Official Worldpay Hosted Payment Page (HPP) Launcher URL
+    // Build Official Worldpay Modern HPP (payments.worldpay.com) Launcher URL
     const instId = WORLDPAY_CHECKOUT_ID || WORLDPAY_ENTITY_ID || process.env.WORLDPAY_INSTALLATION_ID || '1000000';
-    const hppDomain = WORLDPAY_ENVIRONMENT === 'test' ? 'https://select-test.worldpay.com' : 'https://select.worldpay.com';
+    const hppDomain = WORLDPAY_ENVIRONMENT === 'test' ? 'https://payments-test.worldpay.com' : 'https://payments.worldpay.com';
     const callbackUrl = `${protocol}://${host}/api/worldpay/callback`;
+    const sessionId = `WP-HPP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
-    const officialHppUrl = `${hppDomain}/wcc/purchase?instId=${encodeURIComponent(instId)}&cartId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${orderId}`)}&email=${encodeURIComponent(customerEmail || '')}&name=${encodeURIComponent(customerName || '')}&MC_callback=${encodeURIComponent(callbackUrl)}${WORLDPAY_ENVIRONMENT === 'test' ? '&testMode=100' : '&testMode=0'}`;
+    const officialHppUrl = `${hppDomain}/app/hpp/integration/transaction?installationId=${encodeURIComponent(instId)}&orderCode=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(Math.round(parseFloat(amount) * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${orderId}`)}&customerEmail=${encodeURIComponent(customerEmail || '')}&customerName=${encodeURIComponent(customerName || '')}&successUrl=${encodeURIComponent(callbackUrl)}&cancelUrl=${encodeURIComponent(`${protocol}://${host}/payment/cancelled?orderId=${orderId}`)}`;
 
     res.json({
       success: true,
-      sessionId: `WP-HPP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      sessionId,
       checkoutId: instId,
       redirectUrl: officialHppUrl,
-      provider: 'Worldpay Official HPP'
+      provider: 'Worldpay Modern HPP'
     });
   } catch (err: any) {
     console.error('[Worldpay Access Session Error]:', err);

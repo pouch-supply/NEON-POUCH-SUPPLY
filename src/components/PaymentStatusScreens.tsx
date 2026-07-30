@@ -29,7 +29,7 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
     setAmount(currAmount);
     setCheckoutId(currCheckoutId);
 
-    const hppUrl = `https://select.worldpay.com/wcc/purchase?instId=${encodeURIComponent(currCheckoutId)}&cartId=${encodeURIComponent(currOrderId)}&amount=${encodeURIComponent(currAmount)}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${currOrderId}`)}`;
+    const hppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=${encodeURIComponent(currCheckoutId)}&orderCode=${encodeURIComponent(currOrderId)}&amount=${encodeURIComponent(Math.round(parseFloat(currAmount) * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${currOrderId}`)}`;
     setWorldpayUrl(hppUrl);
 
     // Auto redirect directly to official Worldpay Hosted Payment Page
