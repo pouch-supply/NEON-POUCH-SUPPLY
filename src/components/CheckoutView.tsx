@@ -322,20 +322,43 @@ export default function CheckoutView({
       if (sessionRes.ok && sessionData.redirectUrl) {
         const url = sessionData.redirectUrl;
         if (url.startsWith('http://') || url.startsWith('https://')) {
-          window.location.href = url;
-        } else {
-          window.history.pushState({}, '', url);
-          window.dispatchEvent(new Event('popstate'));
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = url;
+            } else {
+              window.location.href = url;
+            }
+          } catch (_e) {
+            window.location.href = url;
+          }
+          return;
         }
-      } else {
-        window.history.pushState({}, '', `/payment/worldpay-gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
-        window.dispatchEvent(new Event('popstate'));
+      }
+
+      // Direct fallback to official Worldpay HPP Launcher
+      const fallbackHppUrl = `https://select.worldpay.com/wcc/purchase?instId=1000000&cartId=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(finalTotalToPay.toFixed(2))}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&email=${encodeURIComponent(email)}`;
+      try {
+        if (window.top && window.top !== window) {
+          window.top.location.href = fallbackHppUrl;
+        } else {
+          window.location.href = fallbackHppUrl;
+        }
+      } catch (_e) {
+        window.location.href = fallbackHppUrl;
       }
     } catch (err: any) {
       console.error('[Worldpay Checkout Session Error]', err);
       setIsProcessing(false);
-      window.history.pushState({}, '', `/payment/gateway?orderId=${generatedOrderId}&amount=${finalTotalToPay.toFixed(2)}`);
-      window.dispatchEvent(new Event('popstate'));
+      const fallbackHppUrl = `https://select.worldpay.com/wcc/purchase?instId=1000000&cartId=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(finalTotalToPay.toFixed(2))}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&email=${encodeURIComponent(email)}`;
+      try {
+        if (window.top && window.top !== window) {
+          window.top.location.href = fallbackHppUrl;
+        } else {
+          window.location.href = fallbackHppUrl;
+        }
+      } catch (_e) {
+        window.location.href = fallbackHppUrl;
+      }
     }
   };
 

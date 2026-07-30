@@ -213,15 +213,19 @@ router.post('/session', async (req: Request, res: Response) => {
       }
     }
 
-    // Default Worldpay Gateway Checkout Simulator URL
-    const redirectUrl = `/payment/worldpay-gateway?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}`;
+    // Build Official Worldpay Hosted Payment Page (HPP) Launcher URL
+    const instId = WORLDPAY_CHECKOUT_ID || WORLDPAY_ENTITY_ID || process.env.WORLDPAY_INSTALLATION_ID || '1000000';
+    const hppDomain = WORLDPAY_ENVIRONMENT === 'test' ? 'https://select-test.worldpay.com' : 'https://select.worldpay.com';
+    const callbackUrl = `${protocol}://${host}/api/worldpay/callback`;
+    
+    const officialHppUrl = `${hppDomain}/wcc/purchase?instId=${encodeURIComponent(instId)}&cartId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&currency=GBP&desc=${encodeURIComponent(`Pouch Supply Order ${orderId}`)}&email=${encodeURIComponent(customerEmail || '')}&name=${encodeURIComponent(customerName || '')}&MC_callback=${encodeURIComponent(callbackUrl)}${WORLDPAY_ENVIRONMENT === 'test' ? '&testMode=100' : '&testMode=0'}`;
 
     res.json({
       success: true,
-      sessionId: `WP-ACC-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      checkoutId: WORLDPAY_CHECKOUT_ID || 'WP-LIVE-CHECKOUT-ID',
-      redirectUrl,
-      provider: 'Worldpay Access Checkout'
+      sessionId: `WP-HPP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      checkoutId: instId,
+      redirectUrl: officialHppUrl,
+      provider: 'Worldpay Official HPP'
     });
   } catch (err: any) {
     console.error('[Worldpay Access Session Error]:', err);
