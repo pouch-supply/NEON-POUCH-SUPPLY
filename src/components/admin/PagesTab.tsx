@@ -541,7 +541,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                       };
                       const isFocused = selectedBuilderSectionId === sec.id;
 
-                      const sectionClassName = (sec.type || sec.name || 'section')
+                      const sectionClassName = (sec.type || (sec as any).name || 'section')
                         .toLowerCase()
                         .trim()
                         .replace(/[^a-z0-9]+/g, '-')

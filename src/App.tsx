@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Product, Collection, Order, FileEntry, Customer, Discount, CustomPage, CartItem, BlogPost, LayoutSettings
+  Product, Collection, Order, FileEntry, Customer, Discount, CustomPage, CartItem, BlogPost, LayoutSettings, DevSettings
 } from './types';
 import { 
   INITIAL_PRODUCTS, INITIAL_COLLECTIONS, INITIAL_ORDERS, INITIAL_FILES, INITIAL_CUSTOMERS, INITIAL_DISCOUNTS, DEFAULT_PAGES, INITIAL_BLOGS 
 } from './initialData';
+import { DEFAULT_DEV_SETTINGS } from './data/initialDevSettings';
+import { applyDevSettingsToDOM } from './utils/devModeInjector';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProductsGrid from './components/ProductsGrid';
@@ -220,6 +222,20 @@ export default function App() {
       ]
     });
   });
+
+  const [devSettings, setDevSettings] = useState<DevSettings>(() => {
+    return safeLoadFromLocalStorage<DevSettings>('ps_dev_settings', DEFAULT_DEV_SETTINGS);
+  });
+
+  // Dynamically inject custom CSS, JS, head, body, and third-party scripts into DOM
+  useEffect(() => {
+    applyDevSettingsToDOM(devSettings);
+  }, [devSettings]);
+
+  const handleUpdateDevSettings = (newSettings: DevSettings) => {
+    setDevSettings(newSettings);
+    safeSaveToLocalStorage('ps_dev_settings', newSettings);
+  };
 
   const handleUpdateLayoutSettings = (newSettings: LayoutSettings | ((prev: LayoutSettings) => LayoutSettings)) => {
     setLayoutSettings(prev => {
@@ -1717,6 +1733,8 @@ export default function App() {
               onUpdateBlogs={setBlogs}
               layoutSettings={layoutSettings}
               onUpdateLayoutSettings={handleUpdateLayoutSettings}
+              devSettings={devSettings}
+              onUpdateDevSettings={handleUpdateDevSettings}
               onDirtyChange={setIsAdminDirty}
               adminActionTrigger={adminActionTrigger}
               onAdminActionComplete={(actionHandled) => {

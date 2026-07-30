@@ -375,3 +375,54 @@ export interface LayoutSettings {
   cloudinaryApiSecret?: string;
 }
 
+export interface CustomHtmlSnippet {
+  id: string;
+  name: string;
+  key: string;
+  description?: string;
+  code: string;
+  enabled: boolean;
+  createdAt?: string;
+}
+
+export interface ThirdPartyIntegrations {
+  googleAnalyticsId: string;
+  googleAnalyticsEnabled: boolean;
+  googleTagManagerId: string;
+  googleTagManagerEnabled: boolean;
+  metaPixelId: string;
+  metaPixelEnabled: boolean;
+  microsoftClarityId: string;
+  microsoftClarityEnabled: boolean;
+  hotjarSiteId: string;
+  hotjarEnabled: boolean;
+  customWebhookUrl: string;
+  customWebhookEnabled: boolean;
+}
+
+export interface EnvironmentApiSettings {
+  apiBaseUrl: string;
+  environmentName: 'production' | 'staging' | 'development';
+  debugMode: boolean;
+  maintenanceMode: boolean;
+  enableExperimentalFeatures: boolean;
+  apiTimeoutMs: number;
+  customHeadersJson: string;
+  rateLimitRequestsPerMin: number;
+}
+
+export interface DevSettings {
+  customCss: string;
+  customCssEnabled: boolean;
+  customJs: string;
+  customJsEnabled: boolean;
+  customHeadCode: string;
+  customHeadEnabled: boolean;
+  customBodyCode: string;
+  customBodyEnabled: boolean;
+  snippets: CustomHtmlSnippet[];
+  integrations: ThirdPartyIntegrations;
+  envSettings: EnvironmentApiSettings;
+  updatedAt?: string;
+}
+

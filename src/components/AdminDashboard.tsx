@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Product, Collection, Order, FileEntry, Customer, Discount, CustomPage, PageSection, BlogPost, LayoutSettings, MenuItem } from '../types';
+import { Product, Collection, Order, FileEntry, Customer, Discount, CustomPage, PageSection, BlogPost, LayoutSettings, MenuItem, DevSettings } from '../types';
 import { 
   TrendingUp, BarChart3, Package, Users, Tag, FileCode, HardDrive, Percent, 
   Search, Plus, Eye, CheckCircle2, Clipboard, ArrowUpDown, ChevronRight, 
@@ -7,7 +7,7 @@ import {
   X, MoveUp, MoveDown, Layout, Globe, Mail, DollarSign, ShoppingBag, EyeOff, RefreshCw, AlertTriangle, GripVertical,
   Columns, Grid, Video, HelpCircle, FolderHeart, Layers, Award, PlaySquare, Compass, ShieldCheck, ChevronLeft,
   ChevronDown, ChevronUp, Star, Heart, FileText, BookOpen, LayoutGrid, Database, Server, Lock, Gift, Check, Clock, Truck, ArrowRight, Zap, Shield,
-  Pencil, Copy, Bold, Italic, Underline, AlignLeft, Link, Calendar, ArrowLeft, MoreHorizontal, Code, FileEdit, LogOut, Download, Upload, Info
+  Pencil, Copy, Bold, Italic, Underline, AlignLeft, Link, Calendar, ArrowLeft, MoreHorizontal, Code, FileEdit, LogOut, Download, Upload, Info, Terminal
 } from 'lucide-react';
 import ImageUploadInput, { renderMediaThumbnail, isVideoUrl, isPdfOrDocUrl } from './ImageUploadInput';
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
@@ -27,6 +27,7 @@ import DiscountsTab from './admin/DiscountsTab';
 import BlogsTab from './admin/BlogsTab';
 import LayoutTab from './admin/LayoutTab';
 import PagesTab from './admin/PagesTab';
+import DevelopmentTab from './admin/DevelopmentTab';
 import { DiagnosticsTab } from './admin/DiagnosticsTab';
 import { Activity } from 'lucide-react';
 
@@ -105,6 +106,8 @@ interface AdminDashboardProps {
   onUpdateBlogs: (newBlogs: BlogPost[]) => void;
   layoutSettings?: LayoutSettings;
   onUpdateLayoutSettings?: (newSettings: LayoutSettings | ((prev: LayoutSettings) => LayoutSettings)) => void;
+  devSettings?: DevSettings;
+  onUpdateDevSettings?: (newSettings: DevSettings) => void;
   onDirtyChange?: (dirty: boolean) => void;
   adminActionTrigger?: { action: 'save' | 'discard'; timestamp: number } | null;
   onAdminActionComplete?: (action: 'save' | 'discard') => void;
@@ -567,7 +570,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'diagnostics';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'development' | 'diagnostics';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -588,6 +591,8 @@ export default function AdminDashboard({
   onUpdateBlogs: parentOnUpdateBlogs,
   layoutSettings,
   onUpdateLayoutSettings,
+  devSettings,
+  onUpdateDevSettings,
   onDirtyChange,
   adminActionTrigger,
   onAdminActionComplete,
@@ -605,6 +610,7 @@ export default function AdminDashboard({
     customers: 'customers',
     discounts: 'discounts',
     layout: 'layout',
+    development: 'development',
     diagnostics: 'diagnostics'
   };
 
@@ -622,6 +628,8 @@ export default function AdminDashboard({
     customers: 'customers',
     discounts: 'discounts',
     layout: 'layout',
+    development: 'development',
+    dev: 'development',
     diagnostics: 'diagnostics',
     status: 'diagnostics',
     db: 'diagnostics'
@@ -3082,6 +3090,7 @@ export default function AdminDashboard({
                 { id: 'customers', label: 'Customers', icon: Users },
                 { id: 'discounts', label: 'Discounts', icon: Percent },
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
+                { id: 'development', label: 'Development Mode', icon: Terminal },
                 { id: 'diagnostics', label: 'DB Diagnostics', icon: Activity },
               ].map(item => {
                 const Icon = item.icon;
@@ -3701,7 +3710,12 @@ export default function AdminDashboard({
       />
     )}
 
-    {/* 11. DIAGNOSTICS & STATUS TEST BLOCK */}
+    {/* 11. DEVELOPMENT MODE TAB */}
+    {activeTab === 'development' && (
+      <DevelopmentTab settings={devSettings} onUpdateSettings={onUpdateDevSettings} />
+    )}
+
+    {/* 12. DIAGNOSTICS & STATUS TEST BLOCK */}
     {activeTab === 'diagnostics' && (
       <DiagnosticsTab onRefreshAll={fetchDbDetails} />
     )}

@@ -1458,7 +1458,7 @@ export default function PageRenderer({
     <div className="space-y-0 pb-24 font-sans">
       {page.sections && page.sections.length > 0 ? (
         page.sections.map((sec, idx) => {
-          const sectionClassName = (sec.type || sec.name || 'section')
+          const sectionClassName = (sec.type || (sec as any).name || 'section')
             .toLowerCase()
             .trim()
             .replace(/[^a-z0-9]+/g, '-')
