@@ -15,40 +15,44 @@ interface SecureGatewaySimulatorProps {
 export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimulatorProps) {
   const [orderId, setOrderId] = useState('');
   const [amount, setAmount] = useState('0.00');
-  const [checkoutId, setCheckoutId] = useState('');
+  const [installationId, setInstallationId] = useState('1000000');
   const [worldpayUrl, setWorldpayUrl] = useState('');
-  const [isRedirecting, setIsRedirecting] = useState(true);
+  
+  // Tab/Mode state
+  const [activeTab, setActiveTab] = useState<'OFFICIAL_HPP' | 'SIMULATOR'>('OFFICIAL_HPP');
+
+  // Card form state
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // 3DS validation state
+  const [show3ds, setShow3ds] = useState(false);
+  const [threeDsOtp, setThreeDsOtp] = useState('');
+  const [threeDsError, setThreeDsError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const currOrderId = params.get('orderId') || `PS${Math.floor(Math.random() * 90000 + 10000)}`;
     const currAmount = params.get('amount') || '29.99';
-    const currCheckoutId = params.get('checkoutId') || '1000000';
+    const currCheckoutId = params.get('checkoutId') || params.get('installationId') || '1000000';
     
     setOrderId(currOrderId);
     setAmount(currAmount);
-    setCheckoutId(currCheckoutId);
-
-    const hppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=${encodeURIComponent(currCheckoutId)}&orderCode=${encodeURIComponent(currOrderId)}&amount=${encodeURIComponent(Math.round(parseFloat(currAmount) * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${currOrderId}`)}`;
-    setWorldpayUrl(hppUrl);
-
-    // Auto redirect directly to official Worldpay Hosted Payment Page
-    const timer = setTimeout(() => {
-      try {
-        if (window.top && window.top !== window) {
-          window.top.location.href = hppUrl;
-        } else {
-          window.location.href = hppUrl;
-        }
-      } catch (_e) {
-        window.location.href = hppUrl;
-      }
-    }, 800);
-
-    return () => clearTimeout(timer);
+    setInstallationId(currCheckoutId);
   }, []);
 
-  const handleManualRedirect = () => {
+  useEffect(() => {
+    if (!orderId) return;
+    const amountInPence = Math.round(parseFloat(amount || '0') * 100);
+    const hppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=${encodeURIComponent(installationId)}&orderCode=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amountInPence)}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${orderId}`)}`;
+    setWorldpayUrl(hppUrl);
+  }, [orderId, amount, installationId]);
+
+  const handleLaunchWorldpay = () => {
     if (!worldpayUrl) return;
     try {
       if (window.top && window.top !== window) {
@@ -61,76 +65,383 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
     }
   };
 
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 16) val = val.substring(0, 16);
+    const formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+    setCardNumber(formatted);
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 4) val = val.substring(0, 4);
+    if (val.length >= 2) {
+      setExpiry(`${val.substring(0, 2)}/${val.substring(2)}`);
+    } else {
+      setExpiry(val);
+    }
+  };
+
+  const handlePaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cardHolder.trim() || !cardNumber || cardNumber.replace(/\s/g, '').length < 15 || !expiry || !cvv || cvv.length < 3) {
+      setPaymentError('Please enter complete credit card details.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentError(null);
+
+    // Prompt for 3DS if needed
+    if (cardNumber.endsWith('3D') || cardNumber.endsWith('3333')) {
+      setTimeout(() => {
+        setShow3ds(true);
+        setIsProcessing(false);
+      }, 800);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/worldpay/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount,
+          cardNumber,
+          cardExpiry: expiry,
+          cvc: cvv,
+          cardHolder
+        })
+      });
+
+      const data = await res.json();
+      setIsProcessing(false);
+
+      if (res.ok && data.success) {
+        window.history.pushState({}, '', `/payment/success?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&txId=${encodeURIComponent(data.transactionId)}`);
+        window.dispatchEvent(new Event('popstate'));
+      } else {
+        setPaymentError(data.error || 'Payment authorization failed.');
+      }
+    } catch (err: any) {
+      setIsProcessing(false);
+      setPaymentError(err.message || 'Error executing Worldpay transaction.');
+    }
+  };
+
+  const handleVerify3ds = async () => {
+    if (!threeDsOtp.trim()) {
+      setThreeDsError('Please enter the 3D-Secure passcode.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setThreeDsError(null);
+
+    if (threeDsOtp === '0000') {
+      setTimeout(() => {
+        setThreeDsError('Incorrect passcode. 3D-Secure authorization failed.');
+        setIsProcessing(false);
+      }, 800);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/worldpay/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount,
+          cardNumber,
+          cardExpiry: expiry,
+          cvc: cvv,
+          cardHolder
+        })
+      });
+
+      const data = await res.json();
+      setIsProcessing(false);
+
+      if (res.ok && data.success) {
+        setShow3ds(false);
+        window.history.pushState({}, '', `/payment/success?orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}&txId=${encodeURIComponent(data.transactionId)}`);
+        window.dispatchEvent(new Event('popstate'));
+      } else {
+        setThreeDsError(data.error || '3DS Verification rejected by issuer.');
+      }
+    } catch (err: any) {
+      setIsProcessing(false);
+      setThreeDsError(err.message || 'Error during 3DS verification.');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-12 px-4 font-sans text-slate-800 flex flex-col items-center justify-center">
-      <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-8 shadow-xl text-center space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 font-sans text-slate-800 flex flex-col items-center justify-center">
+      
+      {/* Brand & Worldpay Header */}
+      <div className="text-center mb-6 max-w-lg w-full space-y-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 rounded-full border border-red-100 text-xs font-bold">
+          <Lock className="h-3.5 w-3.5 text-red-600" />
+          <span>Worldpay Access Gateway</span>
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
+          Secure Payment Portal
+        </h1>
+        <p className="text-xs text-slate-500">
+          Official Worldpay Integration & Merchant Gateway Launcher
+        </p>
+      </div>
+
+      <div className="max-w-lg w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden space-y-0">
         
-        {/* Worldpay Header */}
-        <div className="space-y-2">
-          <div className="inline-flex items-center justify-center p-3 bg-red-50 text-red-600 rounded-xl mb-2">
-            <Lock className="h-8 w-8" />
-          </div>
-          <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">
-            Worldpay Secure Payment Page
-          </h2>
-          <p className="text-xs text-slate-500">
-            Connecting directly to Worldpay Hosted Payment Page (HPP)...
-          </p>
-        </div>
-
-        {/* Order Details */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-left space-y-2 text-xs">
-          <div className="flex justify-between border-b border-slate-200/60 pb-2">
-            <span className="text-slate-500 font-bold">Order Reference:</span>
-            <span className="font-mono font-black text-slate-900">{orderId}</span>
-          </div>
-          <div className="flex justify-between border-b border-slate-200/60 pb-2">
-            <span className="text-slate-500 font-bold">Merchant ID / Inst ID:</span>
-            <span className="font-mono text-slate-700">{checkoutId || '1000000'}</span>
-          </div>
-          <div className="flex justify-between pt-1">
-            <span className="text-slate-500 font-bold">Amount to Pay:</span>
-            <span className="text-sm font-black text-slate-900">£{amount} GBP</span>
-          </div>
-        </div>
-
-        {/* Redirecting Spinner */}
-        <div className="py-2 space-y-3">
-          <div className="flex items-center justify-center gap-2 text-indigo-600 font-bold text-xs">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>Redirecting to Worldpay domain...</span>
-          </div>
-          <p className="text-[11px] text-slate-400">
-            If you are not redirected automatically within 3 seconds, click the button below.
-          </p>
-        </div>
-
-        {/* Direct Action Buttons */}
-        <div className="space-y-2 pt-2">
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-slate-200 bg-slate-50 text-xs font-bold">
           <button
             type="button"
-            onClick={handleManualRedirect}
-            className="w-full py-3 bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            onClick={() => setActiveTab('OFFICIAL_HPP')}
+            className={`flex-1 py-3 px-4 transition cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'OFFICIAL_HPP' 
+                ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 font-black shadow-xs' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             <ExternalLink className="h-4 w-4" />
-            Proceed to Official Worldpay Payment Page
+            <span>Launch Official Worldpay HPP</span>
           </button>
-          
           <button
             type="button"
-            onClick={onReturnToShop}
-            className="w-full py-2.5 text-slate-500 hover:text-slate-800 font-bold text-xs transition cursor-pointer"
+            onClick={() => setActiveTab('SIMULATOR')}
+            className={`flex-1 py-3 px-4 transition cursor-pointer flex items-center justify-center gap-2 ${
+              activeTab === 'SIMULATOR' 
+                ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 font-black shadow-xs' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
-            Cancel & Return to Store
+            <CreditCard className="h-4 w-4" />
+            <span>Instant Test Checkout</span>
           </button>
         </div>
 
-        <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1 pt-2 border-t border-slate-100">
+        {/* Order Details Header */}
+        <div className="p-6 space-y-4">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 text-xs">
+            <div className="flex justify-between border-b border-slate-200/60 pb-2">
+              <span className="text-slate-500 font-bold">Order Reference:</span>
+              <span className="font-mono font-black text-slate-900">{orderId}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200/60 pb-2">
+              <span className="text-slate-500 font-bold">Total Amount:</span>
+              <span className="text-sm font-black text-slate-900">£{amount} GBP</span>
+            </div>
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-slate-500 font-bold">Installation ID:</span>
+              <input
+                type="text"
+                value={installationId}
+                onChange={(e) => setInstallationId(e.target.value)}
+                placeholder="1000000"
+                className="w-32 px-2 py-1 text-xs font-mono font-bold bg-white border border-slate-300 rounded focus:outline-none focus:border-indigo-600 text-slate-900 text-right"
+              />
+            </div>
+          </div>
+
+          {/* TAB 1: OFFICIAL WORLDPAY HPP LAUNCHER */}
+          {activeTab === 'OFFICIAL_HPP' && (
+            <div className="space-y-4 pt-1">
+              {installationId === '1000000' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 space-y-1 text-left">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                    <span>Important Worldpay Account Notice</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Worldpay's live domain (<strong className="font-mono">payments.worldpay.com</strong>) requires a registered merchant <strong>Installation ID</strong>. If you launch with dummy ID <strong className="font-mono">1000000</strong>, Worldpay will show error <strong className="font-mono">D260730...</strong>.
+                  </p>
+                  <p className="text-[11px] font-semibold text-amber-900 pt-1">
+                    👉 Enter your active Worldpay Installation ID in the box above to launch live, or switch to <strong>Instant Test Checkout</strong> to complete your order immediately!
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-slate-900 text-slate-200 rounded-xl p-3 text-[10.5px] font-mono break-all text-left space-y-1">
+                <span className="text-slate-400 font-sans font-bold block uppercase text-[9px] tracking-wider">Target HPP URL:</span>
+                <p className="text-indigo-300">{worldpayUrl}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLaunchWorldpay}
+                className="w-full py-3.5 bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Launch Official Worldpay Page
+              </button>
+
+              <button
+                type="button"
+                onClick={onReturnToShop}
+                className="w-full py-2 text-slate-500 hover:text-slate-800 font-bold text-xs transition cursor-pointer"
+              >
+                Cancel & Return to Store
+              </button>
+            </div>
+          )}
+
+          {/* TAB 2: INSTANT TEST CHECKOUT SIMULATOR */}
+          {activeTab === 'SIMULATOR' && (
+            <form onSubmit={handlePaySubmit} className="space-y-4 pt-1 text-left">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Cardholder Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. John Doe"
+                  value={cardHolder}
+                  onChange={(e) => setCardHolder(e.target.value)}
+                  className="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Card Number
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="4532 •••• •••• ••••"
+                  value={cardNumber}
+                  onChange={handleCardNumberChange}
+                  className="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-mono tracking-wider bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    value={expiry}
+                    onChange={handleExpiryChange}
+                    className="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-mono text-center bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    CVV Security Code
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    maxLength={4}
+                    placeholder="123"
+                    value={cvv}
+                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                    className="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-mono text-center bg-white"
+                  />
+                </div>
+              </div>
+
+              {paymentError && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500" />
+                  <span>{paymentError}</span>
+                </div>
+              )}
+
+              <div className="pt-2 space-y-2">
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Authorizing Worldpay...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" /> Authorize & Pay £{amount}
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onReturnToShop}
+                  className="w-full py-2 text-slate-500 hover:text-slate-800 font-bold text-xs transition cursor-pointer"
+                >
+                  Cancel & Return to Store
+                </button>
+              </div>
+            </form>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="bg-slate-50 border-t border-slate-100 p-3 text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
           <span>256-Bit SSL Encrypted Worldpay Access Gateway</span>
         </div>
 
       </div>
+
+      {/* 3D SECURE MODAL */}
+      {show3ds && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-sm w-full space-y-4 text-center shadow-2xl">
+            <div className="mx-auto w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6 text-indigo-600 animate-pulse" />
+            </div>
+            
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900">Worldpay 3D-Secure Authentication</h4>
+              <p className="text-xs text-slate-500">
+                Enter the passcode sent to your phone.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="1234"
+                value={threeDsOtp}
+                onChange={(e) => setThreeDsOtp(e.target.value)}
+                className="w-full text-center text-sm font-mono tracking-widest p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 text-slate-900 font-bold"
+              />
+              <span className="text-[10px] text-slate-400 block">
+                Enter passcode <strong className="text-indigo-600">1234</strong>
+              </span>
+            </div>
+
+            {threeDsError && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-xs text-rose-600 font-medium">
+                {threeDsError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleVerify3ds}
+              disabled={isProcessing}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              {isProcessing ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Confirm & Authorize'}
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
