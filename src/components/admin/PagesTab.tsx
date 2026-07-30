@@ -977,7 +977,10 @@ export const PagesTab: React.FC<PagesTabProps> = ({
 
                             {/* 12. FAQS */}
                             {sec.type === 'FAQs' && (() => {
-                              const faqs = (sec.settings.faqItems || []).length > 0 ? sec.settings.faqItems : [
+                              const rawFaqs = (sec.settings.faqs && sec.settings.faqs.length > 0) ? sec.settings.faqs 
+                                            : (sec.settings.faqItems && sec.settings.faqItems.length > 0) ? sec.settings.faqItems 
+                                            : null;
+                              const faqs = rawFaqs || [
                                 { question: 'How long does shipping take?', answer: 'Orders placed before 3 PM ship same day via Express Tracked Delivery.' },
                                 { question: 'Are all products tobacco-free?', answer: 'Yes, 100% tobacco-free white nicotine pouches.' }
                               ];
@@ -990,8 +993,8 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                   <div className="space-y-2 text-left pt-1">
                                     {faqs.map((faq: any, fIdx: number) => (
                                       <div key={fIdx} className="bg-slate-50 border rounded-xl p-2.5 text-[9.5px]">
-                                        <p className="font-extrabold text-slate-800">{faq.question}</p>
-                                        <p className="text-slate-500 mt-0.5">{faq.answer}</p>
+                                        <p className="font-extrabold text-slate-800">{faq.question || faq.q || ''}</p>
+                                        <p className="text-slate-500 mt-0.5">{faq.answer || faq.a || ''}</p>
                                       </div>
                                     ))}
                                   </div>
@@ -1317,21 +1320,40 @@ export const PagesTab: React.FC<PagesTabProps> = ({
 
                     {/* FAQS BLOCK MANAGER */}
                     {currentlyEditingSection.type === 'FAQs' && (() => {
-                      const faqs = (currentlyEditingSection.settings.faqs as any[]) || [];
+                      const rawFaqs = currentlyEditingSection.settings.faqs || currentlyEditingSection.settings.faqItems;
+                      const faqs = (Array.isArray(rawFaqs) && rawFaqs.length > 0)
+                        ? rawFaqs.map((f: any) => ({
+                            question: f.question || f.q || '',
+                            answer: f.answer || f.a || '',
+                            q: f.q || f.question || '',
+                            a: f.a || f.answer || ''
+                          }))
+                        : [];
+
+                      const saveFaqs = (updatedList: any[]) => {
+                        const normalized = updatedList.map((f: any) => ({
+                          question: f.question || f.q || '',
+                          answer: f.answer || f.a || '',
+                          q: f.q || f.question || '',
+                          a: f.a || f.answer || ''
+                        }));
+                        handleUpdateSectionSettings('faqs', normalized);
+                        handleUpdateSectionSettings('faqItems', normalized);
+                      };
 
                       const handleUpdateFaq = (idx: number, field: string, val: string) => {
-                        const updated = faqs.map((f, i) => i === idx ? { ...f, [field]: val } : f);
-                        handleUpdateSectionSettings('faqs', updated);
+                        const updated = faqs.map((f, i) => i === idx ? { ...f, [field]: val, [field === 'question' ? 'q' : 'a']: val } : f);
+                        saveFaqs(updated);
                       };
 
                       const handleAddFaq = () => {
-                        const updated = [...faqs, { question: 'New Frequently Asked Question', answer: 'Enter detailed answer text here...' }];
-                        handleUpdateSectionSettings('faqs', updated);
+                        const updated = [...faqs, { question: 'New Frequently Asked Question', answer: 'Enter detailed answer text here...', q: 'New Frequently Asked Question', a: 'Enter detailed answer text here...' }];
+                        saveFaqs(updated);
                       };
 
                       const handleRemoveFaq = (idx: number) => {
                         const updated = faqs.filter((_, i) => i !== idx);
-                        handleUpdateSectionSettings('faqs', updated);
+                        saveFaqs(updated);
                       };
 
                       const handleMoveFaq = (fromIdx: number, toIdx: number) => {
@@ -1339,7 +1361,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                         const updated = [...faqs];
                         const [moved] = updated.splice(fromIdx, 1);
                         updated.splice(toIdx, 0, moved);
-                        handleUpdateSectionSettings('faqs', updated);
+                        saveFaqs(updated);
                       };
 
                       return (

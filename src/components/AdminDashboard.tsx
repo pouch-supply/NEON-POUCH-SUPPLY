@@ -2477,9 +2477,14 @@ export default function AdminDashboard({
           { iconType: 'tag', title: 'MEMBER PRICING', description: 'Better prices, always.' }
         ] : undefined,
         faqItems: sectionType === 'FAQs' ? [
-          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.' },
-          { q: 'Are these pouches tobacco-free?', a: 'Formulated completely on plant fiber with medical pure crystalline extract.' },
-          { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.' }
+          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.' },
+          { q: 'Are these pouches tobacco-free?', a: 'Formulated completely on plant fiber with medical pure crystalline extract.', question: 'Are these pouches tobacco-free?', answer: 'Formulated completely on plant fiber with medical pure crystalline extract.' },
+          { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.', question: 'How long do subscriptions repeat?', answer: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.' }
+        ] : undefined,
+        faqs: sectionType === 'FAQs' ? [
+          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.' },
+          { q: 'Are these pouches tobacco-free?', a: 'Formulated completely on plant fiber with medical pure crystalline extract.', question: 'Are these pouches tobacco-free?', answer: 'Formulated completely on plant fiber with medical pure crystalline extract.' },
+          { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.', question: 'How long do subscriptions repeat?', answer: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.' }
         ] : undefined,
         alertBadgeText: sectionType === 'Plans' ? 'Most customers save up to £55/month' : undefined,
         promoBannerText: sectionType === 'Plans' ? '★ FIRST 50 SUBSCRIBERS - Get 10% OFF FOR LIFE >' : undefined,

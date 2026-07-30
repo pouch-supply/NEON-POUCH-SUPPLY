@@ -2319,55 +2319,68 @@ export default function PageRenderer({
                 )}
 
                 {/* 12. FAQS (Interactive premium Toggles) */}
-                {sec.type === 'FAQs' && (
-                  <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
-                    <div className="text-center space-y-2">
-                      <span className="text-[10px] tracking-widest font-black uppercase text-indigo-600 bg-indigo-50/90 py-1 px-3.5 rounded-full inline-block">Answered Live</span>
-                      <h2 
-                        className="text-3xl font-black uppercase tracking-tight text-[#0F172A]"
-                        style={{ color: sec.settings.headingColor || '#0F172A' }}
-                      >
-                        {sec.settings.title || 'Frequently Asked Questions'}
-                      </h2>
-                      <p className="text-xs text-slate-500">Instant validation regarding formulation standards, tracking, and deliveries.</p>
-                    </div>
+                {sec.type === 'FAQs' && (() => {
+                  const rawList = (sec.settings.faqs && sec.settings.faqs.length > 0) ? sec.settings.faqs
+                                : (sec.settings.faqItems && sec.settings.faqItems.length > 0) ? sec.settings.faqItems
+                                : null;
+                  const faqsToRender = rawList || [
+                    { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express courier / European carrier tracking codes emailed instantly upon fulfillment lines dispatch.' },
+                    { q: 'Are these pouches 100% tobacco-free?', a: 'Under all current EU & UK reseller regulations, our catalog consists strictly of plant-fiber pouch variants utilizing medical crystalline formats.' },
+                    { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific week layouts. Pause, skip custom flavors, or cancel anytime for free in the account dashboard.' },
+                    { q: 'Where are the canisters formulated?', a: 'Formulated in certified European laboratories under strict vacuum sterile protocols, ensuring consistent aroma and maximum flavor lock.' }
+                  ];
 
-                    <div className="space-y-4">
-                      {(sec.settings.faqItems || [
-                        { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express courier / European carrier tracking codes emailed instantly upon fulfillment lines dispatch.' },
-                        { q: 'Are these pouches 100% tobacco-free?', a: 'Under all current EU & UK reseller regulations, our catalog consists strictly of plant-fiber pouch variants utilizing medical crystalline formats.' },
-                        { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific week layouts. Pause, skip custom flavors, or cancel anytime for free in the account dashboard.' },
-                        { q: 'Where are the canisters formulated?', a: 'Formulated in certified European laboratories under strict vacuum sterile protocols, ensuring consistent aroma and maximum flavor lock.' }
-                      ]).map((faq: any, fIdx: number) => {
-                        const isChosen = openFaqIdx === `${sec.id}-${fIdx}`;
-                        return (
-                          <div 
-                            key={fIdx} 
-                            className="bg-white border border-slate-150 rounded-2xl p-4.5 sm:p-5 transition-all shadow-xs cursor-pointer hover:border-slate-300"
-                            onClick={() => toggleFaq(sec.id, fIdx)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-xs sm:text-xs text-slate-800 flex items-center gap-2 pr-4 text-left">
-                                <span className={isChosen ? 'text-indigo-600 font-black' : 'text-slate-400 font-bold'}>Q:</span> 
-                                <span>{faq.q}</span>
-                              </span>
-                              <div className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 font-extrabold text-sm select-none transition-colors">
-                                {isChosen ? '-' : '+'}
+                  const secKey = sec.id || `faq-sec-${idx}`;
+
+                  return (
+                    <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
+                      <div className="text-center space-y-2">
+                        <span className="text-[10px] tracking-widest font-black uppercase text-indigo-600 bg-indigo-50/90 py-1 px-3.5 rounded-full inline-block">Answered Live</span>
+                        <h2 
+                          className="text-3xl font-black uppercase tracking-tight text-[#0F172A]"
+                          style={{ color: sec.settings.headingColor || '#0F172A' }}
+                        >
+                          {sec.settings.title || 'Frequently Asked Questions'}
+                        </h2>
+                        {sec.settings.description && (
+                          <p className="text-xs text-slate-500">{sec.settings.description}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {faqsToRender.map((faq: any, fIdx: number) => {
+                          const qText = faq.question || faq.q || '';
+                          const aText = faq.answer || faq.a || '';
+                          const isChosen = openFaqIdx === `${secKey}-${fIdx}`;
+                          return (
+                            <div 
+                              key={fIdx} 
+                              className="bg-white border border-slate-150 rounded-2xl p-4.5 sm:p-5 transition-all shadow-xs cursor-pointer hover:border-slate-300"
+                              onClick={() => toggleFaq(secKey, fIdx)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-xs sm:text-xs text-slate-800 flex items-center gap-2 pr-4 text-left">
+                                  <span className={isChosen ? 'text-indigo-600 font-black' : 'text-slate-400 font-bold'}>Q:</span> 
+                                  <span>{qText}</span>
+                                </span>
+                                <div className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 font-extrabold text-sm select-none transition-colors">
+                                  {isChosen ? '-' : '+'}
+                                </div>
+                              </div>
+                              
+                              {/* Smooth accordion expanded logic */}
+                              <div className={`transition-all duration-300 overflow-hidden ${isChosen ? 'max-h-96 mt-3 opacity-100 border-t border-slate-50 pt-3' : 'max-h-0 opacity-0'}`}>
+                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed pl-2 text-left">
+                                  {aText}
+                                </p>
                               </div>
                             </div>
-                            
-                            {/* Smooth accordion expanded logic */}
-                            <div className={`transition-all duration-300 overflow-hidden ${isChosen ? 'max-h-96 mt-3 opacity-100 border-t border-slate-50 pt-3' : 'max-h-0 opacity-0'}`}>
-                              <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed pl-2 text-left">
-                                {faq.a}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* 13. SLIDESHOW */}
                 {sec.type === 'Slideshow' && (
