@@ -3,7 +3,7 @@ import { CustomPage, PageSection, Product, Collection, Customer, BlogPost } from
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
 import { 
   ArrowRight, ShoppingCart, Star, Heart, FileText, Check, 
-  ChevronDown, ChevronUp, Play, Sparkles, TrendingUp, Plus, Minus, ShieldCheck, Award, Eye, Flame, ArrowUpRight, BookOpen, Layers,
+  ChevronDown, ChevronUp, Play, Sparkles, TrendingUp, Plus, Minus, ShieldCheck, Award, Eye, Flame, ArrowUpRight, BookOpen, Layers, ExternalLink,
   Truck, Zap, Shield, Clock, Package, HelpCircle, Globe, Tag, ChevronLeft, ChevronRight, Lock, Gift, RefreshCw, Snowflake, Crown, Percent, Calendar
 } from 'lucide-react';
 import PremiumSlideshow from './PremiumSlideshow';
@@ -1367,6 +1367,14 @@ export default function PageRenderer({
   // Safe state for keeping track of active FAQs
   const [openFaqIdx, setOpenFaqIdx] = useState<string | null>(null);
 
+  if (!page) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
+        <p className="text-slate-400 text-sm italic">Page content unavailable.</p>
+      </div>
+    );
+  }
+
   // Safe parsing of custom links or routes
   const handleLinkClick = (link?: string) => {
     if (!link) return;
@@ -1481,6 +1489,30 @@ export default function PageRenderer({
             #sec-${sec.id} button, #sec-${sec.id} .section-btn {
               ${sec.settings.buttonBgColor ? `background-color: ${sec.settings.buttonBgColor} !important;` : ''}
               ${sec.settings.buttonTextColor ? `color: ${sec.settings.buttonTextColor} !important;` : ''}
+            }
+            #sec-${sec.id} .subheading, #sec-${sec.id} .section-subheading, #sec-${sec.id} .subtitle {
+              ${sec.settings.subheadingColor ? `color: ${sec.settings.subheadingColor} !important;` : ''}
+            }
+            #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading {
+              ${sec.settings.cardTitleColor ? `color: ${sec.settings.cardTitleColor} !important;` : ''}
+            }
+            #sec-${sec.id} .card-desc, #sec-${sec.id} .card-text {
+              ${sec.settings.cardTextColor ? `color: ${sec.settings.cardTextColor} !important;` : ''}
+            }
+            #sec-${sec.id} .card-bg, #sec-${sec.id} .card-box {
+              ${sec.settings.cardBgColor ? `background-color: ${sec.settings.cardBgColor} !important;` : ''}
+            }
+            #sec-${sec.id} .badge-text, #sec-${sec.id} .badge-tag {
+              ${sec.settings.badgeTextColor ? `color: ${sec.settings.badgeTextColor} !important;` : ''}
+            }
+            #sec-${sec.id} .badge-bg {
+              ${sec.settings.badgeBgColor ? `background-color: ${sec.settings.badgeBgColor} !important;` : ''}
+            }
+            #sec-${sec.id} .accent-text, #sec-${sec.id} .accent-icon {
+              ${sec.settings.accentColor ? `color: ${sec.settings.accentColor} !important;` : ''}
+            }
+            #sec-${sec.id} .custom-border {
+              ${sec.settings.borderColor ? `border-color: ${sec.settings.borderColor} !important;` : ''}
             }
             #sec-${sec.id} button {
               ${sec.settings.buttonRoundness === 'rounded-none' ? 'border-radius: 0px !important;' : ''}
@@ -2330,7 +2362,7 @@ export default function PageRenderer({
                     { q: 'Where are the canisters formulated?', a: 'Formulated in certified European laboratories under strict vacuum sterile protocols, ensuring consistent aroma and maximum flavor lock.' }
                   ];
 
-                  const secKey = sec.id || `faq-sec-${idx}`;
+                  const secKey = sec.id ? `faq-${sec.id}` : `faq-sec-${idx}`;
 
                   return (
                     <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
@@ -2373,6 +2405,21 @@ export default function PageRenderer({
                                 <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed pl-2 text-left">
                                   {aText}
                                 </p>
+                                {faq.linkUrl && (
+                                  <div className="mt-2.5 pl-2">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleLinkClick(faq.linkUrl);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 underline cursor-pointer"
+                                    >
+                                      <span>More Information</span>
+                                      <ExternalLink className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

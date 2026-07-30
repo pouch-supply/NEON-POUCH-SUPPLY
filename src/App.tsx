@@ -99,12 +99,25 @@ export default function App() {
     }
   };
 
-  // Helper to safely write to LocalStorage
+  // Helper to safely write to LocalStorage with quota recovery
   const safeSaveToLocalStorage = (key: string, value: any) => {
     try {
-      localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+      const strVal = typeof value === 'string' ? value : JSON.stringify(value);
+      localStorage.setItem(key, strVal);
     } catch (e) {
-      console.warn(`[LocalStorage] Failed to write key "${key}" to localStorage:`, e);
+      console.warn(`[LocalStorage] Failed to write key "${key}". Attempting storage cleanup...`, e);
+      try {
+        // Clear simulated emails and old non-critical caches to free space
+        localStorage.removeItem('ps_simulated_emails');
+        const filesStr = localStorage.getItem('ps_files');
+        if (filesStr && filesStr.length > 500000) {
+          localStorage.removeItem('ps_files');
+        }
+        const strVal = typeof value === 'string' ? value : JSON.stringify(value);
+        localStorage.setItem(key, strVal);
+      } catch (retryErr) {
+        console.warn(`[LocalStorage] Quota error persisted for key "${key}":`, retryErr);
+      }
     }
   };
 
@@ -211,7 +224,7 @@ export default function App() {
   const handleUpdateLayoutSettings = (newSettings: LayoutSettings | ((prev: LayoutSettings) => LayoutSettings)) => {
     setLayoutSettings(prev => {
       const resolved = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
-      localStorage.setItem('ps_layout_settings', JSON.stringify(resolved));
+      safeSaveToLocalStorage('ps_layout_settings', resolved);
       
       // Persist to the server's layout settings API endpoint
       fetch('/api/layoutsettings', {
@@ -251,6 +264,13 @@ export default function App() {
       const defaultBrands = DEFAULT_PAGES.find((p: any) => p.slug === 'brands');
       if (defaultBrands) {
         finalPages = [...finalPages, defaultBrands];
+      }
+    }
+    // Guaranteed presence check for About page
+    if (!finalPages.some((p: any) => p && (p.slug === 'about' || p.id === 'about'))) {
+      const defaultAbout = DEFAULT_PAGES.find((p: any) => p.slug === 'about' || p.id === 'about');
+      if (defaultAbout) {
+        finalPages = [...finalPages, defaultAbout];
       }
     }
     return finalPages;
@@ -483,7 +503,7 @@ export default function App() {
               cloudinaryApiKey: resData.cloudinaryApiKey || prev.cloudinaryApiKey || '',
               cloudinaryApiSecret: resData.cloudinaryApiSecret || prev.cloudinaryApiSecret || '',
             };
-            localStorage.setItem('ps_layout_settings', JSON.stringify(merged));
+            safeSaveToLocalStorage('ps_layout_settings', merged);
             if (
               (!resData.klaviyoPublicKey && merged.klaviyoPublicKey) ||
               (!resData.cloudinaryCloudName && merged.cloudinaryCloudName)

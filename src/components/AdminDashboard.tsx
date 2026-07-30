@@ -2379,7 +2379,7 @@ export default function AdminDashboard({
     const isFullWidthByDefault = sectionType === 'Image banner' || sectionType === 'Slideshow' || sectionType === 'Marquee text' || sectionType === 'Video banner';
     
     const newSection: PageSection = {
-      id: `sec-${Date.now()}`,
+      id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       type: sectionType,
       settings: {
         fullWidth: isFullWidthByDefault,

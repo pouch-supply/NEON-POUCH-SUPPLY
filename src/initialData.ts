@@ -172,5 +172,37 @@ export const DEFAULT_PAGES: CustomPage[] = [
         }
       }
     ]
+  },
+  {
+    id: 'about',
+    title: 'About Us',
+    slug: 'about',
+    visibility: 'Visible',
+    updatedAt: 'Jul 20, 2026',
+    sections: [
+      {
+        id: 'about-sec-1',
+        type: 'Rich text',
+        settings: {
+          fullWidth: false,
+          backgroundColor: '#FFFFFF',
+          headingColor: '#0F172A',
+          textColor: '#475569',
+          title: 'About Pouch Supply',
+          description: 'Pouch Supply is Europe’s premier directory and depot for tobacco-free nicotine slim white canisters. We source directly from certified manufacturing laboratories across Sweden, Poland, Germany, and Europe, ensuring 100% genuine products, freshness guarantees, and rapid worldwide dispatch.'
+        }
+      },
+      {
+        id: 'about-sec-2',
+        type: 'Trust badges',
+        settings: {
+          fullWidth: false,
+          backgroundColor: '#F8FAFC',
+          headingColor: '#0F172A',
+          textColor: '#64748B'
+        }
+      }
+    ]
   }
 ];
+

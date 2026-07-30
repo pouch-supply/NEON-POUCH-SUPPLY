@@ -108,6 +108,9 @@ export interface FileEntry {
   publicId?: string;
   resourceType?: string;
   secureUrl?: string;
+  originalFilename?: string;
+  fileSize?: number;
+  folder?: string;
 }
 
 export interface Customer {
@@ -219,6 +222,24 @@ export interface PageSection {
     backgroundColor: string; // hex
     headingColor: string; // hex
     textColor: string; // hex
+    subheadingColor?: string;
+    cardTitleColor?: string;
+    cardTextColor?: string;
+    itemTitleColor?: string;
+    itemTextColor?: string;
+    questionTextColor?: string;
+    answerTextColor?: string;
+    badgeTextColor?: string;
+    badgeBgColor?: string;
+    buttonTextColor?: string;
+    buttonBgColor?: string;
+    buttonText2?: string;
+    buttonLink2?: string;
+    buttonText2Color?: string;
+    buttonBg2Color?: string;
+    imageLink?: string;
+    bannerLink?: string;
+    promoLink?: string;
     iconColor?: string; // hex
     alertBadgeText?: string;
     promoBannerText?: string;
@@ -226,6 +247,7 @@ export interface PageSection {
       iconType: 'badge' | 'shield' | 'globe' | 'tag';
       title: string;
       description: string;
+      linkUrl?: string;
     }[];
     iconItems?: {
       iconName: 'Truck' | 'Zap' | 'Shield' | 'Clock' | 'Award' | 'Package' | 'Heart' | 'HelpCircle' | 'Star';
@@ -257,6 +279,17 @@ export interface PageSection {
       title: string;
       description: string;
       imageUrl: string;
+      linkUrl?: string;
+    }[];
+    galleryItems?: {
+      imageUrl: string;
+      title?: string;
+      linkUrl?: string;
+    }[];
+    logoItems?: {
+      imageUrl: string;
+      title?: string;
+      linkUrl?: string;
     }[];
     slides?: {
       title: string;
@@ -264,6 +297,9 @@ export interface PageSection {
       imageUrl: string;
       buttonText: string;
       buttonLink: string;
+      buttonText2?: string;
+      buttonLink2?: string;
+      slideLink?: string;
     }[];
     planItems?: {
       slug: 'lite' | 'core' | 'pro' | 'ultimate';
@@ -276,6 +312,8 @@ export interface PageSection {
       extraText?: string;
       subtitle?: string;
       isPopular?: boolean;
+      buttonText?: string;
+      buttonLink?: string;
     }[];
   };
   blocks?: any[]; // for columns, items, faqs etc.

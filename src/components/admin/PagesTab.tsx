@@ -562,6 +562,27 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                           ${sec.settings.buttonBgColor ? `background-color: ${sec.settings.buttonBgColor} !important;` : ''}
                           ${sec.settings.buttonTextColor ? `color: ${sec.settings.buttonTextColor} !important;` : ''}
                         }
+                        #sec-${sec.id} .subheading, #sec-${sec.id} .section-subheading, #sec-${sec.id} .subtitle {
+                          ${sec.settings.subheadingColor ? `color: ${sec.settings.subheadingColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading {
+                          ${sec.settings.cardTitleColor ? `color: ${sec.settings.cardTitleColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .card-desc, #sec-${sec.id} .card-text {
+                          ${sec.settings.cardTextColor ? `color: ${sec.settings.cardTextColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .card-bg, #sec-${sec.id} .card-box {
+                          ${sec.settings.cardBgColor ? `background-color: ${sec.settings.cardBgColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .badge-text, #sec-${sec.id} .badge-tag {
+                          ${sec.settings.badgeTextColor ? `color: ${sec.settings.badgeTextColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .badge-bg {
+                          ${sec.settings.badgeBgColor ? `background-color: ${sec.settings.badgeBgColor} !important;` : ''}
+                        }
+                        #sec-${sec.id} .accent-text, #sec-${sec.id} .accent-icon {
+                          ${sec.settings.accentColor ? `color: ${sec.settings.accentColor} !important;` : ''}
+                        }
                         #sec-${sec.id} button {
                           ${sec.settings.buttonRoundness === 'rounded-none' ? 'border-radius: 0px !important;' : ''}
                           ${sec.settings.buttonRoundness === 'rounded' ? 'border-radius: 4px !important;' : ''}
@@ -1190,57 +1211,70 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                       </div>
                     )}
 
-                    {/* Button Controls */}
-                    {['Image banner', 'Image with text', 'Text column with image', 'Rich text', 'Clearance Sale'].includes(currentlyEditingSection.type) && (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Button Label</label>
-                            <input
-                              type="text"
-                              value={currentlyEditingSection.settings.buttonText || ''}
-                              onChange={(e) => handleUpdateSectionSettings('buttonText', e.target.value)}
-                              className="w-full text-xs p-1.5 border rounded-lg bg-slate-50"
-                              placeholder="SHOP NOW"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Button Link Target</label>
-                            <input
-                              type="text"
-                              value={currentlyEditingSection.settings.buttonLink || ''}
-                              onChange={(e) => handleUpdateSectionSettings('buttonLink', e.target.value)}
-                              className="w-full text-xs p-1.5 border rounded-lg bg-slate-50 font-mono"
-                              placeholder="frontend-shop"
-                            />
-                          </div>
+                    {/* Section Buttons & Link Targets */}
+                    <div className="space-y-2.5 bg-slate-50/90 p-3 rounded-xl border border-slate-200/80">
+                      <span className="block text-[10px] font-black text-slate-900 uppercase tracking-wider">🔗 Section Buttons & Link Target URLs</span>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Primary Button Label</label>
+                          <input
+                            type="text"
+                            value={currentlyEditingSection.settings.buttonText || ''}
+                            onChange={(e) => handleUpdateSectionSettings('buttonText', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white"
+                            placeholder="SHOP NOW / SUBSCRIBE"
+                          />
                         </div>
-
-                        {/* Secondary Button */}
-                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Secondary Button Label</label>
-                            <input
-                              type="text"
-                              value={currentlyEditingSection.settings.buttonText2 || ''}
-                              onChange={(e) => handleUpdateSectionSettings('buttonText2', e.target.value)}
-                              className="w-full text-xs p-1.5 border rounded-lg bg-slate-50"
-                              placeholder="LEARN MORE"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Secondary Link Target</label>
-                            <input
-                              type="text"
-                              value={currentlyEditingSection.settings.buttonLink2 || ''}
-                              onChange={(e) => handleUpdateSectionSettings('buttonLink2', e.target.value)}
-                              className="w-full text-xs p-1.5 border rounded-lg bg-slate-50 font-mono"
-                              placeholder="frontend-subscribe"
-                            />
-                          </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Primary Link Target URL</label>
+                          <input
+                            type="text"
+                            value={currentlyEditingSection.settings.buttonLink || ''}
+                            onChange={(e) => handleUpdateSectionSettings('buttonLink', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white font-mono text-[10px]"
+                            placeholder="frontend-shop, /subscribe, etc."
+                          />
                         </div>
                       </div>
-                    )}
+
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Secondary Button Label</label>
+                          <input
+                            type="text"
+                            value={currentlyEditingSection.settings.buttonText2 || ''}
+                            onChange={(e) => handleUpdateSectionSettings('buttonText2', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white"
+                            placeholder="LEARN MORE"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Secondary Link Target URL</label>
+                          <input
+                            type="text"
+                            value={currentlyEditingSection.settings.buttonLink2 || ''}
+                            onChange={(e) => handleUpdateSectionSettings('buttonLink2', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white font-mono text-[10px]"
+                            placeholder="frontend-subscribe, /about, etc."
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Banner / Image Click Target URL</label>
+                        <input
+                          type="text"
+                          value={currentlyEditingSection.settings.imageLink || currentlyEditingSection.settings.bannerLink || ''}
+                          onChange={(e) => {
+                            handleUpdateSectionSettings('imageLink', e.target.value);
+                            handleUpdateSectionSettings('bannerLink', e.target.value);
+                          }}
+                          className="w-full text-xs p-1.5 border rounded-lg bg-white font-mono text-[10px]"
+                          placeholder="e.g. frontend-shop, /collections/all, or https://..."
+                        />
+                      </div>
+                    </div>
 
                     {/* CLEARANCE SALE CONTROLS */}
                     {currentlyEditingSection.type === 'Clearance Sale' && (
@@ -1326,7 +1360,8 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                             question: f.question || f.q || '',
                             answer: f.answer || f.a || '',
                             q: f.q || f.question || '',
-                            a: f.a || f.answer || ''
+                            a: f.a || f.answer || '',
+                            linkUrl: f.linkUrl || ''
                           }))
                         : [];
 
@@ -1335,7 +1370,8 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                           question: f.question || f.q || '',
                           answer: f.answer || f.a || '',
                           q: f.q || f.question || '',
-                          a: f.a || f.answer || ''
+                          a: f.a || f.answer || '',
+                          linkUrl: f.linkUrl || ''
                         }));
                         handleUpdateSectionSettings('faqs', normalized);
                         handleUpdateSectionSettings('faqItems', normalized);
@@ -1426,6 +1462,16 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     value={faq.answer || ''}
                                     onChange={(e) => handleUpdateFaq(fIdx, 'answer', e.target.value)}
                                     className="w-full text-xs p-1.5 border rounded bg-slate-50"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Link Target URL (Optional)</label>
+                                  <input
+                                    type="text"
+                                    value={faq.linkUrl || ''}
+                                    onChange={(e) => handleUpdateFaq(fIdx, 'linkUrl', e.target.value)}
+                                    className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                    placeholder="e.g. frontend-subscribe or https://..."
                                   />
                                 </div>
                               </div>
@@ -1545,6 +1591,16 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     className="w-full text-xs p-1.5 border rounded bg-slate-50"
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Link Target URL</label>
+                                  <input
+                                    type="text"
+                                    value={item.linkUrl || ''}
+                                    onChange={(e) => handleUpdateItem(iIdx, 'linkUrl', e.target.value)}
+                                    className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                    placeholder="frontend-shop or https://..."
+                                  />
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1662,6 +1718,16 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     placeholder="Upload step visual or select image..."
                                   />
                                 </div>
+                                <div>
+                                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Link Target URL</label>
+                                  <input
+                                    type="text"
+                                    value={step.linkUrl || ''}
+                                    onChange={(e) => handleUpdateStep(sIdx, 'linkUrl', e.target.value)}
+                                    className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                    placeholder="frontend-subscribe or https://..."
+                                  />
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1773,6 +1839,16 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     value={badge.description || ''}
                                     onChange={(e) => handleUpdateBadge(bIdx, 'description', e.target.value)}
                                     className="w-full text-xs p-1.5 border rounded bg-slate-50"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Link Target URL</label>
+                                  <input
+                                    type="text"
+                                    value={badge.linkUrl || ''}
+                                    onChange={(e) => handleUpdateBadge(bIdx, 'linkUrl', e.target.value)}
+                                    className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                    placeholder="frontend-shop or https://..."
                                   />
                                 </div>
                               </div>
@@ -1914,6 +1990,28 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     onChange={(url) => handleUpdatePlan(pIdx, 'imageUrl', url)}
                                     placeholder="Upload custom plan image..."
                                   />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Button Label</label>
+                                    <input
+                                      type="text"
+                                      value={plan.buttonText || ''}
+                                      onChange={(e) => handleUpdatePlan(pIdx, 'buttonText', e.target.value)}
+                                      className="w-full text-xs p-1.5 border rounded bg-slate-50"
+                                      placeholder="SELECT PLAN"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Link Target URL</label>
+                                    <input
+                                      type="text"
+                                      value={plan.buttonLink || ''}
+                                      onChange={(e) => handleUpdatePlan(pIdx, 'buttonLink', e.target.value)}
+                                      className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                      placeholder={`frontend-subscribe?plan=${plan.slug}`}
+                                    />
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2 pt-1">
                                   <input
@@ -2267,6 +2365,28 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                     className="w-full text-xs p-1.5 border rounded bg-slate-50"
                                   />
                                 </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Button Label</label>
+                                    <input
+                                      type="text"
+                                      value={slide.buttonText || ''}
+                                      onChange={(e) => handleUpdateSlide(sIdx, 'buttonText', e.target.value)}
+                                      className="w-full text-xs p-1.5 border rounded bg-slate-50"
+                                      placeholder="EXPLORE NOW"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Button Link Target</label>
+                                    <input
+                                      type="text"
+                                      value={slide.buttonLink || ''}
+                                      onChange={(e) => handleUpdateSlide(sIdx, 'buttonLink', e.target.value)}
+                                      className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
+                                      placeholder="frontend-shop"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -2274,25 +2394,162 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                       );
                     })()}
 
-                    {/* Color customizers */}
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Heading Hex</label>
-                        <input
-                          type="color"
-                          value={currentlyEditingSection.settings.headingColor || '#1E293B'}
-                          onChange={(e) => handleUpdateSectionSettings('headingColor', e.target.value)}
-                          className="w-full h-8 border rounded cursor-pointer bg-slate-50 animate-none p-0"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Background Hex</label>
-                        <input
-                          type="color"
-                          value={currentlyEditingSection.settings.backgroundColor || '#FFFFFF'}
-                          onChange={(e) => handleUpdateSectionSettings('backgroundColor', e.target.value)}
-                          className="w-full h-8 border rounded cursor-pointer bg-slate-50 animate-none p-0"
-                        />
+                    {/* Text & Color Customizers */}
+                    <div className="space-y-3 bg-slate-50/90 p-3 rounded-xl border border-slate-200/80 pt-3">
+                      <span className="block text-[10px] font-black text-slate-900 uppercase tracking-wider">🎨 Text Color & Theme Options</span>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Heading Color</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.headingColor || '#1E293B'}
+                              onChange={(e) => handleUpdateSectionSettings('headingColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.headingColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('headingColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#1E293B"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Body / Subtitle Text</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.textColor || '#475569'}
+                              onChange={(e) => handleUpdateSectionSettings('textColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.textColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('textColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#475569"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Card / Item Title</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.cardTitleColor || '#0F172A'}
+                              onChange={(e) => handleUpdateSectionSettings('cardTitleColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.cardTitleColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('cardTitleColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#0F172A"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Card / Item Description</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.cardTextColor || '#64748B'}
+                              onChange={(e) => handleUpdateSectionSettings('cardTextColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.cardTextColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('cardTextColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#64748B"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Primary Button Text</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.buttonTextColor || '#FFFFFF'}
+                              onChange={(e) => handleUpdateSectionSettings('buttonTextColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.buttonTextColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('buttonTextColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#FFFFFF"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Primary Button Bg</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.buttonBgColor || '#4F46E5'}
+                              onChange={(e) => handleUpdateSectionSettings('buttonBgColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.buttonBgColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('buttonBgColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#4F46E5"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Badge / Accent Text</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.badgeTextColor || '#10B981'}
+                              onChange={(e) => handleUpdateSectionSettings('badgeTextColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.badgeTextColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('badgeTextColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#10B981"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[8.5px] font-extrabold text-slate-600 uppercase mb-1">Section Background</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={currentlyEditingSection.settings.backgroundColor || '#FFFFFF'}
+                              onChange={(e) => handleUpdateSectionSettings('backgroundColor', e.target.value)}
+                              className="w-8 h-8 rounded border cursor-pointer bg-white p-0 shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={currentlyEditingSection.settings.backgroundColor || ''}
+                              onChange={(e) => handleUpdateSectionSettings('backgroundColor', e.target.value)}
+                              className="w-full text-[10px] p-1 border rounded bg-white font-mono uppercase"
+                              placeholder="#FFFFFF"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
