@@ -26,6 +26,7 @@ import TermsConditions from './components/TermsConditions';
 import ProductDetailView from './components/ProductDetailView';
 import CollectionDetailView from './components/CollectionDetailView';
 import CheckoutView from './components/CheckoutView';
+import { FolderStructureView } from './components/FolderStructureView';
 import { SecureGatewaySimulator, PaymentSuccessScreen, PaymentFailedScreen, PaymentCancelledScreen } from './components/PaymentStatusScreens';
 import { 
   Sparkles, ShieldCheck, Truck, RefreshCw, Star, ArrowRight, Package, ShoppingCart, Check, Heart, User, CheckCircle2, Save, AlertTriangle, Search, Undo, Mail, X
@@ -637,6 +638,7 @@ export default function App() {
     if (currentPathname !== url) {
       try {
         window.history.pushState({}, '', url);
+        window.dispatchEvent(new Event('popstate'));
       } catch (e) {
         console.warn('[History] Failed to pushState (sandboxed iframe constraint):', e);
       }
@@ -2607,8 +2609,13 @@ export default function App() {
               <TermsConditions onNavigate={navigateToTab} />
             )}
 
+            {/* FRONTEND VIEW - FOLDER STRUCTURE GENERATOR */}
+            {(currentTab === 'folder-structure' || currentTab === 'pages/folder-structure' || currentTab === 'structure') && (
+              <FolderStructureView />
+            )}
+
             {/* FRONTEND VIEW - 404 NOT FOUND FOR NONEXISTENT PAGES */}
-            {!['frontend-home', 'frontend-shop', 'frontend-brands', 'frontend-subscribe', 'frontend-account', 'product-detail', 'collection-detail', 'blogs', 'blog-detail', 'privacy-policy', 'shipping-policy', 'refund-policy', 'terms-conditions', 'frontend-checkout', 'payment-gateway', 'payment-success', 'payment-failed', 'payment-cancelled'].includes(currentTab) && !customPages.some(p => p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, '')) && (
+            {!['frontend-home', 'frontend-shop', 'frontend-brands', 'frontend-subscribe', 'frontend-account', 'product-detail', 'collection-detail', 'blogs', 'blog-detail', 'privacy-policy', 'shipping-policy', 'refund-policy', 'terms-conditions', 'folder-structure', 'pages/folder-structure', 'structure', 'frontend-checkout', 'payment-gateway', 'payment-success', 'payment-failed', 'payment-cancelled'].includes(currentTab) && !customPages.some(p => p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, '')) && (
               <div className="max-w-6xl mx-auto py-24 px-4 text-center space-y-6">
                 <span className="text-7xl block">🔍</span>
                 <div className="space-y-1.5">

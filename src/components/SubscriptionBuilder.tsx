@@ -114,19 +114,20 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
         search = window.location.search;
       } catch (e) {}
 
-      if (search.includes('plan=lite') || p.includes('/subscribe/lite')) {
+      if (search.includes('plan=lite') || p.includes('/subscribe/lite') || p.endsWith('/lite')) {
         setActivePlanSlug('lite');
-      } else if (search.includes('plan=core') || p.includes('/subscribe/core')) {
+      } else if (search.includes('plan=core') || p.includes('/subscribe/core') || p.endsWith('/core')) {
         setActivePlanSlug('core');
-      } else if (search.includes('plan=pro') || p.includes('/subscribe/pro')) {
+      } else if (search.includes('plan=pro') || p.includes('/subscribe/pro') || p.endsWith('/pro')) {
         setActivePlanSlug('pro');
-      } else if (search.includes('plan=ultimate') || p.includes('/subscribe/ultimate')) {
+      } else if (search.includes('plan=ultimate') || p.includes('/subscribe/ultimate') || p.endsWith('/ultimate')) {
         setActivePlanSlug('ultimate');
       } else if (p.includes('/subscribe')) {
         setActivePlanSlug(null);
       }
     };
 
+    handlePopState();
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
