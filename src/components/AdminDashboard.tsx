@@ -29,8 +29,7 @@ import LayoutTab from './admin/LayoutTab';
 import PagesTab from './admin/PagesTab';
 import DevelopmentTab from './admin/DevelopmentTab';
 import { DiagnosticsTab } from './admin/DiagnosticsTab';
-import { FolderStructureView } from './FolderStructureView';
-import { Activity, Folder } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 export const AVAILABLE_SECTION_TEMPLATES = [
   { type: 'Image banner', label: 'Image Banner', desc: 'Hero banner with centered headline overlay & CTA buttons', icon: 'ImageIcon' },
@@ -571,7 +570,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'development' | 'diagnostics' | 'structure';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'development' | 'diagnostics';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -612,8 +611,7 @@ export default function AdminDashboard({
     discounts: 'discounts',
     layout: 'layout',
     development: 'development',
-    diagnostics: 'diagnostics',
-    structure: 'folder-structure'
+    diagnostics: 'diagnostics'
   };
 
   const pathToTabMap: Record<string, SidebarTab> = {
@@ -634,9 +632,7 @@ export default function AdminDashboard({
     dev: 'development',
     diagnostics: 'diagnostics',
     status: 'diagnostics',
-    db: 'diagnostics',
-    'folder-structure': 'structure',
-    structure: 'structure'
+    db: 'diagnostics'
   };
 
   const getInitialTab = (): SidebarTab => {
@@ -3096,7 +3092,6 @@ export default function AdminDashboard({
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
                 { id: 'development', label: 'Development Mode', icon: Terminal },
                 { id: 'diagnostics', label: 'DB Diagnostics', icon: Activity },
-                { id: 'structure', label: 'Folder Structure', icon: Folder },
               ].map(item => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -3723,11 +3718,6 @@ export default function AdminDashboard({
     {/* 12. DIAGNOSTICS & STATUS TEST BLOCK */}
     {activeTab === 'diagnostics' && (
       <DiagnosticsTab onRefreshAll={fetchDbDetails} />
-    )}
-
-    {/* 13. WEBSITE FOLDER STRUCTURE GENERATOR */}
-    {activeTab === 'structure' && (
-      <FolderStructureView />
     )}
 
         {/* DATABASE CONNECTION DETAILS MODAL */}

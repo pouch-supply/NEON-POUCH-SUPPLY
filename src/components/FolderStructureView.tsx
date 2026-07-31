@@ -112,7 +112,7 @@ export function FolderStructureView() {
 
     if (!isMatch && filterQuery) return null;
 
-    const sizeKb = node.size ? `${(node.size / 1024).toFixed(1)} KB` : '';
+    const sizeKb = `${((node.size || 0) / 1024).toFixed(1)} KB`;
 
     return (
       <div 

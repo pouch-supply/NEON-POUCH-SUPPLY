@@ -7,12 +7,7 @@ const router = Router();
 const EXCLUDED_DIRS = new Set([
   'node_modules',
   '.git',
-  'dist',
-  'build',
-  '.aistudio',
-  '.cache',
-  'coverage',
-  '.next'
+  '.cache'
 ]);
 
 interface FileTreeNode {
@@ -35,7 +30,7 @@ function buildTree(dirPath: string, relativePath: string = ''): FileTreeNode[] {
   entries.sort((a, b) => {
     if (a.isDirectory() && !b.isDirectory()) return -1;
     if (!a.isDirectory() && b.isDirectory()) return 1;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const nodes: FileTreeNode[] = [];
@@ -85,8 +80,8 @@ function generateAsciiTree(nodes: FileTreeNode[], prefix: string = ''): string {
         result += generateAsciiTree(node.children, prefix + childPrefix);
       }
     } else {
-      const sizeKb = node.size ? ` (${(node.size / 1024).toFixed(1)} KB)` : '';
-      result += `${prefix}${connector}📄 ${node.name}${sizeKb}\n`;
+      const kb = ((node.size || 0) / 1024).toFixed(1);
+      result += `${prefix}${connector}📄 ${node.name} (${kb} KB)\n`;
     }
   });
 
@@ -98,7 +93,8 @@ router.get('/', (req: Request, res: Response) => {
   try {
     const rootDir = process.cwd();
     const tree = buildTree(rootDir);
-    const projectName = path.basename(rootDir) || 'website';
+    const folderName = path.basename(rootDir);
+    const projectName = (folderName && folderName !== '/' && folderName !== '.') ? folderName : 'task';
     const asciiText = `${projectName}/\n` + generateAsciiTree(tree);
 
     res.json({
