@@ -12,6 +12,7 @@ const WORLDPAY_API_USERNAME = process.env.WORLDPAY_API_USERNAME || '';
 const WORLDPAY_API_PASSWORD = process.env.WORLDPAY_API_PASSWORD || '';
 const WORLDPAY_WEBHOOK_SECRET = process.env.WORLDPAY_WEBHOOK_SECRET || '';
 const WORLDPAY_ENVIRONMENT = (process.env.WORLDPAY_ENVIRONMENT || 'live').toLowerCase();
+const WORLDPAY_BASE_URL = (process.env.WORLDPAY_BASE_URL || (WORLDPAY_ENVIRONMENT === 'live' ? 'https://access.worldpay.com' : 'https://try.access.worldpay.com')).replace(/\/+$/, '');
 
 // Helper to verify Worldpay Webhook Signatures
 function verifyWorldpaySignature(payload: string, signature: string, secret: string): boolean {
@@ -182,15 +183,13 @@ router.post('/session', async (req: Request, res: Response) => {
       });
     }
 
-    const primaryBaseUrl = WORLDPAY_ENVIRONMENT === 'live' 
-      ? 'https://access.worldpay.com' 
+    const primaryBaseUrl = WORLDPAY_BASE_URL;
+
+    const fallbackBaseUrl = WORLDPAY_BASE_URL.includes('try.access.worldpay.com')
+      ? 'https://access.worldpay.com'
       : 'https://try.access.worldpay.com';
 
-    const fallbackBaseUrl = WORLDPAY_ENVIRONMENT === 'live'
-      ? 'https://try.access.worldpay.com'
-      : 'https://access.worldpay.com';
-
-    const baseUrls = [primaryBaseUrl, fallbackBaseUrl];
+    const baseUrls = Array.from(new Set([primaryBaseUrl, fallbackBaseUrl]));
     const authHeader = 'Basic ' + Buffer.from(`${WORLDPAY_API_USERNAME}:${WORLDPAY_API_PASSWORD}`).toString('base64');
     const amountInPence = Math.round(parseFloat(amount) * 100);
 
