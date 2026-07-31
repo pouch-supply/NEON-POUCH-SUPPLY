@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   CustomPage, PageSection, Product, Collection, BlogPost 
 } from '../../types';
@@ -6,11 +6,12 @@ import {
   Download, Upload, Plus, Settings, Clipboard, Eye, Trash2, Globe, MoveUp, MoveDown, 
   GripVertical, RefreshCw, Check, Save, Search, X, ImageIcon, Columns, Grid, ShoppingBag, 
   FolderHeart, PlaySquare, Video, FileText, Sparkles, Layers, Award, HelpCircle, BookOpen, 
-  LayoutGrid, Compass, Flame, ChevronLeft, ChevronRight, Info
+  LayoutGrid, Compass, Flame, ChevronLeft, ChevronRight, Info, Edit3
 } from 'lucide-react';
 import ImageUploadInput, { renderMediaThumbnail, isVideoUrl, isPdfOrDocUrl } from '../ImageUploadInput';
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../../utils/mediaUtils';
 import { AVAILABLE_SECTION_TEMPLATES, getSectionLabel, getSectionIcon } from '../AdminDashboard';
+import PageRenderer from '../PageRenderer';
 
 export interface PagesTabProps {
   localPages: CustomPage[];
@@ -85,6 +86,34 @@ export const PagesTab: React.FC<PagesTabProps> = ({
   collections,
   blogs,
 }) => {
+  const [editingMetaPageId, setEditingMetaPageId] = useState<string | null>(null);
+
+  const handleUpdatePageMeta = (pageId: string, updates: { title?: string; slug?: string; visibility?: 'Visible' | 'Hidden' }) => {
+    const updated = localPages.map(p => {
+      if (p.id === pageId || p.slug === pageId) {
+        let cleanSlug = updates.slug !== undefined ? updates.slug : p.slug;
+        if (updates.slug !== undefined && !p.isHomepage) {
+          cleanSlug = updates.slug
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9-/]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        }
+        return {
+          ...p,
+          title: updates.title !== undefined ? updates.title : p.title,
+          slug: cleanSlug,
+          visibility: updates.visibility !== undefined ? updates.visibility : p.visibility,
+          updatedAt: 'Just Now'
+        };
+      }
+      return p;
+    });
+    setLocalPages(updated);
+    onUpdateCustomPages(updated);
+    setHasUnsavedChanges(true);
+  };
+
   return (
     <div className="space-y-6">
       
@@ -126,111 +155,184 @@ export const PagesTab: React.FC<PagesTabProps> = ({
           </div>
 
           <div className="bg-white border rounded-xl divide-y divide-slate-100 shadow-xs">
-            {localPages.map(page => (
-              <div key={page.id} className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-slate-50/50">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                      {page.title}
-                    </h4>
-                    <span className={`text-[8px] py-0.5 px-1.5 font-bold uppercase tracking-widest rounded ${
-                      page.visibility === 'Visible' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      {page.visibility}
-                    </span>
-                    {page.isHomepage && (
-                      <span className="text-[8px] py-0.5 px-1.5 font-black uppercase tracking-widest rounded bg-amber-500 text-white flex items-center gap-1">
-                        🏠 Active Homepage
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Route URL: <span className="font-mono bg-slate-100 px-1 rounded">{page.isHomepage ? '/' : `/pages/${page.slug}`}</span> • Last updated {page.updatedAt || 'Just Now'}
-                  </p>
-                </div>
+            {localPages.map(page => {
+              const isEditingThis = editingMetaPageId === page.id;
+              return (
+                <div key={page.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50/50">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          {page.title}
+                        </h4>
+                        <span className={`text-[8px] py-0.5 px-1.5 font-bold uppercase tracking-widest rounded ${
+                          page.visibility === 'Visible' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          {page.visibility}
+                        </span>
+                        {page.isHomepage && (
+                          <span className="text-[8px] py-0.5 px-1.5 font-black uppercase tracking-widest rounded bg-amber-500 text-white flex items-center gap-1">
+                            🏠 Active Homepage
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[10px] text-slate-400">
+                          Route URL: <span className="font-mono bg-slate-100 font-bold text-slate-700 px-1 py-0.5 rounded border border-slate-200">{page.isHomepage ? '/' : `/pages/${page.slug}`}</span> • Last updated {page.updatedAt || 'Just Now'}
+                        </p>
+                        {!page.isHomepage && (
+                          <button
+                            onClick={() => setEditingMetaPageId(isEditingThis ? null : page.id)}
+                            className="text-[9px] font-extrabold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 transition cursor-pointer flex items-center gap-1"
+                            title="Edit Title and Slug"
+                          >
+                            <Edit3 className="h-2.5 w-2.5" /> Edit Slug & Title
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                  {!page.isHomepage && (
-                    <button
-                      onClick={() => handleSetPageAsHomepage(page.id)}
-                      className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold py-1.5 px-3 rounded-lg border border-indigo-100 cursor-pointer"
-                    >
-                      Set as Homepage
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      {!page.isHomepage && (
+                        <button
+                          onClick={() => handleSetPageAsHomepage(page.id)}
+                          className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold py-1.5 px-3 rounded-lg border border-indigo-100 cursor-pointer"
+                        >
+                          Set as Homepage
+                        </button>
+                      )}
+                      {/* Customize Layout (Settings Icon) */}
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => setSelectedBuilderPageId(page.id)}
+                          className="p-1.5 bg-teal-50 hover:bg-teal-150 text-teal-700 rounded-md transition-all cursor-pointer hover:scale-105"
+                          aria-label="Customize Layout"
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                          Customize Layout
+                        </div>
+                      </div>
+
+                      {/* Duplicate (Duplicate Icon) */}
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handleDuplicatePage(page)}
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all cursor-pointer hover:scale-105"
+                          aria-label="Duplicate"
+                        >
+                          <Clipboard className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-[#1a1c1d] text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                          Duplicate Page
+                        </div>
+                      </div>
+
+                      {/* Preview (Eye/Preview Icon) */}
+                      <div className="relative group/tooltip">
+                        <button
+                          onClick={() => handlePreviewPage(page)}
+                          className="p-1.5 bg-sky-50 hover:bg-sky-150 text-sky-700 rounded-md transition-all cursor-pointer hover:scale-105"
+                          aria-label="Preview"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                          Preview Page
+                        </div>
+                      </div>
+
+                      {/* Delete (Trash Icon - disable if active homepage for safety) */}
+                      <div className="relative group/tooltip">
+                        <button
+                          disabled={page.isHomepage}
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to permanently delete "${page.title}"?`)) {
+                              const pageId = page.id || page.slug;
+                              const pageSlug = page.slug || page.id;
+                              const updated = localPages.filter(p => p.id !== page.id && p.slug !== page.slug);
+                              setLocalPages(updated);
+                              onUpdateCustomPages(updated);
+                              if (pageId) fetch(`/api/custompages/${pageId}`, { method: 'DELETE' }).catch(() => {});
+                              if (pageSlug && pageSlug !== pageId) fetch(`/api/custompages/${pageSlug}`, { method: 'DELETE' }).catch(() => {});
+                            }
+                          }}
+                          className={`p-1.5 rounded-md transition-all flex items-center justify-center ${
+                            page.isHomepage
+                              ? 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                              : 'bg-red-50 hover:bg-red-150 text-red-650 cursor-pointer hover:scale-105'
+                          }`}
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
+                          {page.isHomepage ? 'Homepage Cannot Be Deleted' : 'Delete Page'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isEditingThis && (
+                    <div className="bg-indigo-50/70 border border-indigo-200 p-3.5 rounded-xl space-y-3 mt-1 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                          <Edit3 className="h-3.5 w-3.5 text-indigo-600" /> Modify Page Metadata & Route Slug
+                        </span>
+                        <button
+                          onClick={() => setEditingMetaPageId(null)}
+                          className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Page Title</label>
+                          <input
+                            type="text"
+                            value={page.title}
+                            onChange={(e) => handleUpdatePageMeta(page.id, { title: e.target.value })}
+                            className="bg-white border border-indigo-200 text-slate-900 font-bold text-xs p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                          />
+                        </div>
+                        {!page.isHomepage && (
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Route Slug (/pages/)</label>
+                            <input
+                              type="text"
+                              value={page.slug}
+                              onChange={(e) => handleUpdatePageMeta(page.id, { slug: e.target.value })}
+                              className="bg-white border border-indigo-200 text-indigo-950 font-mono font-bold text-xs p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Visibility</label>
+                          <select
+                            value={page.visibility}
+                            onChange={(e) => handleUpdatePageMeta(page.id, { visibility: e.target.value as 'Visible' | 'Hidden' })}
+                            className="bg-white border border-indigo-200 text-slate-900 font-bold text-xs p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                          >
+                            <option value="Visible">Visible</option>
+                            <option value="Hidden">Hidden</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <button
+                          onClick={() => setEditingMetaPageId(null)}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-1.5 px-4 rounded-lg cursor-pointer shadow-xs"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
                   )}
-                  {/* Customize Layout (Settings Icon) */}
-                  <div className="relative group/tooltip">
-                    <button
-                      onClick={() => setSelectedBuilderPageId(page.id)}
-                      className="p-1.5 bg-teal-50 hover:bg-teal-150 text-teal-700 rounded-md transition-all cursor-pointer hover:scale-105"
-                      aria-label="Customize Layout"
-                    >
-                      <Settings className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                      Customize Layout
-                    </div>
-                  </div>
-
-                  {/* Duplicate (Duplicate Icon) */}
-                  <div className="relative group/tooltip">
-                    <button
-                      onClick={() => handleDuplicatePage(page)}
-                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all cursor-pointer hover:scale-105"
-                      aria-label="Duplicate"
-                    >
-                      <Clipboard className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-[#1a1c1d] text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                      Duplicate Page
-                    </div>
-                  </div>
-
-                  {/* Preview (Eye/Preview Icon) */}
-                  <div className="relative group/tooltip">
-                    <button
-                      onClick={() => handlePreviewPage(page)}
-                      className="p-1.5 bg-sky-50 hover:bg-sky-150 text-sky-700 rounded-md transition-all cursor-pointer hover:scale-105"
-                      aria-label="Preview"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                      Preview Page
-                    </div>
-                  </div>
-
-                  {/* Delete (Trash Icon - disable if active homepage for safety) */}
-                  <div className="relative group/tooltip">
-                    <button
-                      disabled={page.isHomepage}
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to permanently delete "${page.title}"?`)) {
-                          const pageId = page.id || page.slug;
-                          const pageSlug = page.slug || page.id;
-                          const updated = localPages.filter(p => p.id !== page.id && p.slug !== page.slug);
-                          setLocalPages(updated);
-                          onUpdateCustomPages(updated);
-                          if (pageId) fetch(`/api/custompages/${pageId}`, { method: 'DELETE' }).catch(() => {});
-                          if (pageSlug && pageSlug !== pageId) fetch(`/api/custompages/${pageSlug}`, { method: 'DELETE' }).catch(() => {});
-                        }
-                      }}
-                      className={`p-1.5 rounded-md transition-all flex items-center justify-center ${
-                        page.isHomepage
-                          ? 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'
-                          : 'bg-red-50 hover:bg-red-150 text-red-650 cursor-pointer hover:scale-105'
-                      }`}
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30">
-                      {page.isHomepage ? 'Homepage Cannot Be Deleted' : 'Delete Page'}
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add Page Modal */}
@@ -284,8 +386,8 @@ export const PagesTab: React.FC<PagesTabProps> = ({
         // ----------------------------------------------------
         <div className="space-y-4">
           {/* Save Options Action Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900 text-white p-3.5 px-4 rounded-xl shadow-md border border-slate-800 gap-3">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 text-white p-3.5 px-4 rounded-xl shadow-md border border-slate-800 gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => {
                   if (hasUnsavedChanges && !confirm("You have unsaved adjustments! Exit anyway and discard modifications?")) {
@@ -299,13 +401,52 @@ export const PagesTab: React.FC<PagesTabProps> = ({
               >
                 ← Exit Builder
               </button>
-              <div>
-                <span className="text-xs font-black uppercase tracking-widest block">{currentlyEditingPage?.title}</span>
-                <div className="flex items-center gap-1.5 mt-0.5 select-none">
-                  <span className={`h-2 w-2 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'}`} />
-                  <span className="text-[9px] text-slate-300 font-bold">
-                    {hasUnsavedChanges ? 'Unsaved Customizations' : 'All Changes Saved & Live'}
-                  </span>
+
+              <div className="flex flex-wrap items-center gap-2 border-l border-slate-800 pl-3">
+                <div>
+                  <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Page Title</label>
+                  <input
+                    type="text"
+                    value={currentlyEditingPage?.title || ''}
+                    onChange={(e) => {
+                      if (currentlyEditingPage) {
+                        handleUpdatePageMeta(currentlyEditingPage.id, { title: e.target.value });
+                      }
+                    }}
+                    className="bg-slate-800 border border-slate-700 text-white font-black text-xs px-2 py-1 rounded focus:outline-none focus:border-indigo-400 w-36 sm:w-44"
+                    placeholder="Page Title"
+                  />
+                </div>
+                {!currentlyEditingPage?.isHomepage && (
+                  <div>
+                    <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">URL Slug (/pages/)</label>
+                    <input
+                      type="text"
+                      value={currentlyEditingPage?.slug || ''}
+                      onChange={(e) => {
+                        if (currentlyEditingPage) {
+                          handleUpdatePageMeta(currentlyEditingPage.id, { slug: e.target.value });
+                        }
+                      }}
+                      className="bg-slate-800 border border-slate-700 text-amber-300 font-mono font-bold text-xs px-2 py-1 rounded focus:outline-none focus:border-indigo-400 w-36 sm:w-48"
+                      placeholder="page-slug"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Visibility</label>
+                  <select
+                    value={currentlyEditingPage?.visibility || 'Visible'}
+                    onChange={(e) => {
+                      if (currentlyEditingPage) {
+                        handleUpdatePageMeta(currentlyEditingPage.id, { visibility: e.target.value as 'Visible' | 'Hidden' });
+                      }
+                    }}
+                    className="bg-slate-800 border border-slate-700 text-white font-bold text-xs px-2 py-1 rounded focus:outline-none focus:border-indigo-400 cursor-pointer"
+                  >
+                    <option value="Visible">Visible</option>
+                    <option value="Hidden">Hidden</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -514,8 +655,21 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   </div>
-                  <div className="bg-white border rounded py-1 px-8 text-center text-slate-500 w-64 truncate">
-                    pouch-supply.com/pages/{currentlyEditingPage?.slug}
+                  <div className="bg-white border border-slate-250 rounded-lg py-1 px-3 text-center text-slate-600 w-auto max-w-md flex items-center justify-center gap-1 font-mono text-xs shadow-2xs">
+                    <span className="text-slate-400 select-none">pouch-supply.com/pages/</span>
+                    <input
+                      type="text"
+                      value={currentlyEditingPage?.slug || ''}
+                      disabled={currentlyEditingPage?.isHomepage}
+                      onChange={(e) => {
+                        if (currentlyEditingPage && !currentlyEditingPage.isHomepage) {
+                          handleUpdatePageMeta(currentlyEditingPage.id, { slug: e.target.value });
+                        }
+                      }}
+                      placeholder="page-slug"
+                      className="bg-amber-50/80 border border-amber-300 text-slate-900 font-bold px-1.5 py-0.5 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-mono disabled:bg-slate-100 disabled:border-slate-200 cursor-text"
+                      title="Click to modify page route slug"
+                    />
                   </div>
                   <Globe className="h-3.5 w-3.5" />
                 </div>
@@ -535,74 +689,13 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                     </div>
                   ) : (
                     currentlyEditingPage.sections.map((sec, sIdx) => {
-                      const sStyle = {
-                        backgroundColor: sec.settings.backgroundColor || '#FFFFFF',
-                        color: sec.settings.textColor || '#64748B'
-                      };
                       const isFocused = selectedBuilderSectionId === sec.id;
-
-                      const sectionClassName = (sec.type || (sec as any).name || 'section')
-                        .toLowerCase()
-                        .trim()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-+|-+$/g, '');
-
-                      const customStyles = `
-                        #sec-${sec.id} {
-                          ${sec.settings.paddingTop !== undefined ? `padding-top: ${sec.settings.paddingTop}px !important;` : ''}
-                          ${sec.settings.paddingBottom !== undefined ? `padding-bottom: ${sec.settings.paddingBottom}px !important;` : ''}
-                          ${sec.settings.paddingSide !== undefined ? `padding-left: ${sec.settings.paddingSide}px !important; padding-right: ${sec.settings.paddingSide}px !important;` : ''}
-                          ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
-                        }
-                        #sec-${sec.id} h1, #sec-${sec.id} h2, #sec-${sec.id} .section-title, #sec-${sec.id} h3:not(.brand-card-title):not(.card-title):not(.overlay-heading), #sec-${sec.id} h4:not(.brand-card-title):not(.card-title):not(.overlay-heading) {
-                          ${sec.settings.titleFontSize ? `font-size: ${sec.settings.titleFontSize}px !important;` : ''}
-                          ${sec.settings.headingColor ? `color: ${sec.settings.headingColor} !important;` : ''}
-                          ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
-                        }
-                        #sec-${sec.id} p, #sec-${sec.id} .section-desc, #sec-${sec.id} li {
-                          ${sec.settings.bodyFontSize ? `font-size: ${sec.settings.bodyFontSize}px !important;` : ''}
-                          ${sec.settings.textColor ? `color: ${sec.settings.textColor} !important;` : ''}
-                          ${sec.settings.alignment ? `text-align: ${sec.settings.alignment} !important;` : ''}
-                        }
-                        #sec-${sec.id} button, #sec-${sec.id} .section-btn {
-                          ${sec.settings.buttonBgColor ? `background-color: ${sec.settings.buttonBgColor} !important;` : ''}
-                          ${sec.settings.buttonTextColor ? `color: ${sec.settings.buttonTextColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .subheading, #sec-${sec.id} .section-subheading, #sec-${sec.id} .subtitle {
-                          ${sec.settings.subheadingColor ? `color: ${sec.settings.subheadingColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .card-title, #sec-${sec.id} .card-heading, #sec-${sec.id} .brand-card-title, #sec-${sec.id} .overlay-heading {
-                          ${(sec.settings.overlayHeadingColor || sec.settings.cardTitleColor) ? `color: ${sec.settings.overlayHeadingColor || sec.settings.cardTitleColor} !important;` : (sec.type === 'Brand list' ? 'color: #FFFFFF !important;' : '')}
-                        }
-                        #sec-${sec.id} .card-desc, #sec-${sec.id} .card-text {
-                          ${sec.settings.cardTextColor ? `color: ${sec.settings.cardTextColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .card-bg, #sec-${sec.id} .card-box {
-                          ${sec.settings.cardBgColor ? `background-color: ${sec.settings.cardBgColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .badge-text, #sec-${sec.id} .badge-tag {
-                          ${sec.settings.badgeTextColor ? `color: ${sec.settings.badgeTextColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .badge-bg {
-                          ${sec.settings.badgeBgColor ? `background-color: ${sec.settings.badgeBgColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} .accent-text, #sec-${sec.id} .accent-icon {
-                          ${sec.settings.accentColor ? `color: ${sec.settings.accentColor} !important;` : ''}
-                        }
-                        #sec-${sec.id} button {
-                          ${sec.settings.buttonRoundness === 'rounded-none' ? 'border-radius: 0px !important;' : ''}
-                          ${sec.settings.buttonRoundness === 'rounded' ? 'border-radius: 4px !important;' : ''}
-                          ${sec.settings.buttonRoundness === 'rounded-lg' ? 'border-radius: 8px !important;' : ''}
-                          ${sec.settings.buttonRoundness === 'rounded-xl' ? 'border-radius: 12px !important;' : ''}
-                          ${sec.settings.buttonRoundness === 'rounded-full' ? 'border-radius: 9999px !important;' : ''}
-                        }
-                      `;
 
                       return (
                         <div 
-                          id={`sec-${sec.id}`}
+                          id={`sec-wrapper-${sec.id}`}
                           key={sec.id}
-                          onClick={() => setSelectedBuilderSectionId(sec.id)}
+                          onClickCapture={() => setSelectedBuilderSectionId(sec.id)}
                           draggable
                           onDragStart={(e) => {
                             e.dataTransfer.setData('text/plain', sIdx.toString());
@@ -619,14 +712,12 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                               handleMoveSectionTo(dragIdx, sIdx);
                             }
                           }}
-                          className={`relative group p-6 rounded-2xl border transition-all cursor-grab active:cursor-grabbing ${sectionClassName} ${
+                          className={`relative group rounded-2xl border transition-all cursor-pointer overflow-hidden ${
                             isFocused 
-                              ? 'ring-2 ring-indigo-600 border-indigo-600 bg-white shadow-md scale-[1.01]' 
-                              : 'border-slate-200/55 hover:border-slate-400 bg-slate-50/20 hover:bg-white shadow-2xs'
+                              ? 'ring-2 ring-indigo-600 border-indigo-600 bg-white shadow-lg scale-[1.002] z-10' 
+                              : 'border-slate-200/80 hover:border-indigo-400 bg-white hover:shadow-sm'
                           }`}
-                          style={sStyle}
                         >
-                          <style dangerouslySetInnerHTML={{ __html: customStyles }} />
                           {/* Floating action tools overlay */}
                           <div className="absolute right-3 top-2.5 z-30 opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity bg-slate-900/90 backdrop-blur-md p-1 px-1.5 rounded-lg shadow-lg border border-slate-700">
                             <button
@@ -663,8 +754,20 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                             {getSectionLabel(sec.type)} {isFocused ? '• EDITING' : ''}
                           </span>
 
-                          {/* Different visual layouts */}
-                          <div className="pt-3">
+                          {/* Render section in exact live-website fidelity */}
+                          <div className="pointer-events-none">
+                            <PageRenderer
+                              page={{ ...currentlyEditingPage, sections: [sec] }}
+                              allProducts={products}
+                              allCollections={collections}
+                              allBlogs={blogs}
+                              loggedInCustomer={null}
+                              onAddToCart={() => {}}
+                              onToggleWishlist={() => {}}
+                              onNavigate={() => {}}
+                            />
+                          </div>
+                          <div className="hidden">
                             
                             {/* 1. IMAGE BANNER */}
                             {sec.type === 'Image banner' && (
