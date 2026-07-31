@@ -45,23 +45,42 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
     setInstallationId(currCheckoutId);
   }, []);
 
-  useEffect(() => {
-    if (!orderId) return;
-    const amountInPence = Math.round(parseFloat(amount || '0') * 100);
-    const hppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=${encodeURIComponent(installationId)}&orderCode=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amountInPence)}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${orderId}`)}`;
-    setWorldpayUrl(hppUrl);
-  }, [orderId, amount, installationId]);
-
-  const handleLaunchWorldpay = () => {
-    if (!worldpayUrl) return;
+  const handleLaunchWorldpay = async () => {
+    setIsProcessing(true);
+    setPaymentError(null);
     try {
-      if (window.top && window.top !== window) {
-        window.top.location.href = worldpayUrl;
-      } else {
-        window.location.href = worldpayUrl;
+      const sessionRes = await fetch('/api/worldpay/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          amount,
+          customerName: cardHolder || 'Valued Customer',
+          customerEmail: 'customer@pouch-supply.com'
+        })
+      });
+
+      const sessionData = await sessionRes.json();
+      setIsProcessing(false);
+
+      if (sessionRes.ok && sessionData.redirectUrl) {
+        const url = sessionData.redirectUrl;
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = url;
+          } else {
+            window.location.href = url;
+          }
+        } catch (_e) {
+          window.location.href = url;
+        }
+        return;
       }
-    } catch (_e) {
-      window.location.href = worldpayUrl;
+
+      setPaymentError(sessionData.error || sessionData.message || 'Worldpay Access Checkout session creation failed.');
+    } catch (err: any) {
+      setIsProcessing(false);
+      setPaymentError(err.message || 'Error connecting to Worldpay Access API.');
     }
   };
 
@@ -247,36 +266,36 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
             </div>
           </div>
 
-          {/* TAB 1: OFFICIAL WORLDPAY HPP LAUNCHER */}
+          {/* TAB 1: OFFICIAL WORLDPAY ACCESS LAUNCHER */}
           {activeTab === 'OFFICIAL_HPP' && (
             <div className="space-y-4 pt-1">
-              {installationId === '1000000' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 space-y-1 text-left">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-950">
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-                    <span>Important Worldpay Account Notice</span>
+              {paymentError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 text-xs text-red-800 space-y-1 text-left flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-red-900">Worldpay Access Session Error</span>
+                    <p className="text-[11.5px] leading-relaxed">{paymentError}</p>
                   </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    Worldpay's live domain (<strong className="font-mono">payments.worldpay.com</strong>) requires a registered merchant <strong>Installation ID</strong>. If you launch with dummy ID <strong className="font-mono">1000000</strong>, Worldpay will show error <strong className="font-mono">D260730...</strong>.
-                  </p>
-                  <p className="text-[11px] font-semibold text-amber-900 pt-1">
-                    👉 Enter your active Worldpay Installation ID in the box above to launch live, or switch to <strong>Instant Test Checkout</strong> to complete your order immediately!
-                  </p>
                 </div>
               )}
 
-              <div className="bg-slate-900 text-slate-200 rounded-xl p-3 text-[10.5px] font-mono break-all text-left space-y-1">
-                <span className="text-slate-400 font-sans font-bold block uppercase text-[9px] tracking-wider">Target HPP URL:</span>
-                <p className="text-indigo-300">{worldpayUrl}</p>
-              </div>
-
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={handleLaunchWorldpay}
-                className="w-full py-3.5 bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-3.5 bg-[#0F172A] hover:bg-[#1E293B] disabled:bg-slate-300 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:cursor-not-allowed"
               >
-                <ExternalLink className="h-4 w-4" />
-                Launch Official Worldpay Page
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin text-indigo-400" />
+                    <span>Connecting to Worldpay Access...</span>
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-4 w-4" />
+                    <span>Launch Worldpay Access Checkout</span>
+                  </>
+                )}
               </button>
 
               <button

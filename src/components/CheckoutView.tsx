@@ -335,30 +335,12 @@ export default function CheckoutView({
         }
       }
 
-      // Direct fallback to official Worldpay HPP Launcher
-      const fallbackHppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=1000000&orderCode=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(Math.round(finalTotalToPay * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&customerEmail=${encodeURIComponent(email)}`;
-      try {
-        if (window.top && window.top !== window) {
-          window.top.location.href = fallbackHppUrl;
-        } else {
-          window.location.href = fallbackHppUrl;
-        }
-      } catch (_e) {
-        window.location.href = fallbackHppUrl;
-      }
+      // If Access Checkout session creation failed, display exact Worldpay API error
+      setPaymentError(sessionData.error || sessionData.message || 'Worldpay Access session creation failed.');
     } catch (err: any) {
       console.error('[Worldpay Checkout Session Error]', err);
       setIsProcessing(false);
-      const fallbackHppUrl = `https://payments.worldpay.com/app/hpp/integration/transaction?installationId=1000000&orderCode=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(Math.round(finalTotalToPay * 100))}&currency=GBP&orderDescription=${encodeURIComponent(`Pouch Supply Order ${generatedOrderId}`)}&customerEmail=${encodeURIComponent(email)}`;
-      try {
-        if (window.top && window.top !== window) {
-          window.top.location.href = fallbackHppUrl;
-        } else {
-          window.location.href = fallbackHppUrl;
-        }
-      } catch (_e) {
-        window.location.href = fallbackHppUrl;
-      }
+      setPaymentError(err.message || 'Failed to connect to Worldpay Access payment gateway.');
     }
   };
 
