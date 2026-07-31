@@ -75,13 +75,12 @@ function generateAsciiTree(nodes: FileTreeNode[], prefix: string = ''): string {
     const childPrefix = isLast ? '    ' : '│   ';
 
     if (node.type === 'directory') {
-      result += `${prefix}${connector}📁 ${node.name}/\n`;
+      result += `${prefix}${connector}${node.name}/\n`;
       if (node.children && node.children.length > 0) {
         result += generateAsciiTree(node.children, prefix + childPrefix);
       }
     } else {
-      const kb = ((node.size || 0) / 1024).toFixed(1);
-      result += `${prefix}${connector}📄 ${node.name} (${kb} KB)\n`;
+      result += `${prefix}${connector}${node.name}\n`;
     }
   });
 

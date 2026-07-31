@@ -158,7 +158,7 @@ export function FolderStructureView() {
             <button
               onClick={fetchFolderStructure}
               disabled={isLoading}
-              className="py-3 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-2 shadow-md disabled:cursor-not-allowed"
+              className="py-3 px-5 bg-[#1c2d50] hover:bg-[#152340] disabled:bg-slate-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-2 shadow-md disabled:cursor-not-allowed"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span>{isLoading ? 'Scanning Directory...' : 'Generate Folder Structure'}</span>
@@ -169,13 +169,13 @@ export function FolderStructureView() {
               disabled={!asciiText || isLoading}
               className={`py-3 px-5 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-2 shadow-md ${
                 isCopied 
-                  ? 'bg-emerald-600 text-white' 
+                  ? 'bg-[#1c2d50] text-white ring-2 ring-amber-400' 
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-50'
               }`}
             >
               {isCopied ? (
                 <>
-                  <Check className="h-4 w-4 text-emerald-200" />
+                  <Check className="h-4 w-4 text-amber-300" />
                   <span>Copied to Clipboard!</span>
                 </>
               ) : (
@@ -216,7 +216,7 @@ export function FolderStructureView() {
               onClick={() => setActiveView('ascii')}
               className={`flex-1 sm:flex-initial py-1.5 px-4 rounded-lg font-bold transition cursor-pointer flex items-center justify-center gap-2 ${
                 activeView === 'ascii' 
-                  ? 'bg-indigo-600 text-white shadow-xs' 
+                  ? 'bg-[#1c2d50] text-white shadow-xs' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -227,7 +227,7 @@ export function FolderStructureView() {
               onClick={() => setActiveView('interactive')}
               className={`flex-1 sm:flex-initial py-1.5 px-4 rounded-lg font-bold transition cursor-pointer flex items-center justify-center gap-2 ${
                 activeView === 'interactive' 
-                  ? 'bg-indigo-600 text-white shadow-xs' 
+                  ? 'bg-[#1c2d50] text-white shadow-xs' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -245,13 +245,13 @@ export function FolderStructureView() {
                 placeholder="Filter files or folders..."
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 font-mono"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-8 pr-3 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-[#1c2d50] font-mono"
               />
             </div>
           )}
 
           <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
             <span>Root: <strong className="text-slate-200">{projectName}/</strong></span>
           </div>
         </div>
@@ -260,11 +260,11 @@ export function FolderStructureView() {
         <div className="p-6 overflow-x-auto min-h-[420px] max-h-[650px] scrollbar-thin scrollbar-thumb-slate-800">
           {isLoading ? (
             <div className="py-24 text-center space-y-3">
-              <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin mx-auto" />
+              <RefreshCw className="h-8 w-8 text-[#1c2d50] animate-spin mx-auto" />
               <p className="text-xs font-mono text-slate-400">Scanning filesystem directory tree...</p>
             </div>
           ) : activeView === 'ascii' ? (
-            <pre className="font-mono text-xs text-emerald-400 leading-relaxed selection:bg-indigo-900 selection:text-white whitespace-pre">
+            <pre className="font-mono text-xs text-slate-200 leading-relaxed selection:bg-[#1c2d50] selection:text-white whitespace-pre">
               {asciiText || '// Click "Generate Folder Structure" above to scan project directory.'}
             </pre>
           ) : (

@@ -3068,7 +3068,7 @@ export default function AdminDashboard({
             
             {/* Dashboard Head */}
             <div className="flex items-center gap-3 pb-4 border-b border-[#e1e3e5]">
-              <div className="w-8 h-8 bg-[#008060] rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-[#1c2d50] rounded flex items-center justify-center">
                 <div className="w-4 h-4 border-2 border-white rounded-sm"></div>
               </div>
               <div>
@@ -3113,7 +3113,7 @@ export default function AdminDashboard({
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className="bg-[#e3f5e9] text-[#008060] font-bold text-[10px] py-0.5 px-2 rounded-full border border-[#c8ebd3]">
+                      <span className="bg-[#e8ecf4] text-[#1c2d50] font-bold text-[10px] py-0.5 px-2 rounded-full border border-slate-200">
                         {item.badge}
                       </span>
                     )}
@@ -3130,13 +3130,13 @@ export default function AdminDashboard({
                   setShowDbDetailsModal(true);
                   fetchDbDetails();
                 }}
-                className="w-full flex items-center justify-between p-2 rounded-md text-[12px] font-bold text-teal-800 hover:bg-teal-50 hover:text-teal-900 transition-all cursor-pointer bg-white border border-teal-200/80 shadow-xs"
+                className="w-full flex items-center justify-between p-2 rounded-md text-[12px] font-bold text-slate-800 hover:bg-slate-100 transition-all cursor-pointer bg-white border border-slate-200 shadow-xs"
               >
                 <div className="flex items-center gap-2 rounded select-none text-left">
-                  <Database className="h-3.5 w-3.5 text-teal-600 shrink-0 animate-pulse" />
+                  <Database className="h-3.5 w-3.5 text-[#1c2d50] shrink-0 animate-pulse" />
                   <span>Neon PostgreSQL</span>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 block shrink-0 animate-pulse ml-1" />
+                <span className="w-2 h-2 rounded-full bg-[#1c2d50] block shrink-0 animate-pulse ml-1" />
               </button>
             </div>
 
@@ -3145,7 +3145,7 @@ export default function AdminDashboard({
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-[#008060] hover:bg-[#006e52] px-3.5 py-2.5 rounded-xl text-white font-black text-[11px] uppercase tracking-wider shadow-sm transition-colors cursor-pointer select-none text-center"
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-[#1c2d50] hover:bg-[#152340] px-3.5 py-2.5 rounded-xl text-white font-black text-[11px] uppercase tracking-wider shadow-sm transition-colors cursor-pointer select-none text-center"
             >
               <Globe className="h-4 w-4 shrink-0" />
               <span>View Online Store</span>
@@ -3202,7 +3202,7 @@ export default function AdminDashboard({
                   isSaving
                     ? 'bg-slate-700 text-white border-slate-700 cursor-wait'
                     : hasUnsavedChanges
-                    ? 'bg-[#008060] hover:bg-[#006e52] text-white border-[#008060] cursor-pointer ring-4 ring-emerald-400/30 animate-pulse font-extrabold shadow-md shadow-emerald-100'
+                    ? 'bg-[#1c2d50] hover:bg-[#152340] text-white border-[#1c2d50] cursor-pointer ring-4 ring-slate-400/30 animate-pulse font-extrabold shadow-md'
                     : 'bg-slate-100 text-slate-350 border-slate-200 cursor-not-allowed select-none'
                 }`}
               >
@@ -3234,10 +3234,10 @@ export default function AdminDashboard({
                 href="/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2.5 px-4 bg-white hover:bg-slate-150 text-[#008060] border border-slate-250 hover:border-slate-350 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-xs cursor-pointer select-none"
+                className="py-2.5 px-4 bg-white hover:bg-slate-150 text-[#1c2d50] border border-slate-250 hover:border-slate-350 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-xs cursor-pointer select-none"
                 title="Open Customer Online Store in new tab"
               >
-                <Globe className="h-4 w-4 shrink-0 text-[#008060]" />
+                <Globe className="h-4 w-4 shrink-0 text-[#1c2d50]" />
                 <span>View Online Store</span>
               </a>
 

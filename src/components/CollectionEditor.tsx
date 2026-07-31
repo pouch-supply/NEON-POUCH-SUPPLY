@@ -266,7 +266,7 @@ export default function CollectionEditor({
 
           <button
             onClick={() => handleSaveSubmit()}
-            className="py-2.5 px-5 bg-[#008060] hover:bg-[#006e52] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm hover:shadow"
+            className="py-2.5 px-5 bg-[#1c2d50] hover:bg-[#152340] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm hover:shadow"
           >
             <Save className="h-4 w-4" />
             <span>Save Collection</span>
@@ -816,7 +816,7 @@ export default function CollectionEditor({
 
         <button
           onClick={() => handleSaveSubmit()}
-          className="py-2.5 px-6 bg-[#008060] hover:bg-[#006e52] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-700/5 hover:shadow-lg"
+          className="py-2.5 px-6 bg-[#1c2d50] hover:bg-[#152340] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
         >
           <Save className="h-4 w-4" />
           <span>Save Changes</span>
