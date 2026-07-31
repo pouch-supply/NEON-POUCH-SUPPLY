@@ -587,14 +587,21 @@ export default function App() {
   // Unified SPA navigation helper mapping state shifts to matching browser URLs
   const navigateToTab = (tab: string, productId?: string, collectionId?: string) => {
     let url = '/';
+    let targetTab = tab;
+
     if (tab === 'frontend-home') {
       url = '/';
     } else if (tab === 'frontend-shop') {
       url = '/collections/all';
     } else if (tab === 'frontend-brands') {
       url = '/pages/brands';
-    } else if (tab === 'frontend-subscribe') {
+    } else if (tab === 'frontend-subscribe' && !productId) {
       url = '/pages/subscribe';
+    } else if (tab.includes('subscribe') || (tab === 'frontend-subscribe' && productId)) {
+      const subPath = productId || tab;
+      const cleanSub = subPath.startsWith('/') ? subPath : (subPath.startsWith('pages/') ? `/${subPath}` : `/pages/${subPath.startsWith('subscribe') ? subPath : `subscribe/${subPath}`}`);
+      url = cleanSub;
+      targetTab = 'frontend-subscribe';
     } else if (tab === 'frontend-account') {
       url = '/pages/account';
     } else if (tab === 'frontend-checkout') {
@@ -635,8 +642,8 @@ export default function App() {
       }
     }
     
-    setCurrentTab(tab);
-    if (tab === 'blog-detail' && productId) {
+    setCurrentTab(targetTab);
+    if (targetTab === 'blog-detail' && productId) {
       setSelectedBlogSlug(productId);
     }
     if (productId !== undefined) {
@@ -651,7 +658,11 @@ export default function App() {
 
   // Helper for handling navigation requests from custom page section renderers
   const handlePageRendererNavigate = (target: string, arg?: string) => {
-    if (target === 'product-detail' && arg) {
+    if (target === 'frontend-subscribe' && arg) {
+      navigateToTab('frontend-subscribe', arg);
+    } else if (target.includes('subscribe')) {
+      navigateToTab('frontend-subscribe', target);
+    } else if (target === 'product-detail' && arg) {
       navigateToTab('product-detail', arg);
     } else if (target === 'collection-detail' && arg) {
       navigateToTab('collection-detail', undefined, arg);

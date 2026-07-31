@@ -2118,7 +2118,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                       value={plan.buttonLink || ''}
                                       onChange={(e) => handleUpdatePlan(pIdx, 'buttonLink', e.target.value)}
                                       className="w-full text-xs p-1.5 border rounded bg-slate-50 font-mono text-[10px]"
-                                      placeholder={`frontend-subscribe?plan=${plan.slug}`}
+                                      placeholder={`/pages/subscribe/${plan.slug}`}
                                     />
                                   </div>
                                 </div>

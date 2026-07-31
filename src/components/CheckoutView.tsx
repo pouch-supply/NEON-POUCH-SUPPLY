@@ -276,28 +276,7 @@ export default function CheckoutView({
     const generatedOrderId = `PS${Math.floor(Math.random() * 90000 + 10000)}`;
 
     try {
-      // Save order record first
-      onCompleteCheckout({
-        orderId: generatedOrderId,
-        customerName: fullName,
-        customerEmail: email,
-        address: `${addressLine}, ${city}, ${postcode}, ${country}`,
-        total: finalTotalToPay,
-        discountApplied: currentDiscount,
-        items: cartItems.map(item => ({
-          productId: item.productId,
-          productTitle: item.productTitle,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image
-        })),
-        gatewayTxId: `WP-PENDING-${generatedOrderId}`,
-        gatewayAuthCode: 'PENDING-AUTH',
-        cardBrand: 'Worldpay Hosted Checkout',
-        storeCreditApplied: storeCreditApplied
-      });
-
-      // Initialize Worldpay Hosted Session
+      // Initialize Worldpay Access Checkout Session
       const sessionRes = await fetch('/api/worldpay/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

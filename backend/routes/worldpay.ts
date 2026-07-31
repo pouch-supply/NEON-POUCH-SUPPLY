@@ -32,7 +32,16 @@ function verifyWorldpaySignature(payload: string, signature: string, secret: str
 async function updateOrderPaymentStatus(
   orderId: string,
   paymentStatus: 'Paid' | 'Failed',
-  details: { transactionId: string; authCode: string; cardBrand?: string }
+  details: { 
+    transactionId: string; 
+    authCode: string; 
+    cardBrand?: string;
+    customerName?: string;
+    customerEmail?: string;
+    amount?: number;
+    address?: string;
+    items?: any[];
+  }
 ) {
   let updatedOrder: any = null;
   try {
@@ -56,6 +65,30 @@ async function updateOrderPaymentStatus(
       });
       console.log(`[Worldpay Access] Order ${orderId} updated to '${paymentStatus}' in Neon PostgreSQL.`);
       return updatedOrder;
+    } else if (paymentStatus === 'Paid') {
+      // Create paid order record if it doesn't exist yet
+      updatedOrder = await prisma.order.create({
+        data: {
+          id: orderId,
+          customerName: details.customerName || 'Valued Customer',
+          customerEmail: details.customerEmail || 'customer@pouch-supply.com',
+          tags: ['Storefront', 'Worldpay Access Checkout'],
+          fulfillmentStatus: 'Unfulfilled',
+          paymentStatus: 'Paid',
+          total: details.amount || 0,
+          destination: details.address || 'United Kingdom',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          deliveryMethod: 'Priority Express Courier Shipping | Tracked',
+          worldpayTxId: details.transactionId,
+          worldpayAuthCode: details.authCode,
+          gatewayTxId: details.transactionId,
+          gatewayAuthCode: details.authCode,
+          cardBrand: details.cardBrand || 'Visa/Mastercard',
+          items: details.items || []
+        }
+      });
+      console.log(`[Worldpay Access] Order ${orderId} created as 'Paid' in Neon PostgreSQL.`);
+      return updatedOrder;
     }
   } catch (prismaErr: any) {
     console.warn(`[Worldpay Access] Prisma update failed for ${orderId}, trying StoreResource fallback:`, prismaErr?.message);
@@ -75,6 +108,29 @@ async function updateOrderPaymentStatus(
       await saveResource('orders', orders);
       console.log(`[Worldpay Access] Order ${orderId} updated via StoreResource fallback.`);
       return orders[idx];
+    } else if (paymentStatus === 'Paid') {
+      const newOrder = {
+        id: orderId,
+        customerName: details.customerName || 'Valued Customer',
+        customerEmail: details.customerEmail || 'customer@pouch-supply.com',
+        tags: ['Storefront', 'Worldpay Access Checkout'],
+        fulfillmentStatus: 'Unfulfilled',
+        paymentStatus: 'Paid',
+        total: details.amount || 0,
+        destination: details.address || 'United Kingdom',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        deliveryMethod: 'Priority Express Courier Shipping | Tracked',
+        worldpayTxId: details.transactionId,
+        worldpayAuthCode: details.authCode,
+        gatewayTxId: details.transactionId,
+        gatewayAuthCode: details.authCode,
+        cardBrand: details.cardBrand || 'Visa/Mastercard',
+        items: details.items || []
+      };
+      orders.unshift(newOrder);
+      await saveResource('orders', orders);
+      console.log(`[Worldpay Access] Order ${orderId} created as 'Paid' via StoreResource fallback.`);
+      return newOrder;
     }
   } catch (fallbackErr) {
     console.error(`[Worldpay Access] StoreResource update error for order ${orderId}:`, fallbackErr);
@@ -114,31 +170,6 @@ router.post('/session', async (req: Request, res: Response) => {
 
     console.log(`[Worldpay Access] Initializing checkout session for Order: ${orderId}, Amount: £${amount}`);
 
-    // Pre-register pending order in Neon PostgreSQL database
-    try {
-      const existing = await prisma.order.findUnique({ where: { id: orderId } });
-      if (!existing) {
-        await prisma.order.create({
-          data: {
-            id: orderId,
-            customerName: customerName || 'Valued Customer',
-            customerEmail: customerEmail || 'customer@example.com',
-            tags: ['Storefront', 'Worldpay Access Checkout'],
-            fulfillmentStatus: 'Unfulfilled',
-            paymentStatus: 'Pending',
-            total: parseFloat(amount),
-            destination: destination || 'United Kingdom',
-            date: new Date().toISOString().split('T')[0],
-            deliveryMethod: 'Standard Delivery',
-            items: items || []
-          }
-        });
-        console.log(`[Worldpay Access] Pre-registered pending order ${orderId} in database.`);
-      }
-    } catch (dbErr) {
-      console.warn('[Worldpay Access] DB pre-register non-fatal warning:', dbErr);
-    }
-
     const protocol = req.protocol || 'https';
     const host = req.get('host') || 'localhost:3000';
 
@@ -151,10 +182,15 @@ router.post('/session', async (req: Request, res: Response) => {
       });
     }
 
-    const baseUrl = WORLDPAY_ENVIRONMENT === 'live' 
+    const primaryBaseUrl = WORLDPAY_ENVIRONMENT === 'live' 
       ? 'https://access.worldpay.com' 
       : 'https://try.access.worldpay.com';
 
+    const fallbackBaseUrl = WORLDPAY_ENVIRONMENT === 'live'
+      ? 'https://try.access.worldpay.com'
+      : 'https://access.worldpay.com';
+
+    const baseUrls = [primaryBaseUrl, fallbackBaseUrl];
     const authHeader = 'Basic ' + Buffer.from(`${WORLDPAY_API_USERNAME}:${WORLDPAY_API_PASSWORD}`).toString('base64');
     const amountInPence = Math.round(parseFloat(amount) * 100);
 
@@ -162,121 +198,137 @@ router.post('/session', async (req: Request, res: Response) => {
     const failureReturnUrl = `${protocol}://${host}/api/worldpay/callback?orderId=${encodeURIComponent(orderId)}&status=FAILED`;
     const cancelReturnUrl = `${protocol}://${host}/payment/cancelled?orderId=${encodeURIComponent(orderId)}`;
 
-    // Attempts for Worldpay Access Platform Session creation endpoints
-    const attempts = [
-      {
-        url: `${baseUrl}/checkout/sessions`,
-        contentType: 'application/vnd.worldpay.checkout-sessions-v1.hal+json',
-        accept: 'application/vnd.worldpay.checkout-sessions-v1.hal+json, application/json',
-        body: {
-          entity: WORLDPAY_ENTITY_ID,
-          checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
-          transaction: {
-            reference: String(orderId),
-            value: {
-              amount: amountInPence,
-              currency: 'GBP'
-            }
-          },
-          customer: {
-            email: customerEmail || undefined,
-            name: customerName || undefined
-          },
-          returnUrls: {
-            success: successReturnUrl,
-            cancel: cancelReturnUrl,
-            failure: failureReturnUrl
-          }
-        }
-      },
-      {
-        url: `${baseUrl}/verifiedTokens/sessions`,
-        contentType: 'application/vnd.worldpay.verified-tokens-v1.hal+json',
-        accept: 'application/vnd.worldpay.verified-tokens-v1.hal+json, application/json',
-        body: {
-          entity: WORLDPAY_ENTITY_ID,
-          checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
-          transaction: {
-            reference: String(orderId),
-            value: {
-              amount: amountInPence,
-              currency: 'GBP'
-            }
-          }
-        }
-      },
-      {
-        url: `${baseUrl}/sessions`,
-        contentType: 'application/vnd.worldpay.sessions-v1.hal+json',
-        accept: 'application/vnd.worldpay.sessions-v1.hal+json, application/json',
-        body: {
-          entity: WORLDPAY_ENTITY_ID,
-          checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
-          transaction: {
-            reference: String(orderId),
-            value: {
-              amount: amountInPence,
-              currency: 'GBP'
-            }
-          }
-        }
-      }
-    ];
-
     let lastStatus = 500;
     let lastErrorData: any = null;
 
-    for (const attempt of attempts) {
-      try {
-        console.log(`[Worldpay Access API] POST ${attempt.url} (${attempt.contentType})`);
-        const response = await fetch(attempt.url, {
-          method: 'POST',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': attempt.contentType,
-            'Accept': attempt.accept
-          },
-          body: JSON.stringify(attempt.body)
-        });
-
-        lastStatus = response.status;
-        const responseText = await response.text();
-        let data: any = {};
-        try {
-          data = JSON.parse(responseText);
-        } catch (_e) {
-          data = { message: responseText };
-        }
-
-        console.log(`[Worldpay Access API] Response Status ${response.status}:`, JSON.stringify(data));
-
-        if (response.ok) {
-          const redirectUrl = 
-            data._links?.checkout?.href || 
-            data._links?.self?.href || 
-            data._links?.redirect?.href || 
-            data.redirectUrl || 
-            data.url;
-
-          if (redirectUrl) {
-            return res.json({
-              success: true,
-              sessionId: data.id || data.sessionId || `WP-ACC-${orderId}`,
-              redirectUrl,
-              checkoutId: WORLDPAY_CHECKOUT_ID || WORLDPAY_ENTITY_ID,
-              provider: 'Worldpay Access Checkout'
-            });
+    for (const baseUrl of baseUrls) {
+      const attempts = [
+        {
+          url: `${baseUrl}/checkout/sessions`,
+          contentType: 'application/json',
+          accept: 'application/json, application/vnd.worldpay.checkout-sessions-v1.hal+json',
+          body: {
+            entity: WORLDPAY_ENTITY_ID,
+            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            transaction: {
+              reference: String(orderId),
+              value: {
+                amount: amountInPence,
+                currency: 'GBP'
+              }
+            },
+            customer: {
+              email: customerEmail || undefined,
+              name: customerName || undefined
+            },
+            returnUrls: {
+              success: successReturnUrl,
+              cancel: cancelReturnUrl,
+              failure: failureReturnUrl
+            }
+          }
+        },
+        {
+          url: `${baseUrl}/verifiedTokens/sessions`,
+          contentType: 'application/vnd.worldpay.verified-tokens-v1.hal+json',
+          accept: 'application/vnd.worldpay.verified-tokens-v1.hal+json, application/json',
+          body: {
+            entity: WORLDPAY_ENTITY_ID,
+            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            transaction: {
+              reference: String(orderId),
+              value: {
+                amount: amountInPence,
+                currency: 'GBP'
+              }
+            }
+          }
+        },
+        {
+          url: `${baseUrl}/sessions`,
+          contentType: 'application/vnd.worldpay.sessions-v1.hal+json',
+          accept: 'application/vnd.worldpay.sessions-v1.hal+json, application/json',
+          body: {
+            entity: WORLDPAY_ENTITY_ID,
+            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            transaction: {
+              reference: String(orderId),
+              value: {
+                amount: amountInPence,
+                currency: 'GBP'
+              }
+            }
+          }
+        },
+        {
+          url: `${baseUrl}/payments/authorisations`,
+          contentType: 'application/vnd.worldpay.payments-v6.hal+json',
+          accept: 'application/vnd.worldpay.payments-v6.hal+json, application/json',
+          body: {
+            entity: WORLDPAY_ENTITY_ID,
+            instruction: {
+              narrative: { line1: `Order ${orderId}` },
+              value: { amount: amountInPence, currency: 'GBP' }
+            }
           }
         }
+      ];
 
-        lastErrorData = data;
-        // If authentication failed (401/403), stop attempting other endpoints and return error immediately
-        if (response.status === 401 || response.status === 403) {
-          break;
+      for (const attempt of attempts) {
+        try {
+          console.log(`[Worldpay Access API] POST ${attempt.url} (${attempt.contentType})`);
+          const response = await fetch(attempt.url, {
+            method: 'POST',
+            headers: {
+              'Authorization': authHeader,
+              'Content-Type': attempt.contentType,
+              'Accept': attempt.accept
+            },
+            body: JSON.stringify(attempt.body)
+          });
+
+          lastStatus = response.status;
+          const responseText = await response.text();
+          let data: any = {};
+          try {
+            data = JSON.parse(responseText);
+          } catch (_e) {
+            data = { message: responseText };
+          }
+
+          console.log(`[Worldpay Access API] Response Status ${response.status}:`, JSON.stringify(data));
+
+          if (response.ok) {
+            const redirectUrl = 
+              data._links?.checkout?.href || 
+              data._links?.self?.href || 
+              data._links?.redirect?.href || 
+              data.redirectUrl || 
+              data.url;
+
+            if (redirectUrl) {
+              return res.json({
+                success: true,
+                sessionId: data.id || data.sessionId || `WP-ACC-${orderId}`,
+                redirectUrl,
+                checkoutId: WORLDPAY_CHECKOUT_ID || WORLDPAY_ENTITY_ID,
+                provider: 'Worldpay Access Checkout'
+              });
+            }
+          }
+
+          lastErrorData = data;
+          if (response.status === 401 || response.status === 403) {
+            break;
+          }
+        } catch (attemptErr: any) {
+          console.warn(`[Worldpay Access API] Endpoint ${attempt.url} error:`, attemptErr.message);
+          lastErrorData = { message: attemptErr.message };
         }
-      } catch (attemptErr: any) {
-        console.warn(`[Worldpay Access API] Endpoint ${attempt.url} error:`, attemptErr.message);
-        lastErrorData = { message: attemptErr.message };
+      }
+
+      if (lastStatus === 401 || lastStatus === 403) {
+        break;
       }
     }
 

@@ -225,8 +225,11 @@ function PlansSection({ sec, handleLinkClick }: PlansSectionProps) {
   ];
 
   // Map click of Choose Plan to navigate straight to the subscribe wizard with that plan
-  const handleSelectPlan = (slug: string) => {
-    handleLinkClick(`frontend-subscribe?plan=${slug}`);
+  const handleSelectPlan = (plan: any) => {
+    const targetLink = plan.buttonLink && plan.buttonLink.trim() !== ''
+      ? plan.buttonLink
+      : `/pages/subscribe/${plan.slug}`;
+    handleLinkClick(targetLink);
   };
 
   return (
@@ -372,7 +375,7 @@ function PlansSection({ sec, handleLinkClick }: PlansSectionProps) {
                   )}
 
                   <button
-                    onClick={() => handleSelectPlan(plan.slug)}
+                    onClick={() => handleSelectPlan(plan)}
                     className={`w-full py-3.5 px-6 rounded-full font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 group ${
                       isPopular 
                         ? 'bg-[#dfb55a] text-slate-950 hover:bg-[#cf9e42] shadow-amber-500/10' 
@@ -1396,8 +1399,9 @@ export default function PageRenderer({
       onNavigate('frontend-shop');
       return;
     }
-    if (trimmed === 'frontend-subscribe' || trimmed === '/subscribe' || trimmed === '/pages/subscribe') {
-      onNavigate('frontend-subscribe');
+    if (trimmed.includes('subscribe')) {
+      const targetSub = trimmed.startsWith('/') ? trimmed : (trimmed.startsWith('pages/') ? `/${trimmed}` : `/pages/${trimmed}`);
+      onNavigate('frontend-subscribe', targetSub);
       return;
     }
     if (trimmed === 'frontend-brands' || trimmed === '/brands' || trimmed === '/pages/brands') {
