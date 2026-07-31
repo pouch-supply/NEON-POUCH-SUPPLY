@@ -235,6 +235,13 @@ export default function App() {
   const handleUpdateDevSettings = (newSettings: DevSettings) => {
     setDevSettings(newSettings);
     safeSaveToLocalStorage('ps_dev_settings', newSettings);
+
+    // Persist to the server's dev settings API endpoint
+    fetch('/api/devsettings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newSettings)
+    }).catch(err => console.error("Failed to sync dev settings to server:", err));
   };
 
   const handleUpdateLayoutSettings = (newSettings: LayoutSettings | ((prev: LayoutSettings) => LayoutSettings)) => {
@@ -349,7 +356,7 @@ export default function App() {
         // Fetch store data
         const [
           prodsRes, collsRes, ordersRes, filesRes,
-          custsRes, discsRes, pagesRes, blogsRes, layoutRes
+          custsRes, discsRes, pagesRes, blogsRes, layoutRes, devRes
         ] = await Promise.all([
           fetch('/api/products').then(r => r.ok ? r.json() : null),
           fetch('/api/collections').then(r => r.ok ? r.json() : null),
@@ -360,6 +367,7 @@ export default function App() {
           fetch('/api/custompages').then(r => r.ok ? r.json() : null),
           fetch('/api/blogs').then(r => r.ok ? r.json() : null),
           fetch('/api/layoutsettings').then(r => r.ok ? r.json() : null),
+          fetch('/api/devsettings').then(r => r.ok ? r.json() : null),
         ]);
 
         if (Array.isArray(prodsRes) && prodsRes.length > 0) {
@@ -532,6 +540,17 @@ export default function App() {
             }
             return merged;
           });
+        }
+
+        if (devRes) {
+          const resDevData = devRes.data || devRes;
+          if (resDevData && typeof resDevData === 'object' && resDevData.customCss !== undefined) {
+            setDevSettings(prev => {
+              const merged = { ...prev, ...resDevData };
+              safeSaveToLocalStorage('ps_dev_settings', merged);
+              return merged;
+            });
+          }
         }
       } catch (err) {
         console.error("[State Loader] Failed to connect to backend Database API. Using local backup state.", err);

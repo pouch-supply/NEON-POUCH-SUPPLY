@@ -4,7 +4,7 @@ import fs from "fs";
 import { 
   fetchResource, saveResource, saveUploadedImage, getUploadedImage, 
   getConnectionStatus, updateDatabaseUrl, getDb, getDatabaseDetails, 
-  fetchLayoutSettings, saveLayoutSettings 
+  fetchLayoutSettings, saveLayoutSettings, fetchDevSettings, saveDevSettings 
 } from "./serverDb";
 
 // Import modular routers for products, collections, customers, orders, files, discounts, custom pages, and blogs
@@ -28,6 +28,7 @@ export async function createExpressApp() {
   // Hydrate environment variables (including Cloudinary) from stored layout settings
   try {
     await fetchLayoutSettings();
+    await fetchDevSettings();
   } catch (err) {}
 
   app.use((req, res, next) => {
@@ -480,6 +481,24 @@ export async function createExpressApp() {
       res.json({ status: "success", data: saved });
     } catch (err: any) {
       res.status(500).json({ error: err.message || "Failed to save layout settings" });
+    }
+  });
+
+  app.get("/api/devsettings", async (req, res) => {
+    try {
+      const data = await fetchDevSettings();
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to load dev settings" });
+    }
+  });
+
+  app.post("/api/devsettings", async (req, res) => {
+    try {
+      const saved = await saveDevSettings(req.body);
+      res.json({ status: "success", data: saved });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to save dev settings" });
     }
   });
 

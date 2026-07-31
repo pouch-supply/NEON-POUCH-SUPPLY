@@ -30,6 +30,13 @@ export default function DevelopmentTab({ settings: initialSettings, onUpdateSett
     return DEFAULT_DEV_SETTINGS;
   });
 
+  // Keep devSettings synced when initialSettings is loaded from backend database
+  useEffect(() => {
+    if (initialSettings) {
+      setDevSettings(initialSettings);
+    }
+  }, [initialSettings]);
+
   const [activeSubTab, setActiveSubTab] = useState<DevSubTab>('css');
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
@@ -57,10 +64,18 @@ export default function DevelopmentTab({ settings: initialSettings, onUpdateSett
     try {
       localStorage.setItem('ps_dev_settings', JSON.stringify(updated));
       applyDevSettingsToDOM(updated);
+      
+      // Direct POST to backend database API
+      fetch('/api/devsettings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      }).catch(e => console.error('Error persisting devsettings to API:', e));
+
       if (onUpdateSettings) {
         onUpdateSettings(updated);
       }
-      setSavedSuccessMessage('Development settings saved and applied globally!');
+      setSavedSuccessMessage('Development settings saved and synchronized to database!');
       setTimeout(() => setSavedSuccessMessage(null), 3000);
     } catch (e) {
       console.error('Failed to save dev settings:', e);

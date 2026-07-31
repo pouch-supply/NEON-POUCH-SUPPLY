@@ -9,6 +9,7 @@ import {
   INITIAL_PRODUCTS, INITIAL_COLLECTIONS, INITIAL_ORDERS, INITIAL_FILES, 
   INITIAL_CUSTOMERS, INITIAL_DISCOUNTS, DEFAULT_PAGES, INITIAL_BLOGS 
 } from './src/initialData';
+import { DEFAULT_DEV_SETTINGS } from './src/data/initialDevSettings';
 
 export interface DbStatus {
   status: 'connected' | 'error' | 'not-configured' | 'pending';
@@ -603,6 +604,60 @@ export async function saveLayoutSettings(settings: any): Promise<any> {
       });
     } catch (err) {
       console.error("[Neon DB] Error saving layout settings:", err);
+    }
+  }
+
+  return settings;
+}
+
+export async function fetchDevSettings(): Promise<any> {
+  let settingsData: any = null;
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      const setting = await prisma.storeSetting.findUnique({
+        where: { id: "dev_settings" }
+      });
+      if (setting && setting.data) {
+        settingsData = setting.data;
+      }
+    } catch (err) {
+      console.error("[Neon DB] Error fetching dev settings:", err);
+    }
+  }
+
+  if (!settingsData) {
+    const filePath = path.join(process.cwd(), "dev_settings.json");
+    if (fs.existsSync(filePath)) {
+      try {
+        settingsData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      } catch (e) {}
+    }
+  }
+
+  if (!settingsData) {
+    settingsData = DEFAULT_DEV_SETTINGS;
+  }
+
+  return settingsData;
+}
+
+export async function saveDevSettings(settings: any): Promise<any> {
+  const filePath = path.join(process.cwd(), "dev_settings.json");
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), "utf-8");
+  } catch (e) {}
+
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      await prisma.storeSetting.upsert({
+        where: { id: "dev_settings" },
+        update: { data: settings },
+        create: { id: "dev_settings", data: settings }
+      });
+    } catch (err) {
+      console.error("[Neon DB] Error saving dev settings:", err);
     }
   }
 
