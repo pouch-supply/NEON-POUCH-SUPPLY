@@ -167,7 +167,7 @@ router.post('/preview', (req: Request, res: Response) => {
 // POST /api/email/test - Send a test email
 router.post('/test', async (req: Request, res: Response) => {
   try {
-    const { recipient, type, customSubject, customData } = req.body;
+    const { recipient, type, customSubject, customData, apiKey, fromEmail } = req.body;
 
     if (!recipient || typeof recipient !== 'string' || !recipient.includes('@')) {
       return res.status(400).json({ error: 'Valid recipient email address is required' });
@@ -176,7 +176,7 @@ router.post('/test', async (req: Request, res: Response) => {
     const templateType = (type || 'order_confirmation') as EmailTemplateType;
     const data = getSampleTemplateData(templateType, customData);
 
-    const result = await sendEmail(templateType, recipient.trim(), data, customSubject);
+    const result = await sendEmail(templateType, recipient.trim(), data, customSubject, apiKey, fromEmail);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to send test email' });

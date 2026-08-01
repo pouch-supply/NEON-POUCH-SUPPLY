@@ -193,7 +193,9 @@ export function EmailSettingsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient: testRecipient,
-          type: testTemplate
+          type: testTemplate,
+          apiKey: emailSettings?.resendApiKey,
+          fromEmail: emailSettings?.fromEmail
         })
       });
       const data = await res.json();
@@ -202,7 +204,7 @@ export function EmailSettingsTab() {
       const logsRes = await fetch('/api/email/logs');
       if (logsRes.ok) setEmailLogs(await logsRes.json());
     } catch (err: any) {
-      setTestResult({ error: err.message || 'Failed to send test email' });
+      setTestResult({ success: false, error: err.message || 'Failed to send test email' });
     } finally {
       setTestSending(false);
     }
@@ -560,10 +562,51 @@ export function EmailSettingsTab() {
       {/* SUB-TAB 4: SEND TEST EMAIL */}
       {activeSubTab === 'test' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h3 className="text-base font-bold text-slate-900">Send Test Transactional Email</h3>
-            <p className="text-xs text-slate-500">Dispatch a test email to verify your Resend integration or review live inbox formatting.</p>
+          <div className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Send Test Transactional Email</h3>
+              <p className="text-xs text-slate-500">Dispatch a test email to verify your Resend integration or review live inbox formatting.</p>
+            </div>
+
+            <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 ${
+              emailSettings?.resendApiKey ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              <ShieldCheck className="h-4 w-4" />
+              {emailSettings?.resendApiKey ? 'Resend Live Mode' : 'Simulation Mode Active'}
+            </div>
           </div>
+
+          {/* Quick Resend API Key setup banner if missing */}
+          {!emailSettings?.resendApiKey && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm">Resend API Key Required for Real Inbox Delivery</h4>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    No Resend API Key is currently saved. Test emails will run in <strong>Local Simulation Mode</strong> (logged in dashboard, but not delivered to real inboxes). Enter your key below to send actual emails to your inbox.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <input
+                  type="password"
+                  placeholder="Paste Resend API Key (re_12345...)"
+                  value={emailSettings?.resendApiKey || ''}
+                  onChange={(e) => setEmailSettings(prev => prev ? { ...prev, resendApiKey: e.target.value } : null)}
+                  className="flex-1 px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  onClick={handleSaveEmailSettings}
+                  disabled={saving || !emailSettings?.resendApiKey}
+                  className="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all shrink-0"
+                >
+                  Save Key
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -603,14 +646,49 @@ export function EmailSettingsTab() {
           </div>
 
           {testResult && (
-            <div className={`p-4 rounded-xl border font-mono text-xs ${
-              testResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'
+            <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+              testResult.success
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : testResult.mode === 'simulated'
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                : 'bg-red-50 border-red-200 text-red-900'
             }`}>
-              <div className="font-bold text-sm mb-2 flex items-center gap-2 font-sans">
-                {testResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-amber-600" />}
-                {testResult.success ? 'Test Email Dispatched!' : 'Dispatch Response'}
+              <div className="font-bold text-sm flex items-center gap-2">
+                {testResult.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                ) : testResult.mode === 'simulated' ? (
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                )}
+
+                <span>
+                  {testResult.success
+                    ? 'Test Email Successfully Delivered via Resend!'
+                    : testResult.mode === 'simulated'
+                    ? 'Simulation Mode: No Resend API Key Configured'
+                    : 'Resend Email Dispatch Failed'}
+                </span>
               </div>
-              <pre className="overflow-x-auto p-2 bg-white/80 rounded border border-slate-200">{JSON.stringify(testResult, null, 2)}</pre>
+
+              <p className="text-xs">
+                {testResult.message || (testResult.error ? String(testResult.error) : 'Check details below.')}
+              </p>
+
+              {testResult.log?.resendId && (
+                <div className="p-2.5 bg-white/80 rounded border border-emerald-200 font-mono text-[11px] text-emerald-900 font-bold">
+                  Resend Message Reference ID: {testResult.log.resendId}
+                </div>
+              )}
+
+              <details className="mt-2 pt-2 border-t border-slate-200/60">
+                <summary className="cursor-pointer text-[11px] font-bold text-slate-600 hover:underline">
+                  View Raw API Payload Response
+                </summary>
+                <pre className="mt-2 p-2 bg-white/90 rounded border border-slate-200 font-mono text-[11px] overflow-x-auto text-slate-800">
+                  {JSON.stringify(testResult, null, 2)}
+                </pre>
+              </details>
             </div>
           )}
         </div>

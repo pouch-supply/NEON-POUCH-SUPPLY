@@ -135,8 +135,10 @@ export async function sendEmail(
   type: EmailTemplateType,
   recipient: string,
   data: EmailTemplateData,
-  customSubject?: string
-): Promise<{ success: boolean; log: EmailLogEntry }> {
+  customSubject?: string,
+  apiKeyOverride?: string,
+  fromEmailOverride?: string
+): Promise<{ success: boolean; log: EmailLogEntry; mode?: 'live' | 'simulated'; message?: string }> {
   const settings = await getEmailSettings();
 
   // Check global enabled
@@ -149,7 +151,7 @@ export async function sendEmail(
       status: 'disabled',
       error: 'Global email system disabled in settings'
     });
-    return { success: false, log };
+    return { success: false, log, message: 'Global email sending is disabled in settings.' };
   }
 
   // Check template enabled
@@ -163,7 +165,7 @@ export async function sendEmail(
       status: 'disabled',
       error: `Template '${type}' is disabled in settings`
     });
-    return { success: false, log };
+    return { success: false, log, message: `Template '${type}' is currently disabled in settings.` };
   }
 
   // Determine subject
@@ -209,9 +211,11 @@ export async function sendEmail(
       html = `<p>Notification from Pouch Supply Co.</p>`;
   }
 
-  const apiKey = settings.resendApiKey || process.env.RESEND_API_KEY;
+  const apiKey = (apiKeyOverride && apiKeyOverride.trim() !== '')
+    ? apiKeyOverride.trim()
+    : (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
 
-  if (!apiKey || apiKey.trim() === '') {
+  if (!apiKey) {
     console.warn(`[EmailService] No RESEND_API_KEY found. Simulating email dispatch to ${recipient}.`);
     const log = await logEmail({
       type,
@@ -221,33 +225,58 @@ export async function sendEmail(
       error: 'No RESEND_API_KEY configured (simulated mode active)',
       metadata: { data }
     });
-    return { success: true, log };
+    return {
+      success: false,
+      mode: 'simulated',
+      message: 'Simulation Mode: No Resend API Key is set. Please enter a valid Resend API key (e.g. re_12345...) in settings to send live emails.',
+      log
+    };
   }
 
   try {
-    const resend = new Resend(apiKey.trim());
-    const fromEmail = settings.fromEmail || 'Pouch Supply Co. <onboarding@resend.dev>';
+    const resend = new Resend(apiKey);
+    let fromEmail = (fromEmailOverride && fromEmailOverride.trim() !== '')
+      ? fromEmailOverride.trim()
+      : (settings.fromEmail || 'Pouch Supply Co. <onboarding@resend.dev>').trim();
 
-    console.log(`[EmailService] Sending '${type}' via Resend to '${recipient}'...`);
+    console.log(`[EmailService] Sending '${type}' via Resend to '${recipient}' (From: ${fromEmail})...`);
 
-    const resendResponse = await resend.emails.send({
+    let resendResponse = await resend.emails.send({
       from: fromEmail,
       to: recipient,
       subject,
       html
     });
 
+    // Fallback: If custom domain error occurs, retry with onboarding@resend.dev
     if (resendResponse.error) {
+      const errMsg = resendResponse.error.message || String(resendResponse.error);
+      const isDomainError = errMsg.toLowerCase().includes('domain') || errMsg.toLowerCase().includes('not verified') || errMsg.toLowerCase().includes('onboarding');
+
+      if (isDomainError && !fromEmail.includes('onboarding@resend.dev')) {
+        console.warn(`[EmailService] Custom sender domain failed (${errMsg}). Retrying with fallback onboarding@resend.dev...`);
+        fromEmail = 'Pouch Supply Co. <onboarding@resend.dev>';
+        resendResponse = await resend.emails.send({
+          from: fromEmail,
+          to: recipient,
+          subject,
+          html
+        });
+      }
+    }
+
+    if (resendResponse.error) {
+      const errMsg = resendResponse.error.message || String(resendResponse.error);
       console.warn(`[EmailService] Resend API error for ${type}:`, resendResponse.error);
       const log = await logEmail({
         type,
         recipient,
         subject,
         status: 'failed',
-        error: resendResponse.error.message || String(resendResponse.error),
+        error: errMsg,
         metadata: { data }
       });
-      return { success: false, log };
+      return { success: false, mode: 'live', message: `Resend API Error: ${errMsg}`, log };
     }
 
     const resendId = resendResponse.data?.id;
@@ -262,19 +291,25 @@ export async function sendEmail(
       metadata: { data }
     });
 
-    return { success: true, log };
+    return {
+      success: true,
+      mode: 'live',
+      message: `Email successfully sent to ${recipient} via Resend! (Message ID: ${resendId})`,
+      log
+    };
 
   } catch (error: any) {
+    const errMsg = error.message || String(error);
     console.error(`[EmailService] Unexpected error sending email '${type}':`, error);
     const log = await logEmail({
       type,
       recipient,
       subject,
       status: 'failed',
-      error: error.message || String(error),
+      error: errMsg,
       metadata: { data }
     });
-    return { success: false, log };
+    return { success: false, mode: 'live', message: `Unexpected Email Error: ${errMsg}`, log };
   }
 }
 
