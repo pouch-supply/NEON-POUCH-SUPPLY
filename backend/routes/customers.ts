@@ -2,6 +2,8 @@ import { Router } from "express";
 import crypto from "crypto";
 import { fetchResource, saveResource, getDb } from "../../serverDb";
 import { Customer } from "../../src/types";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail } from "../services/emailService";
+import { trackCustomerSignup, trackEmailVerified } from "../services/klaviyoService";
 
 const router = Router();
 
@@ -127,6 +129,10 @@ router.post("/signup", async (req, res) => {
 
     console.log(`[Customer Auth] New registration successful for: ${emailTrim}`);
     
+    // Automatically dispatch Welcome Email and Klaviyo Event
+    sendWelcomeEmail(emailTrim, name.trim(), validReferredByCode ? `REF10-${codeSuffix}` : 'WELCOME10').catch(e => console.warn('Welcome email fail:', e));
+    trackCustomerSignup({ email: emailTrim, name: name.trim() }).catch(e => console.warn('Klaviyo signup track fail:', e));
+
     // Return customer without passwordHash
     const { passwordHash, ...safeCustomer } = newCustomer;
     res.status(201).json({
@@ -136,6 +142,92 @@ router.post("/signup", async (req, res) => {
   } catch (err: any) {
     console.error("[Customer Auth] Signup Error:", err);
     res.status(500).json({ error: err.message || "Failed to complete customer registration" });
+  }
+});
+
+// POST: Request Password Reset Email
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required." });
+    }
+
+    const emailTrim = email.trim().toLowerCase();
+    const customersList = await fetchResource("customers");
+    const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    const resetToken = crypto.randomBytes(24).toString("hex");
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const resetLink = `${appUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(emailTrim)}`;
+
+    if (found) {
+      found.resetToken = resetToken;
+      found.resetTokenExpires = Date.now() + 3600000; // 1 hour
+      await saveResource("customers", customersList);
+      await sendPasswordResetEmail(emailTrim, found.name, resetToken, resetLink);
+    } else {
+      // Send for guest / user without crashing
+      await sendPasswordResetEmail(emailTrim, 'Valued Customer', resetToken, resetLink);
+    }
+
+    res.json({
+      success: true,
+      message: "Password reset link dispatched to your email address."
+    });
+  } catch (err: any) {
+    console.error("[Customer Auth] Forgot Password Error:", err);
+    res.status(500).json({ error: err.message || "Failed to process password reset request" });
+  }
+});
+
+// POST: Request Email Verification Code
+router.post("/request-verification", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required." });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const result = await sendEmailVerificationEmail(email.trim(), name, code);
+
+    res.json({
+      success: true,
+      message: "Verification code sent to email.",
+      code // Included for frontend testing
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to send verification code" });
+  }
+});
+
+// POST: Confirm Email Verification
+router.post("/verify-email", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required." });
+    }
+
+    const emailTrim = email.trim().toLowerCase();
+    const customersList = await fetchResource("customers");
+    const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    if (found) {
+      found.emailVerified = true;
+      found.emailVerifiedAt = new Date().toISOString();
+      await saveResource("customers", customersList);
+    }
+
+    await trackEmailVerified(emailTrim, name || found?.name);
+
+    res.json({
+      success: true,
+      message: "Email address verified successfully!"
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to verify email address" });
   }
 });
 

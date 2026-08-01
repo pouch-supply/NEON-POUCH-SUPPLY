@@ -29,6 +29,7 @@ import LayoutTab from './admin/LayoutTab';
 import PagesTab from './admin/PagesTab';
 import DevelopmentTab from './admin/DevelopmentTab';
 import { DiagnosticsTab } from './admin/DiagnosticsTab';
+import { EmailSettingsTab } from './admin/EmailSettingsTab';
 import { Activity } from 'lucide-react';
 
 export const AVAILABLE_SECTION_TEMPLATES = [
@@ -570,7 +571,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'layout' | 'development' | 'diagnostics';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'email' | 'layout' | 'development' | 'diagnostics';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -609,6 +610,7 @@ export default function AdminDashboard({
     files: 'files',
     customers: 'customers',
     discounts: 'discounts',
+    email: 'email',
     layout: 'layout',
     development: 'development',
     diagnostics: 'diagnostics'
@@ -627,6 +629,9 @@ export default function AdminDashboard({
     media: 'files',
     customers: 'customers',
     discounts: 'discounts',
+    email: 'email',
+    'email-settings': 'email',
+    klaviyo: 'email',
     layout: 'layout',
     development: 'development',
     dev: 'development',
@@ -3089,6 +3094,7 @@ export default function AdminDashboard({
                 { id: 'files', label: 'Files Manager', icon: HardDrive },
                 { id: 'customers', label: 'Customers', icon: Users },
                 { id: 'discounts', label: 'Discounts', icon: Percent },
+                { id: 'email', label: 'Email & Marketing', icon: Mail },
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
                 { id: 'development', label: 'Development Mode', icon: Terminal },
                 { id: 'diagnostics', label: 'DB Diagnostics', icon: Activity },
@@ -3676,6 +3682,11 @@ export default function AdminDashboard({
             cleanMediaUrl={cleanMediaUrl}
             slugify={(text) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "")}
           />
+        )}
+
+        {/* 10. EMAIL & MARKETING BLOCK */}
+        {activeTab === 'email' && (
+          <EmailSettingsTab />
         )}
 
     {/* 10. LAYOUT / HEADER FOOTER SETTINGS BLOCK */}

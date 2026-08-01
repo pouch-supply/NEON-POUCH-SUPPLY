@@ -1,32 +1,54 @@
 import { Router, Request, Response } from "express";
 import { fetchResource, saveResource, getDb } from "../../serverDb";
+import {
+  sendOrderConfirmationEmail,
+  sendOrderProcessingEmail,
+  sendOrderShippedEmail,
+  sendOutForDeliveryEmail,
+  sendDeliveredEmail,
+  sendOrderCancelledEmail,
+  sendOrderRefundedEmail,
+  sendAdminNewOrderNotification
+} from "../services/emailService";
+import { trackPurchaseCompleted, trackOrderRefunded } from "../services/klaviyoService";
 
 const router = Router();
 
 async function saveSingleOrder(orderData: any) {
   const id = String(orderData.id || orderData.orderId || `PS${Math.floor(Math.random() * 90000 + 10000)}`);
+  
+  // Check existing order status to detect changes
+  let existingOrder: any = null;
+  try {
+    const currentOrders: any[] = (await fetchResource('orders')) || [];
+    existingOrder = currentOrders.find((o: any) => String(o.id) === id);
+  } catch (_e) {}
+
   const formattedOrder = {
     id,
-    customerName: orderData.customerName || 'Valued Customer',
-    customerEmail: orderData.customerEmail || 'customer@pouch-supply.com',
-    tags: Array.isArray(orderData.tags) ? orderData.tags : ['Storefront', 'Online Order'],
-    fulfillmentStatus: orderData.fulfillmentStatus || 'Unfulfilled',
-    paymentStatus: orderData.paymentStatus || (orderData.total === 0 ? 'Paid' : 'Pending'),
-    worldpayTxId: orderData.worldpayTxId || orderData.gatewayTxId || null,
-    worldpayAuthCode: orderData.worldpayAuthCode || orderData.gatewayAuthCode || null,
-    gatewayTxId: orderData.gatewayTxId || orderData.worldpayTxId || null,
-    gatewayAuthCode: orderData.gatewayAuthCode || orderData.worldpayAuthCode || null,
-    cardBrand: orderData.cardBrand || 'Card',
-    total: typeof orderData.total === 'number' ? orderData.total : parseFloat(orderData.total) || 0,
-    storeCreditApplied: typeof orderData.storeCreditApplied === 'number' ? orderData.storeCreditApplied : parseFloat(orderData.storeCreditApplied) || 0,
-    destination: orderData.destination || orderData.address || 'United Kingdom',
-    date: orderData.date || (new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
-    deliveryMethod: orderData.deliveryMethod || 'Priority Express Courier Shipping | Tracked',
-    items: orderData.items || [],
-    discountApplied: orderData.discountApplied || null,
+    customerName: orderData.customerName || existingOrder?.customerName || 'Valued Customer',
+    customerEmail: orderData.customerEmail || existingOrder?.customerEmail || 'customer@pouch-supply.com',
+    tags: Array.isArray(orderData.tags) ? orderData.tags : (existingOrder?.tags || ['Storefront', 'Online Order']),
+    fulfillmentStatus: orderData.fulfillmentStatus || existingOrder?.fulfillmentStatus || 'Unfulfilled',
+    paymentStatus: orderData.paymentStatus || existingOrder?.paymentStatus || (orderData.total === 0 ? 'Paid' : 'Pending'),
+    worldpayTxId: orderData.worldpayTxId || orderData.gatewayTxId || existingOrder?.worldpayTxId || null,
+    worldpayAuthCode: orderData.worldpayAuthCode || orderData.gatewayAuthCode || existingOrder?.worldpayAuthCode || null,
+    gatewayTxId: orderData.gatewayTxId || orderData.worldpayTxId || existingOrder?.gatewayTxId || null,
+    gatewayAuthCode: orderData.gatewayAuthCode || orderData.worldpayAuthCode || existingOrder?.gatewayAuthCode || null,
+    cardBrand: orderData.cardBrand || existingOrder?.cardBrand || 'Card',
+    total: typeof orderData.total === 'number' ? orderData.total : parseFloat(orderData.total) || existingOrder?.total || 0,
+    storeCreditApplied: typeof orderData.storeCreditApplied === 'number' ? orderData.storeCreditApplied : parseFloat(orderData.storeCreditApplied) || existingOrder?.storeCreditApplied || 0,
+    destination: orderData.destination || orderData.address || existingOrder?.destination || 'United Kingdom',
+    date: orderData.date || existingOrder?.date || (new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+    deliveryMethod: orderData.deliveryMethod || existingOrder?.deliveryMethod || 'Priority Express Courier Shipping | Tracked',
+    items: orderData.items || existingOrder?.items || [],
+    discountApplied: orderData.discountApplied || existingOrder?.discountApplied || null,
+    trackingNumber: orderData.trackingNumber || existingOrder?.trackingNumber || null,
+    carrier: orderData.carrier || existingOrder?.carrier || null,
     data: {
-      address: orderData.address,
-      paymentMethod: orderData.paymentMethod
+      ...(existingOrder?.data || {}),
+      address: orderData.address || existingOrder?.data?.address,
+      paymentMethod: orderData.paymentMethod || existingOrder?.data?.paymentMethod
     }
   };
 
@@ -42,10 +64,10 @@ async function saveSingleOrder(orderData: any) {
     console.warn('[Orders Router] Prisma save warning:', prismaErr?.message);
   }
 
-  // Fallback / StoreResource sync
+  // Sync to StoreResource
   try {
     const currentOrders: any[] = (await fetchResource('orders')) || [];
-    const existingIdx = currentOrders.findIndex((o: any) => o.id === id);
+    const existingIdx = currentOrders.findIndex((o: any) => String(o.id) === id);
     if (existingIdx !== -1) {
       currentOrders[existingIdx] = { ...currentOrders[existingIdx], ...formattedOrder };
     } else {
@@ -54,6 +76,45 @@ async function saveSingleOrder(orderData: any) {
     await saveResource('orders', currentOrders);
   } catch (resourceErr) {
     console.error('[Orders Router] StoreResource save error:', resourceErr);
+  }
+
+  // Trigger Automatic Emails & Klaviyo Events on creation or status transition
+  try {
+    const isNewOrder = !existingOrder;
+    const paymentStatusJustPaid = (existingOrder?.paymentStatus !== 'Paid') && (formattedOrder.paymentStatus === 'Paid');
+    
+    // 1. New Order or Payment Succeeded
+    if (isNewOrder || paymentStatusJustPaid) {
+      console.log(`[Orders Trigger] Dispatching Order Confirmation & Klaviyo Purchase for ${id}`);
+      sendOrderConfirmationEmail(formattedOrder).catch(e => console.warn('Order confirmation email fail:', e));
+      trackPurchaseCompleted(formattedOrder).catch(e => console.warn('Klaviyo purchase track fail:', e));
+    }
+
+    // 2. Fulfillment Status Transition
+    if (existingOrder && existingOrder.fulfillmentStatus !== formattedOrder.fulfillmentStatus) {
+      const newStatus = formattedOrder.fulfillmentStatus;
+      console.log(`[Orders Trigger] Fulfillment status changed for ${id}: ${existingOrder.fulfillmentStatus} -> ${newStatus}`);
+      if (newStatus === 'Processing') {
+        sendOrderProcessingEmail(formattedOrder).catch(e => console.warn('Order processing email fail:', e));
+      } else if (newStatus === 'Shipped') {
+        sendOrderShippedEmail(formattedOrder, formattedOrder.trackingNumber, formattedOrder.carrier).catch(e => console.warn('Order shipped email fail:', e));
+      } else if (newStatus === 'Out for Delivery') {
+        sendOutForDeliveryEmail(formattedOrder).catch(e => console.warn('Out for delivery email fail:', e));
+      } else if (newStatus === 'Delivered') {
+        sendDeliveredEmail(formattedOrder).catch(e => console.warn('Order delivered email fail:', e));
+      } else if (newStatus === 'Cancelled') {
+        sendOrderCancelledEmail(formattedOrder, orderData.reason || 'Order cancelled by store administrator').catch(e => console.warn('Order cancelled email fail:', e));
+      }
+    }
+
+    // 3. Refund Transition
+    if (existingOrder && existingOrder.paymentStatus !== 'Refunded' && formattedOrder.paymentStatus === 'Refunded') {
+      console.log(`[Orders Trigger] Refund processed for ${id}`);
+      sendOrderRefundedEmail(formattedOrder, formattedOrder.total, orderData.refundReason).catch(e => console.warn('Order refund email fail:', e));
+      trackOrderRefunded(formattedOrder, formattedOrder.total).catch(e => console.warn('Klaviyo refund track fail:', e));
+    }
+  } catch (triggerErr) {
+    console.warn('[Orders Trigger] Error dispatching automated notifications:', triggerErr);
   }
 
   return formattedOrder;

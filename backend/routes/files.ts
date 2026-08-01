@@ -36,36 +36,58 @@ router.post("/", async (req, res) => {
     try {
       for (const file of payload) {
         if (!file.id || !file.url) continue;
-        await prisma.fileEntry.upsert({
-          where: { id: file.id },
-          update: {
-            fileName: file.fileName || file.originalFilename || 'Media Asset',
-            altText: file.altText,
-            size: file.size || file.fileSize,
-            references: file.references,
-            url: file.url,
-            secureUrl: file.secureUrl || file.url,
-            mimeType: file.mimeType,
-            publicId: file.publicId ? file.publicId : null,
-            resourceType: file.resourceType,
-            format: file.format,
-            folder: file.folder
-          },
-          create: {
-            id: file.id,
-            fileName: file.fileName || file.originalFilename || 'Media Asset',
-            altText: file.altText || 'Media Asset',
-            size: file.size || file.fileSize || 'Media',
-            references: file.references || 'Direct Upload',
-            url: file.url,
-            secureUrl: file.secureUrl || file.url,
-            mimeType: file.mimeType,
-            publicId: file.publicId ? file.publicId : null,
-            resourceType: file.resourceType || 'image',
-            format: file.format,
-            folder: file.folder || 'storefront_media'
+
+        const sizeVal = file.size ?? file.fileSize;
+        const sizeStr = typeof sizeVal === 'number'
+          ? (sizeVal > 1024 * 1024 ? `${(sizeVal / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(sizeVal / 1024)} KB`)
+          : (sizeVal ? String(sizeVal) : null);
+
+        const rawPublicId = file.publicId;
+        const publicIdStr = (rawPublicId && typeof rawPublicId === 'string' && rawPublicId.trim() !== '')
+          ? rawPublicId.trim()
+          : null;
+
+        const fileData = {
+          fileName: file.fileName || file.originalFilename || 'Media Asset',
+          altText: file.altText ? String(file.altText) : 'Media Asset',
+          size: sizeStr,
+          fileSize: sizeStr,
+          references: file.references ? String(file.references) : 'Direct Upload',
+          url: String(file.url),
+          secureUrl: file.secureUrl ? String(file.secureUrl) : String(file.url),
+          mimeType: file.mimeType ? String(file.mimeType) : null,
+          publicId: publicIdStr,
+          resourceType: file.resourceType ? String(file.resourceType) : 'image',
+          format: file.format ? String(file.format) : null,
+          folder: file.folder ? String(file.folder) : 'storefront_media',
+          width: typeof file.width === 'number' ? file.width : (parseInt(String(file.width), 10) || null),
+          height: typeof file.height === 'number' ? file.height : (parseInt(String(file.height), 10) || null)
+        };
+
+        try {
+          await prisma.fileEntry.upsert({
+            where: { id: String(file.id) },
+            update: fileData,
+            create: {
+              id: String(file.id),
+              ...fileData
+            }
+          });
+        } catch (upsertErr: any) {
+          if (upsertErr?.code === 'P2002') {
+            await prisma.fileEntry.upsert({
+              where: { id: String(file.id) },
+              update: { ...fileData, publicId: null },
+              create: {
+                id: String(file.id),
+                ...fileData,
+                publicId: null
+              }
+            });
+          } else {
+            throw upsertErr;
           }
-        });
+        }
       }
 
       const updated = await prisma.fileEntry.findMany({
