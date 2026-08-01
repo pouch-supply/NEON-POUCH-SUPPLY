@@ -201,14 +201,43 @@ router.post('/session', async (req: Request, res: Response) => {
     let lastErrorData: any = null;
 
     for (const baseUrl of baseUrls) {
+      const extraHeaders: Record<string, string> = {};
+      if (WORLDPAY_ENTITY_ID) {
+        extraHeaders['WP-Entity-Id'] = WORLDPAY_ENTITY_ID;
+        extraHeaders['Entity-Id'] = WORLDPAY_ENTITY_ID;
+      }
+
       const attempts = [
+        {
+          url: `${baseUrl}/checkout/sessions`,
+          contentType: 'application/vnd.worldpay.checkout-sessions-v1.hal+json',
+          accept: 'application/vnd.worldpay.checkout-sessions-v1.hal+json, application/json',
+          body: {
+            ...(WORLDPAY_CHECKOUT_ID ? { checkoutId: WORLDPAY_CHECKOUT_ID } : {}),
+            transaction: {
+              reference: String(orderId),
+              value: {
+                amount: amountInPence,
+                currency: 'GBP'
+              }
+            },
+            customer: {
+              email: customerEmail || undefined,
+              name: customerName || undefined
+            },
+            returnUrls: {
+              success: successReturnUrl,
+              cancel: cancelReturnUrl,
+              failure: failureReturnUrl
+            }
+          }
+        },
         {
           url: `${baseUrl}/checkout/sessions`,
           contentType: 'application/json',
           accept: 'application/json, application/vnd.worldpay.checkout-sessions-v1.hal+json',
           body: {
-            entity: WORLDPAY_ENTITY_ID,
-            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            ...(WORLDPAY_CHECKOUT_ID ? { checkoutId: WORLDPAY_CHECKOUT_ID } : {}),
             transaction: {
               reference: String(orderId),
               value: {
@@ -232,8 +261,7 @@ router.post('/session', async (req: Request, res: Response) => {
           contentType: 'application/vnd.worldpay.verified-tokens-v1.hal+json',
           accept: 'application/vnd.worldpay.verified-tokens-v1.hal+json, application/json',
           body: {
-            entity: WORLDPAY_ENTITY_ID,
-            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            ...(WORLDPAY_CHECKOUT_ID ? { checkoutId: WORLDPAY_CHECKOUT_ID } : {}),
             transaction: {
               reference: String(orderId),
               value: {
@@ -248,26 +276,13 @@ router.post('/session', async (req: Request, res: Response) => {
           contentType: 'application/vnd.worldpay.sessions-v1.hal+json',
           accept: 'application/vnd.worldpay.sessions-v1.hal+json, application/json',
           body: {
-            entity: WORLDPAY_ENTITY_ID,
-            checkoutId: WORLDPAY_CHECKOUT_ID || undefined,
+            ...(WORLDPAY_CHECKOUT_ID ? { checkoutId: WORLDPAY_CHECKOUT_ID } : {}),
             transaction: {
               reference: String(orderId),
               value: {
                 amount: amountInPence,
                 currency: 'GBP'
               }
-            }
-          }
-        },
-        {
-          url: `${baseUrl}/payments/authorisations`,
-          contentType: 'application/vnd.worldpay.payments-v6.hal+json',
-          accept: 'application/vnd.worldpay.payments-v6.hal+json, application/json',
-          body: {
-            entity: WORLDPAY_ENTITY_ID,
-            instruction: {
-              narrative: { line1: `Order ${orderId}` },
-              value: { amount: amountInPence, currency: 'GBP' }
             }
           }
         }
@@ -281,7 +296,8 @@ router.post('/session', async (req: Request, res: Response) => {
             headers: {
               'Authorization': authHeader,
               'Content-Type': attempt.contentType,
-              'Accept': attempt.accept
+              'Accept': attempt.accept,
+              ...extraHeaders
             },
             body: JSON.stringify(attempt.body)
           });

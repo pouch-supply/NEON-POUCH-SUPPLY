@@ -522,7 +522,7 @@ export default function CheckoutView({
           <ArrowLeft className="h-4 w-4" /> Back to Catalog Shop
         </button>
         <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold">
-          <ShieldCheck className="h-4 w-4 text-emerald-500" /> 256-Bit SSL Encrypted Checkout
+          <ShieldCheck className="h-4 w-4 text-[#1c2d50]" /> 256-Bit SSL Encrypted Checkout
         </div>
       </div>
 
@@ -534,7 +534,7 @@ export default function CheckoutView({
           {/* Shipping Form */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-              <Truck className="h-4 w-4 text-indigo-600" /> 1. Shipping Address & Contact Details
+              <Truck className="h-4 w-4 text-[#1c2d50]" /> 1. Shipping Address & Contact Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -549,7 +549,7 @@ export default function CheckoutView({
                     setFullName(e.target.value);
                     if (!cardHolder) setCardHolder(e.target.value);
                   }}
-                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-semibold"
+                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-semibold"
                 />
               </div>
 
@@ -561,7 +561,7 @@ export default function CheckoutView({
                   placeholder="e.g. alex@example.co.uk"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-semibold"
+                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-semibold"
                 />
               </div>
             </div>
@@ -574,7 +574,7 @@ export default function CheckoutView({
                 placeholder="e.g. 100 Clifton Street, Floor 2"
                 value={addressLine}
                 onChange={(e) => setAddressLine(e.target.value)}
-                className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-semibold"
+                className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-semibold"
               />
             </div>
 
@@ -586,7 +586,7 @@ export default function CheckoutView({
                   required
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-semibold"
+                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-semibold"
                 />
               </div>
 
@@ -597,7 +597,7 @@ export default function CheckoutView({
                   required
                   value={postcode}
                   onChange={(e) => setPostcode(e.target.value)}
-                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-semibold uppercase"
+                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-semibold uppercase"
                 />
               </div>
 
@@ -606,7 +606,7 @@ export default function CheckoutView({
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-600 font-bold text-slate-700 bg-white"
+                  className="w-full text-xs p-3 border border-slate-250 bg-slate-50/30 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1c2d50] font-bold text-slate-700 bg-white"
                 >
                   <option value="United Kingdom">United Kingdom (UK)</option>
                   <option value="Ireland">Ireland</option>
@@ -623,11 +623,11 @@ export default function CheckoutView({
               <div className="border border-slate-800 bg-slate-50 ring-1 ring-slate-800 rounded-xl p-3.5 flex items-center justify-between">
                 <div className="text-left">
                   <span className="font-extrabold text-xs block text-slate-800 flex items-center gap-1.5">
-                    <Truck className="h-4 w-4 text-indigo-600" /> Express Courier
+                    <Truck className="h-4 w-4 text-[#1c2d50]" /> Express Courier
                   </span>
                   <span className="text-[10px] text-slate-500">Arrives in 3–5 business days</span>
                 </div>
-                <span className={subtotalAfterDiscount >= 40 ? "font-black text-xs text-emerald-600" : "font-black text-xs text-slate-800"}>
+                <span className={subtotalAfterDiscount >= 40 ? "font-black text-xs text-[#1c2d50]" : "font-black text-xs text-slate-800"}>
                   {subtotalAfterDiscount >= 40 ? 'FREE' : '£2.99'}
                 </span>
               </div>
@@ -636,21 +636,17 @@ export default function CheckoutView({
 
           {/* Age Verification Removed */}
 
-
-
-
-
           {/* Payment Gateway Form */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-indigo-600" /> 2. Secure Gateway Payment
+                <CreditCard className="h-4 w-4 text-[#1c2d50]" /> 2. Secure Gateway Payment
               </h3>
             </div>
 
             {/* HOSTED CHECKOUT GRAPHIC */}
-            <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shadow-inner">
+            <div className="border border-slate-200 bg-slate-50/80 rounded-2xl p-6 text-center space-y-4">
+              <div className="mx-auto w-12 h-12 bg-slate-100 text-[#1c2d50] rounded-full flex items-center justify-center shadow-inner">
                 <ShieldCheck className="h-6 w-6" />
               </div>
               <div className="space-y-1">
