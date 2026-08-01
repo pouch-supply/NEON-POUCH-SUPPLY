@@ -223,12 +223,12 @@ export async function sendEmail(
       subject,
       status: 'simulated',
       error: 'No RESEND_API_KEY configured (simulated mode active)',
-      metadata: { data }
+      metadata: { data, html }
     });
     return {
-      success: false,
+      success: true,
       mode: 'simulated',
-      message: 'Simulation Mode: No Resend API Key is set. Please enter a valid Resend API key (e.g. re_12345...) in settings to send live emails.',
+      message: `Simulated Email Sent! Test email for '${type}' generated for ${recipient}. To send live emails to external inboxes, enter a Resend API Key in Email Settings.`,
       log
     };
   }
@@ -268,15 +268,21 @@ export async function sendEmail(
     if (resendResponse.error) {
       const errMsg = resendResponse.error.message || String(resendResponse.error);
       console.warn(`[EmailService] Resend API error for ${type}:`, resendResponse.error);
+
+      let userFacingMessage = `Resend API Error: ${errMsg}`;
+      if (errMsg.toLowerCase().includes('testing emails') || errMsg.toLowerCase().includes('own email address')) {
+        userFacingMessage = `Resend Sandbox Limit: When using the default Resend onboarding sender (onboarding@resend.dev), Resend only allows sending live test emails to your verified Resend account address. To send live emails to ${recipient}, verify a custom domain in your Resend Dashboard or send to your verified Resend email.`;
+      }
+
       const log = await logEmail({
         type,
         recipient,
         subject,
         status: 'failed',
         error: errMsg,
-        metadata: { data }
+        metadata: { data, html }
       });
-      return { success: false, mode: 'live', message: `Resend API Error: ${errMsg}`, log };
+      return { success: false, mode: 'live', message: userFacingMessage, log };
     }
 
     const resendId = resendResponse.data?.id;

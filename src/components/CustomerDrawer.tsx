@@ -713,7 +713,7 @@ export default function CustomerDrawer({
                       {/* 3. WISHLIST TAB */}
                       {activeTab === 'wishlist' && (
                         <div className="space-y-3">
-                          {loggedInCustomer.wishlist.length === 0 ? (
+                          {(!loggedInCustomer.wishlist || loggedInCustomer.wishlist.length === 0) ? (
                             <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                               <Heart className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
                               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Empty Wishlist</p>
@@ -722,7 +722,7 @@ export default function CustomerDrawer({
                           ) : (
                             <div className="grid grid-cols-1 gap-2.5">
                               {loggedInCustomer.wishlist.map((productId) => {
-                                const prod = allProducts.find(p => p.id === productId);
+                                const prod = allProducts.find(p => p.id === productId || p.slug === productId || p.title === productId);
                                 if (!prod) return null;
                                 return (
                                   <div 

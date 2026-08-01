@@ -608,9 +608,36 @@ export function EmailSettingsTab() {
             </div>
           )}
 
+          {/* Info Banner explaining Resend Sandbox Recipient Limitation */}
+          {emailSettings?.resendApiKey && (
+            <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs space-y-2">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-xs text-blue-950">Resend Free Sandbox Recipient Rule</p>
+                  <p className="text-blue-800 leading-relaxed">
+                    By default, Resend API key sends via <code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">onboarding@resend.dev</code>. In this free sandbox mode, Resend <strong>strictly restricts delivery to your registered Resend email address</strong> (<strong className="underline">scottkivlinpouch@gmail.com</strong>).
+                  </p>
+                  <p className="text-blue-800 leading-relaxed">
+                    To send live emails to other customer addresses (or any outside inbox), you must verify a domain at <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="font-bold underline text-blue-900 hover:text-blue-950">resend.com/domains</a> and set a custom 'From Email' in the Configuration tab.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Recipient Email Address</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Recipient Email Address</label>
+                <button
+                  type="button"
+                  onClick={() => setTestRecipient('scottkivlinpouch@gmail.com')}
+                  className="text-[11px] font-bold text-teal-700 hover:text-teal-900 underline cursor-pointer"
+                >
+                  Use scottkivlinpouch@gmail.com
+                </button>
+              </div>
               <input
                 type="email"
                 value={testRecipient}
@@ -618,6 +645,9 @@ export function EmailSettingsTab() {
                 placeholder="scottkivlinpouch@gmail.com"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
+              <p className="text-[11px] text-slate-500">
+                Send to <strong>scottkivlinpouch@gmail.com</strong> for testing while on <code className="bg-slate-100 px-1 rounded font-mono">onboarding@resend.dev</code>.
+              </p>
             </div>
 
             <div className="space-y-2">

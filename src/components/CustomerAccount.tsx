@@ -6,7 +6,7 @@ import {
   Eye, X, Search, Truck, Check, Clock, Calendar, RefreshCw, Award, 
   Copy, Share2, HelpCircle, ShieldAlert, CreditCard, Star, ChevronRight, 
   CheckCircle2, AlertTriangle, Play, Pause, ChevronDown, CheckCircle, Tag, LifeBuoy,
-  Layout, LogOut
+  Layout, LogOut, Plus
 } from 'lucide-react';
 
 interface CustomerAccountProps {
@@ -22,6 +22,8 @@ interface CustomerAccountProps {
   onUpdateProfile?: (customer: Customer) => void;
   onUpdateOrder?: (order: Order) => void;
   discounts?: Discount[];
+  onAddToCart?: (product: Product, qty: number) => void;
+  onOpenCart?: () => void;
 }
 
 export default function CustomerAccount({
@@ -36,7 +38,9 @@ export default function CustomerAccount({
   onRemoveAddress,
   onUpdateProfile,
   onUpdateOrder,
-  discounts = []
+  discounts = [],
+  onAddToCart,
+  onOpenCart
 }: CustomerAccountProps) {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [nameInput, setNameInput] = useState('');
@@ -621,6 +625,7 @@ export default function CustomerAccount({
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Layout },
     { id: 'orders', label: 'Orders', icon: Package },
+    { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'subscriptions', label: 'Subscriptions', icon: RefreshCw },
     { id: 'loyalty', label: 'Loyalty Rewards', icon: Award },
     { id: 'referrals', label: 'Referrals', icon: Share2 },
@@ -969,7 +974,7 @@ export default function CustomerAccount({
                         </div>
 
                         {/* Stats grid */}
-                        <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                        <div className="grid grid-cols-4 gap-2 text-center pt-2">
                           <div className="bg-slate-50 border border-slate-100 p-2 rounded-2xl flex flex-col justify-center min-w-0">
                             <p className="text-xs font-black text-[#071d37] truncate">{tierInfo.currentTierName}</p>
                             <p className="text-[8px] text-slate-400 uppercase font-bold tracking-tight mt-0.5">Status Level</p>
@@ -978,6 +983,17 @@ export default function CustomerAccount({
                             <p className="text-base font-black text-[#071d37]">{tierInfo.unlockedCount}</p>
                             <p className="text-[8px] text-slate-400 uppercase font-bold tracking-tight mt-0.5">Unlocked Perks</p>
                           </div>
+                          <button 
+                            type="button"
+                            onClick={() => setActiveTab('wishlist')}
+                            className="bg-rose-50 hover:bg-rose-100 border border-rose-100 p-2 rounded-2xl flex flex-col justify-center items-center min-w-0 cursor-pointer transition-colors"
+                          >
+                            <p className="text-base font-black text-rose-600 flex items-center gap-1">
+                              <Heart className="h-3.5 w-3.5 fill-rose-500" />
+                              {Array.isArray(loggedInCustomer.wishlist) ? loggedInCustomer.wishlist.length : 0}
+                            </p>
+                            <p className="text-[8px] text-rose-500 uppercase font-bold tracking-tight mt-0.5">Wishlist</p>
+                          </button>
                           <div className="bg-slate-50 border border-slate-100 p-2 rounded-2xl flex flex-col justify-center min-w-0">
                             <p className="text-base font-black text-[#071d37]">£{(tierInfo.unlockedCount * 12).toFixed(0)}</p>
                             <p className="text-[8px] text-slate-400 uppercase font-bold tracking-tight mt-0.5">Saved Total</p>
@@ -1576,6 +1592,97 @@ export default function CustomerAccount({
                     )}
                   </div>
 
+                </div>
+              )}
+
+              {/* TAB 3: WISHLIST TAB */}
+              {activeTab === 'wishlist' && (
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="font-extrabold text-base text-[#071d37] uppercase tracking-wider flex items-center gap-2">
+                        <Heart className="h-5 w-5 text-rose-500 fill-rose-500" />
+                        My Saved Wishlist
+                      </h3>
+                      <p className="text-slate-400 text-xs mt-0.5">
+                        {Array.isArray(loggedInCustomer.wishlist) ? loggedInCustomer.wishlist.length : 0} item(s) saved in your personal collection.
+                      </p>
+                    </div>
+                  </div>
+
+                  {(!loggedInCustomer.wishlist || loggedInCustomer.wishlist.length === 0) ? (
+                    <div className="text-center py-16 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 space-y-3">
+                      <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-400">
+                        <Heart className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm text-slate-800 font-extrabold uppercase tracking-wide">Your Wishlist is Empty</p>
+                      <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                        Explore our catalog and click the heart icon on any product to save your favorite nicotine pouch cans here!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {loggedInCustomer.wishlist.map((productId) => {
+                        const prod = allProducts.find(p => p.id === productId || p.slug === productId || p.title === productId);
+                        if (!prod) return null;
+                        return (
+                          <div 
+                            key={prod.id} 
+                            className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4 flex flex-col justify-between space-y-3 transition-all hover:shadow-sm"
+                          >
+                            <div className="space-y-3">
+                              <div className="h-36 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center relative p-2 border border-slate-100">
+                                <img 
+                                  src={prod.image} 
+                                  className="w-full h-full object-contain" 
+                                  alt={prod.title} 
+                                  referrerPolicy="no-referrer"
+                                />
+                                <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider bg-[#071d37] text-white px-2 py-0.5 rounded-full">
+                                  {prod.vendor}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => onUpdateWishlist(prod.id, 'remove')}
+                                  className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-rose-50 text-rose-500 rounded-full shadow-xs transition-colors cursor-pointer"
+                                  title="Remove from Wishlist"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+
+                              <div>
+                                <p className="text-[9.5px] text-slate-400 uppercase font-black tracking-wider">{prod.category || 'Pouches'}</p>
+                                <h4 className="font-extrabold text-slate-900 text-xs truncate mt-0.5">{prod.title}</h4>
+                                <p className="text-sm text-indigo-700 font-black mt-1">£{prod.price.toFixed(2)}</p>
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (onAddToCart) onAddToCart(prod, 1);
+                                  if (onOpenCart) onOpenCart();
+                                }}
+                                className="flex-1 bg-[#071d37] hover:bg-[#0c2e56] text-white font-bold text-xs uppercase tracking-wider py-2 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                              >
+                                <Plus className="h-3.5 w-3.5" /> Add to Bag
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onUpdateWishlist(prod.id, 'remove')}
+                                className="px-2.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer text-xs font-bold"
+                                title="Remove"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 

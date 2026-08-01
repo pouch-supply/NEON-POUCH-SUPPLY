@@ -6,6 +6,7 @@ import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
 interface ProductDetailViewProps {
   product: Product;
   allProducts?: Product[];
+  loggedInCustomer?: Customer | null;
   onAddToCart: (product: Product, qty: number) => void;
   onToggleWishlist: (productId: string) => void;
   onNavigate: (tab: string, arg?: string) => void;
@@ -14,6 +15,7 @@ interface ProductDetailViewProps {
 export default function ProductDetailView({
   product,
   allProducts = [],
+  loggedInCustomer,
   onAddToCart,
   onToggleWishlist,
   onNavigate
@@ -21,6 +23,18 @@ export default function ProductDetailView({
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (loggedInCustomer && Array.isArray(loggedInCustomer.wishlist)) {
+      setIsFavorite(
+        loggedInCustomer.wishlist.includes(product.id) ||
+        loggedInCustomer.wishlist.includes(product.slug || '') ||
+        loggedInCustomer.wishlist.includes(product.title)
+      );
+    } else {
+      setIsFavorite(false);
+    }
+  }, [loggedInCustomer, product]);
 
   // Helper to extract numeric strength and flavour
   const getProductStrengthLabel = (p: Product): string => {
@@ -215,6 +229,11 @@ export default function ProductDetailView({
   };
 
   const handleToggleFavorite = () => {
+    if (!loggedInCustomer) {
+      alert("Wishlist feature is only accessible when logged in. Please log in or register your account first.");
+      onNavigate('frontend-account');
+      return;
+    }
     setIsFavorite(!isFavorite);
     onToggleWishlist(product.id);
   };

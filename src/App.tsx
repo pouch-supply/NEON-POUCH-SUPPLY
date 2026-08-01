@@ -2002,6 +2002,7 @@ export default function App() {
                 <ProductDetailView
                   product={matchedProduct}
                   allProducts={products}
+                  loggedInCustomer={loggedInCustomer}
                   onAddToCart={handleAddToCart}
                   onToggleWishlist={handleToggleWishlist}
                   onNavigate={(target, arg) => {
@@ -2133,6 +2134,8 @@ export default function App() {
                 onUpdateProfile={handleUpdateProfile}
                 onUpdateOrder={handleUpdateOrder}
                 discounts={discounts}
+                onAddToCart={handleAddToCart}
+                onOpenCart={() => setCartOpen(true)}
               />
             )}
 
