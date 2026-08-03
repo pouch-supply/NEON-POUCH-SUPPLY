@@ -19,7 +19,8 @@ export interface EmailSettings {
 export interface KlaviyoSettings {
   enabled: boolean;
   apiKey: string;
-  publicKey: string;
+  siteId?: string;
+  publicKey?: string;
   listId?: string;
   trackEvents: Record<string, boolean>;
 }
@@ -845,15 +846,15 @@ export function EmailSettingsTab() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Klaviyo Public Site ID / Key</label>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Klaviyo Site ID</label>
               <input
                 type="text"
-                value={klaviyoSettings.publicKey || ''}
-                onChange={(e) => setKlaviyoSettings({ ...klaviyoSettings, publicKey: e.target.value })}
+                value={klaviyoSettings.siteId || klaviyoSettings.publicKey || ''}
+                onChange={(e) => setKlaviyoSettings({ ...klaviyoSettings, siteId: e.target.value, publicKey: e.target.value })}
                 placeholder="ABC123XYZ"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              <p className="text-[11px] text-slate-500">Six-character public company ID for client-side web tracking.</p>
+              <p className="text-[11px] text-slate-500">Six-character public Site ID from Klaviyo Account Settings (Account &gt; Settings &gt; API Keys).</p>
             </div>
           </div>
 

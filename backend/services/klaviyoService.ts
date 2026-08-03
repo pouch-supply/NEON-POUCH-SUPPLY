@@ -3,7 +3,8 @@ import { fetchResource, saveResource } from '../../serverDb';
 export interface KlaviyoSettings {
   enabled: boolean;
   apiKey: string;
-  publicKey: string;
+  siteId: string;
+  publicKey?: string;
   listId?: string;
   trackEvents: {
     customerSignup: boolean;
@@ -30,7 +31,8 @@ export interface KlaviyoEventLog {
 const DEFAULT_KLAVIYO_SETTINGS: KlaviyoSettings = {
   enabled: true,
   apiKey: process.env.KLAVIYO_API_KEY || '',
-  publicKey: process.env.KLAVIYO_PUBLIC_KEY || '',
+  siteId: process.env.KLAVIYO_SITE_ID || process.env.KLAVIYO_PUBLIC_KEY || '',
+  publicKey: process.env.KLAVIYO_SITE_ID || process.env.KLAVIYO_PUBLIC_KEY || '',
   listId: '',
   trackEvents: {
     customerSignup: true,
@@ -48,9 +50,12 @@ export async function getKlaviyoSettings(): Promise<KlaviyoSettings> {
   try {
     const stored: any = await fetchResource('klaviyo_settings');
     if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+      const siteIdVal = stored.siteId || stored.publicKey || DEFAULT_KLAVIYO_SETTINGS.siteId;
       return {
         ...DEFAULT_KLAVIYO_SETTINGS,
         ...stored,
+        siteId: siteIdVal,
+        publicKey: siteIdVal,
         trackEvents: {
           ...DEFAULT_KLAVIYO_SETTINGS.trackEvents,
           ...(stored.trackEvents || {})
@@ -63,9 +68,12 @@ export async function getKlaviyoSettings(): Promise<KlaviyoSettings> {
 
 export async function saveKlaviyoSettings(settings: Partial<KlaviyoSettings>): Promise<KlaviyoSettings> {
   const current = await getKlaviyoSettings();
+  const siteIdVal = settings.siteId || settings.publicKey || current.siteId;
   const updated: KlaviyoSettings = {
     ...current,
     ...settings,
+    siteId: siteIdVal,
+    publicKey: siteIdVal,
     trackEvents: {
       ...current.trackEvents,
       ...(settings.trackEvents || {})
