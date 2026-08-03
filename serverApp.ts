@@ -20,6 +20,7 @@ import worldpayRouter from "./backend/routes/worldpay";
 import structureRouter from "./backend/routes/structure";
 import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
+import royalMailRouter from "./backend/routes/royalMail";
 
 import mediaRouter from "./backend/routes/media";
 import { uploadToCloudinary, isCloudinaryConfigured } from "./backend/services/cloudinary";
@@ -528,6 +529,7 @@ export async function createExpressApp() {
   app.use("/api/folder-structure", structureRouter);
   app.use("/api/email", emailRouter);
   app.use("/api/klaviyo", klaviyoRouter);
+  app.use("/api/royalmail", royalMailRouter);
 
   // Vite middleware for development or static serving for production
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {

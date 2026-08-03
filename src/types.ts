@@ -67,7 +67,7 @@ export interface Order {
   customerName: string;
   customerEmail: string;
   tags: string[];
-  fulfillmentStatus: 'Unfulfilled' | 'Fulfilled' | 'Delivered';
+  fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered';
   paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
   gatewayTxId?: string;
   gatewayAuthCode?: string;
@@ -85,6 +85,7 @@ export interface Order {
     image?: string;
   }[];
   trackingId?: string;
+  trackingNumber?: string;
   carrier?: string;
   trackingHistory?: {
     status: string;
@@ -94,6 +95,7 @@ export interface Order {
   }[];
   discountApplied?: Discount | null;
   createdAt?: string;
+  data?: any;
 }
 
 export interface FileEntry {

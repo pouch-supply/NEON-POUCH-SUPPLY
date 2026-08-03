@@ -295,3 +295,15 @@ export async function trackWishlistAdded(email: string, item: any) {
     Price: item.price
   });
 }
+
+export async function trackOrderShipped(order: any, trackingNumber?: string, carrier?: string) {
+  const email = order.customerEmail || 'customer@pouch-supply.com';
+  return trackKlaviyoEvent('Order Shipped', email, {
+    $event_id: String(order.id),
+    OrderId: String(order.id),
+    Carrier: carrier || order.carrier || 'Royal Mail Tracked 24',
+    TrackingNumber: trackingNumber || order.trackingNumber || order.trackingId,
+    TrackingUrl: `https://www.royalmail.com/track-your-item#/tracking-results/${trackingNumber || order.trackingNumber || order.trackingId}`,
+    Destination: order.destination || order.address
+  });
+}

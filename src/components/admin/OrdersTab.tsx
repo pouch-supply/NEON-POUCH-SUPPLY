@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send
 } from 'lucide-react';
 import { Order } from '../../types';
+import { RoyalMailOrderActions } from './RoyalMailOrderActions';
 
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&q=80&w=300";
 
@@ -493,10 +494,29 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                     })}
                   </div>
 
-                  {/* Tracking Section */}
+                  {/* Royal Mail Click & Drop Integration Section */}
+                  <RoyalMailOrderActions
+                    order={selectedOrder}
+                    onUpdateOrder={(updated) => {
+                      setSelectedOrder(updated);
+                      const updatedOrders = parentOrders.map(o => String(o.id) === String(updated.id) ? updated : o);
+                      parentOnUpdateOrders(updatedOrders);
+                    }}
+                    onAddTimelineComment={(text) => {
+                      setTimelineComments(prev => ({
+                        ...prev,
+                        [selectedOrder.id]: [
+                          ...(prev[selectedOrder.id] || []),
+                          { text, date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
+                        ]
+                      }));
+                    }}
+                  />
+
+                  {/* Manual Tracking Section Fallback */}
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Tracking information</span>
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Other Carrier / Manual Tracking</span>
                       <div className="flex items-center gap-2 mt-1">
                         <Truck className="h-4 w-4 text-slate-600" />
                         <span className="text-xs font-extrabold text-slate-800">
@@ -513,7 +533,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       }}
                       className="py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs rounded-lg transition-all shadow-3xs cursor-pointer select-none"
                     >
-                      {selectedOrder.trackingId ? 'Edit tracking' : 'Add tracking'}
+                      {selectedOrder.trackingId ? 'Edit Manual Tracking' : 'Add Manual Tracking'}
                     </button>
                   </div>
 

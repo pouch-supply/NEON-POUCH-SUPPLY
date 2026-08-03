@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Mail, Send, CheckCircle2, AlertCircle, Eye, Settings, RefreshCw, 
   Trash2, ShieldCheck, Zap, Lock, Filter, Smartphone, Monitor, Code, 
-  ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw
+  ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw, Truck
 } from 'lucide-react';
+import { RoyalMailSettingsCard } from './RoyalMailSettingsCard';
 
 export interface EmailSettings {
   enabled: boolean;
@@ -62,7 +63,7 @@ const TEMPLATE_OPTIONS = [
 ];
 
 export function EmailSettingsTab() {
-  const [activeSubTab, setActiveSubTab] = useState<'config' | 'templates' | 'preview' | 'test' | 'logs' | 'klaviyo'>('config');
+  const [activeSubTab, setActiveSubTab] = useState<'config' | 'templates' | 'preview' | 'test' | 'logs' | 'klaviyo' | 'royalmail'>('config');
   
   // Settings state
   const [emailSettings, setEmailSettings] = useState<EmailSettings | null>(null);
@@ -327,6 +328,15 @@ export function EmailSettingsTab() {
             }`}
           >
             <Sparkles className="h-3.5 w-3.5" /> Klaviyo Integration
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('royalmail')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeSubTab === 'royalmail' ? 'bg-rose-600 text-white shadow-lg' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Truck className="h-3.5 w-3.5" /> Royal Mail Click & Drop
           </button>
         </div>
       </div>
@@ -964,6 +974,11 @@ export function EmailSettingsTab() {
             )}
           </div>
         </div>
+      )}
+
+      {/* SUBTAB: Royal Mail Click & Drop Settings */}
+      {activeSubTab === 'royalmail' && (
+        <RoyalMailSettingsCard />
       )}
     </div>
   );
