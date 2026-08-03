@@ -311,39 +311,7 @@ export default function CheckoutView({
         amount: finalTotalToPay.toFixed(2)
       });
 
-      // Create order first
-      const orderData = {
-        orderId: generatedOrderId,
-        customerName: fullName,
-        customerEmail: email,
-        address: `${addressLine}, ${city}, ${postcode}, ${country}`,
-        total: finalTotalToPay,
-        discountApplied: currentDiscount,
-        items: cartItems.map(item => ({
-          productId: item.productId,
-          productTitle: item.productTitle,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image
-        })),
-        gatewayTxId: `PENDING-${Date.now()}`,
-        gatewayAuthCode: 'PENDING',
-        cardBrand: 'Pending',
-        storeCreditApplied: storeCreditApplied,
-        paymentMethod: 'Card'
-      };
-
-      const orderResponse = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create order');
-      }
-
-      // Initialize Worldpay HPP session
+      // Initialize Worldpay HPP session directly without creating an unconfirmed pending order
       const sessionRes = await fetch('/api/worldpay/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -380,8 +348,8 @@ export default function CheckoutView({
         }
       }
 
-      // Handle error
-      setPaymentError(sessionData.error || sessionData.message || 'Worldpay session creation failed.');
+      // Handle error if payment gateway is not configured or session fails
+      setPaymentError(sessionData.error || sessionData.message || 'Payment gateway is currently not configured or session failed. No order was generated.');
       setIsProcessingPayment(false);
       
     } catch (error: any) {

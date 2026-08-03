@@ -992,7 +992,8 @@ export default function App() {
           fresh.referralCode !== loggedInCustomer.referralCode ||
           fresh.ordersCount !== loggedInCustomer.ordersCount ||
           fresh.amountSpent !== loggedInCustomer.amountSpent ||
-          fresh.subscriptionStatus !== loggedInCustomer.subscriptionStatus;
+          fresh.subscriptionStatus !== loggedInCustomer.subscriptionStatus ||
+          JSON.stringify(fresh.wishlist || []) !== JSON.stringify(loggedInCustomer.wishlist || []);
         if (hasDiff) {
           console.log(`[Sync Engine] Synchronizing loggedInCustomer state with master customers list. Store credit: £${fresh.storeCredit}`);
           setLoggedInCustomer(fresh);
@@ -1176,16 +1177,28 @@ export default function App() {
   // --- Wishlist handlers ---
   const handleToggleWishlist = (productId: string) => {
     if (!loggedInCustomer) return;
+    let nextWishlist: string[] = [];
     setLoggedInCustomer(prev => {
       if (!prev) return null;
       const copy = { ...prev };
-      if (copy.wishlist.includes(productId)) {
-        copy.wishlist = copy.wishlist.filter(id => id !== productId);
+      const list = Array.isArray(copy.wishlist) ? copy.wishlist : [];
+      if (list.includes(productId)) {
+        nextWishlist = list.filter(id => id !== productId);
       } else {
-        copy.wishlist = [...copy.wishlist, productId];
+        nextWishlist = [...list, productId];
       }
+      copy.wishlist = nextWishlist;
       return copy;
     });
+
+    setCustomers(prevCusts => prevCusts.map(c => {
+      if (c.id === loggedInCustomer.id || c.email.toLowerCase() === loggedInCustomer.email.toLowerCase()) {
+        const list = Array.isArray(c.wishlist) ? c.wishlist : [];
+        const updatedList = list.includes(productId) ? list.filter(id => id !== productId) : [...list, productId];
+        return { ...c, wishlist: updatedList };
+      }
+      return c;
+    }));
   };
 
   const handleUpdateWishlistAction = (productId: string, action: 'add' | 'remove') => {
@@ -1193,13 +1206,28 @@ export default function App() {
     setLoggedInCustomer(prev => {
       if (!prev) return null;
       const copy = { ...prev };
+      const list = Array.isArray(copy.wishlist) ? copy.wishlist : [];
       if (action === 'remove') {
-        copy.wishlist = copy.wishlist.filter(id => id !== productId);
-      } else if (!copy.wishlist.includes(productId)) {
-        copy.wishlist = [...copy.wishlist, productId];
+        copy.wishlist = list.filter(id => id !== productId);
+      } else if (!list.includes(productId)) {
+        copy.wishlist = [...list, productId];
       }
       return copy;
     });
+
+    setCustomers(prevCusts => prevCusts.map(c => {
+      if (c.id === loggedInCustomer.id || c.email.toLowerCase() === loggedInCustomer.email.toLowerCase()) {
+        const list = Array.isArray(c.wishlist) ? c.wishlist : [];
+        let updatedList = list;
+        if (action === 'remove') {
+          updatedList = list.filter(id => id !== productId);
+        } else if (!list.includes(productId)) {
+          updatedList = [...list, productId];
+        }
+        return { ...c, wishlist: updatedList };
+      }
+      return c;
+    }));
   };
 
   // --- Customer login and details update ---

@@ -1622,8 +1622,15 @@ export default function CustomerAccount({
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {loggedInCustomer.wishlist.map((productId) => {
-                        const prod = allProducts.find(p => p.id === productId || p.slug === productId || p.title === productId);
+                      {(loggedInCustomer.wishlist || []).map((productId) => {
+                        const pidStr = String(productId).trim().toLowerCase();
+                        const prod = allProducts.find(p => 
+                          String(p.id).toLowerCase() === pidStr || 
+                          (p.slug && String(p.slug).toLowerCase() === pidStr) || 
+                          (p.title && String(p.title).toLowerCase() === pidStr) ||
+                          (p.concreteVariantId && String(p.concreteVariantId).toLowerCase() === pidStr) ||
+                          (p.concreteVariants && p.concreteVariants.some(v => String(v.id).toLowerCase() === pidStr || String(v.name).toLowerCase() === pidStr))
+                        );
                         if (!prod) return null;
                         return (
                           <div 
