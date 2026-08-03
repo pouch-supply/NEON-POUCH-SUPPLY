@@ -609,19 +609,33 @@ export function EmailSettingsTab() {
             </div>
           )}
 
-          {/* Info Banner explaining Resend Sandbox Recipient Limitation */}
+          {/* Info Banner explaining Resend Sandbox Recipient Limitation & How to allow ANY email */}
           {emailSettings?.resendApiKey && (
-            <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-xs space-y-2">
+            <div className="p-4 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-xs space-y-3">
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-bold text-xs text-blue-950">Resend Free Sandbox Recipient Rule</p>
-                  <p className="text-blue-800 leading-relaxed">
-                    By default, Resend API key sends via <code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">onboarding@resend.dev</code>. In this free sandbox mode, Resend <strong>strictly restricts delivery to your registered Resend email address</strong> (<strong className="underline">scottkivlinpouch@gmail.com</strong>).
+                <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-1.5">
+                  <p className="font-extrabold text-sm text-blue-950">Where are emails delivered & How to send to ANY email address?</p>
+                  
+                  <p className="text-blue-900 leading-relaxed">
+                    <strong>1. Where do test emails go?</strong> They are sent directly to the specified recipient inbox (e.g., <strong>scottkivlinpouch@gmail.com</strong>). Please check your <em>Primary inbox, Spam/Junk folder, and Promotions tab</em> in Gmail.
                   </p>
-                  <p className="text-blue-800 leading-relaxed">
-                    To send live emails to other customer addresses (or any outside inbox), you must verify a domain at <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="font-bold underline text-blue-900 hover:text-blue-950">resend.com/domains</a> and set a custom 'From Email' in the Configuration tab.
+
+                  <p className="text-blue-900 leading-relaxed">
+                    <strong>2. Why did sending to other emails fail?</strong> Resend's free default sender (<code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">onboarding@resend.dev</code>) only permits sending to your registered Resend account owner email (<strong className="underline">scottkivlinpouch@gmail.com</strong>) to prevent spam.
                   </p>
+
+                  <div className="p-3 bg-white/90 rounded-lg border border-blue-200 text-blue-950 space-y-1">
+                    <p className="font-extrabold text-xs text-blue-900 uppercase tracking-wider">How to unlock sending to ANY email address (3 simple steps):</p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700 pl-1">
+                      <li>Log into Resend and go to <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="font-bold underline text-blue-700 hover:text-blue-900">resend.com/domains</a> to add your domain (e.g., <code className="bg-slate-100 px-1 rounded font-mono">pouch-supply.com</code>).</li>
+                      <li>Add the required DNS records at your domain registrar to verify ownership.</li>
+                      <li>In this dashboard, switch to the <strong>Configuration</strong> tab above and set <strong>From Email</strong> to your domain address (e.g., <code className="bg-slate-100 px-1 rounded font-mono">orders@pouch-supply.com</code>).</li>
+                    </ol>
+                    <p className="text-[11px] text-emerald-800 font-bold pt-1">
+                      ✓ Once your custom domain is verified, Resend allows sending live emails to ANY customer address!
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -705,6 +719,15 @@ export function EmailSettingsTab() {
               <p className="text-xs">
                 {testResult.message || (testResult.error ? String(testResult.error) : 'Check details below.')}
               </p>
+
+              {testResult.success && testResult.mode === 'live' && (
+                <div className="p-3 bg-white/90 rounded-lg border border-emerald-300 text-emerald-950 text-xs space-y-1 mt-2">
+                  <p className="font-bold">📬 Delivered to: <span className="underline">{testRecipient}</span></p>
+                  <p className="text-[11px] text-emerald-900 leading-relaxed">
+                    Check your Gmail account at <strong>{testRecipient}</strong>. If you do not see it in your primary inbox, please check your <strong>Spam / Junk</strong> folder or <strong>Promotions</strong> tab.
+                  </p>
+                </div>
+              )}
 
               {testResult.log?.resendId && (
                 <div className="p-2.5 bg-white/80 rounded border border-emerald-200 font-mono text-[11px] text-emerald-900 font-bold">
