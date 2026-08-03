@@ -1298,8 +1298,8 @@ export default function App() {
     cardBrand: string;
     storeCreditApplied?: number;
   }) => {
-    // Generate Express Courier Track & Trace ID
-    const generatedTrackingId = 'EC' + Math.floor(100000000 + Math.random() * 900000000) + 'GB';
+    // Generate Royal Mail Track & Trace ID
+    const generatedTrackingId = 'RM' + Math.floor(100000000 + Math.random() * 900000000) + 'GB';
 
     // Construct order
     const newOrder: Order = {
@@ -1315,16 +1315,16 @@ export default function App() {
       total: paymentDetails.total,
       destination: paymentDetails.address,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      deliveryMethod: 'Priority Express Courier Shipping | Tracked',
+      deliveryMethod: 'Royal Mail Tracked 24/48',
       items: paymentDetails.items,
       trackingId: generatedTrackingId,
-      carrier: 'Express Courier',
+      carrier: 'Royal Mail',
       trackingHistory: [
         {
           status: 'Sender dispatching item',
           date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           location: 'Pouch Supply Hub, London MC',
-          description: 'We have received sender advice. Express Courier is awaiting receipt of the physical package.'
+          description: 'We have received sender advice. Royal Mail is awaiting receipt of the physical package.'
         }
       ]
     };
@@ -1342,7 +1342,7 @@ export default function App() {
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 550px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #334155;">
         <div style="background-color: #0f172a; padding: 25px 20px; text-align: center;">
-          <span style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">EXPRESS COURIER TRACK & TRACE</span>
+          <span style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">ROYAL MAIL TRACK & TRACE</span>
           <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Pouch Supply Order Confirmation Advice</div>
         </div>
         
@@ -1352,17 +1352,17 @@ export default function App() {
             Thank you for shopping with <strong>Pouch Supply</strong>. Your order has been securely processed and is preparing for immediate delivery partner handoff.
           </p>
 
-          <!-- Express Courier Tracking Box -->
+          <!-- Royal Mail Tracking Box -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
               <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">Delivery Partner Integration</span>
-              <span style="font-size: 10px; font-weight: bold; color: #1e293b; background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px;">EXPRESS COURIER TRACKED</span>
+              <span style="font-size: 10px; font-weight: bold; color: #1e293b; background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px;">ROYAL MAIL TRACKED</span>
             </div>
             
             <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
               <tr>
                 <td style="color: #64748b; padding: 4px 0;">Carrier service:</td>
-                <td style="font-weight: bold; color: #0f172a; text-align: right; padding: 4px 0;">Express Courier 1st Class Tracked</td>
+                <td style="font-weight: bold; color: #0f172a; text-align: right; padding: 4px 0;">Royal Mail Tracked 24/48</td>
               </tr>
               <tr>
                 <td style="color: #64748b; padding: 4px 0;">Tracking reference number:</td>
@@ -1375,8 +1375,8 @@ export default function App() {
             </table>
 
             <div style="margin-top: 15px; text-align: center;">
-              <span style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; letter-spacing: 1px;">
-                Express Tracked 24
+              <span style="display: inline-block; background-color: #d97706; color: #ffffff; font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; letter-spacing: 1px;">
+                Royal Mail Tracked 24
               </span>
             </div>
           </div>
@@ -1413,16 +1413,16 @@ export default function App() {
 
     const customerEmailObj = {
       to: paymentDetails.customerEmail,
-      subject: `Your Pouch Supply Order Despatch Advice [Express Courier: ${generatedTrackingId}]`,
-      preview: `Your order #${paymentDetails.orderId} is being prepared. Express Courier tracking reference: ${generatedTrackingId}.`,
+      subject: `Your Pouch Supply Order Despatch Advice [Royal Mail: ${generatedTrackingId}]`,
+      preview: `Your order #${paymentDetails.orderId} is being prepared. Royal Mail tracking reference: ${generatedTrackingId}.`,
       body: emailHtml,
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     const adminEmailObj = {
       to: 'scott@pouch-supply.com',
-      subject: `[Copy] Pouch Supply Order Dispatch Reference #${paymentDetails.orderId} [Express Courier: ${generatedTrackingId}]`,
-      preview: `Dispatched notification for customer ${paymentDetails.customerName} (${paymentDetails.customerEmail}) with Express Courier ID: ${generatedTrackingId}.`,
+      subject: `[Copy] Pouch Supply Order Dispatch Reference #${paymentDetails.orderId} [Royal Mail: ${generatedTrackingId}]`,
+      preview: `Dispatched notification for customer ${paymentDetails.customerName} (${paymentDetails.customerEmail}) with Royal Mail ID: ${generatedTrackingId}.`,
       body: emailHtml,
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };

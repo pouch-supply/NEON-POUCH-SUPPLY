@@ -53,7 +53,7 @@ function getSampleTemplateData(type: EmailTemplateType, customData?: any): Email
     deliveryCost: 2.99,
     total: 37.93,
     destination: '42 Baker Street, Marylebone, London, NW1 6XE, United Kingdom',
-    deliveryMethod: 'Priority Express Courier Shipping | Tracked 24',
+    deliveryMethod: 'Royal Mail Tracked 24/48',
     trackingNumber: 'GB892341982UK',
     carrier: 'Royal Mail Tracked 24',
     estimatedDelivery: 'Tomorrow by 1:00 PM',

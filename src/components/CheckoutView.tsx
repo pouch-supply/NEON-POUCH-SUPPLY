@@ -606,9 +606,9 @@ export default function CheckoutView({
               <div className="border border-slate-800 bg-slate-50 ring-1 ring-slate-800 rounded-xl p-3.5 flex items-center justify-between">
                 <div className="text-left">
                   <span className="font-extrabold text-xs block text-slate-800 flex items-center gap-1.5">
-                    <Truck className="h-4 w-4 text-indigo-600" /> Express Courier
+                    <Truck className="h-4 w-4 text-red-600" /> Royal Mail Tracked
                   </span>
-                  <span className="text-[10px] text-slate-500">Arrives in 3–5 business days</span>
+                  <span className="text-[10px] text-slate-500">Royal Mail 24/48 Tracked Delivery</span>
                 </div>
                 <span className={subtotalAfterDiscount >= 40 ? "font-black text-xs text-emerald-600" : "font-black text-xs text-slate-800"}>
                   {subtotalAfterDiscount >= 40 ? 'FREE' : '£2.99'}

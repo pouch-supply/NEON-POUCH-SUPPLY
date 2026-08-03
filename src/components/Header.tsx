@@ -473,7 +473,7 @@ export default function Header({
                     <span className="text-emerald-500">✔</span> Official Supplier
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-emerald-500">✔</span> Tracked Express
+                    <span className="text-emerald-500">✔</span> Royal Mail Tracked
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-emerald-500">✔</span> Age Verified

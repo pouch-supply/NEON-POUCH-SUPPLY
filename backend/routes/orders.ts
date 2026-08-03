@@ -40,7 +40,7 @@ async function saveSingleOrder(orderData: any) {
     storeCreditApplied: typeof orderData.storeCreditApplied === 'number' ? orderData.storeCreditApplied : parseFloat(orderData.storeCreditApplied) || existingOrder?.storeCreditApplied || 0,
     destination: orderData.destination || orderData.address || existingOrder?.destination || 'United Kingdom',
     date: orderData.date || existingOrder?.date || (new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
-    deliveryMethod: orderData.deliveryMethod || existingOrder?.deliveryMethod || 'Priority Express Courier Shipping | Tracked',
+    deliveryMethod: orderData.deliveryMethod || existingOrder?.deliveryMethod || 'Royal Mail Tracked 24/48',
     items: orderData.items || existingOrder?.items || [],
     discountApplied: orderData.discountApplied || existingOrder?.discountApplied || null,
     trackingNumber: orderData.trackingNumber || existingOrder?.trackingNumber || null,

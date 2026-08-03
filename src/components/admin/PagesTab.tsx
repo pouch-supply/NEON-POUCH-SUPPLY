@@ -1111,7 +1111,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                             : (sec.settings.faqItems && sec.settings.faqItems.length > 0) ? sec.settings.faqItems 
                                             : null;
                               const faqs = rawFaqs || [
-                                { question: 'How long does shipping take?', answer: 'Orders placed before 3 PM ship same day via Express Tracked Delivery.' },
+                                { question: 'How long does shipping take?', answer: 'Orders placed before 3 PM ship same day via Royal Mail Tracked Delivery.' },
                                 { question: 'Are all products tobacco-free?', answer: 'Yes, 100% tobacco-free white nicotine pouches.' }
                               ];
 
@@ -1183,7 +1183,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                                 </h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                                   {[
-                                    { title: 'Express Tracked 24', sub: 'Fast Tracked UK Delivery' },
+                                    { title: 'Royal Mail Tracked 24', sub: 'Fast Tracked UK Delivery' },
                                     { title: '100% Authentic', sub: 'Direct Swedish Imports' },
                                     { title: 'Lab Tested', sub: 'Purity & Quality Guaranteed' },
                                     { title: 'Discreet Package', sub: 'No Brand Outer Logos' }

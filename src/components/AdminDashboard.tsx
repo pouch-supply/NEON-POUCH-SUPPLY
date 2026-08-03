@@ -1304,7 +1304,7 @@ export default function AdminDashboard({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
-  const [carrierInput, setCarrierInput] = useState('Express Courier');
+  const [carrierInput, setCarrierInput] = useState('Royal Mail');
   const [timelineComment, setTimelineComment] = useState('');
   const [timelineComments, setTimelineComments] = useState<Record<string, {text: string, date: string}[]>>({});
 
@@ -2490,12 +2490,12 @@ export default function AdminDashboard({
           { iconType: 'tag', title: 'MEMBER PRICING', description: 'Better prices, always.' }
         ] : undefined,
         faqItems: sectionType === 'FAQs' ? [
-          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.' },
+          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time Royal Mail tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time Royal Mail tracking codes emailed instantly upon dispatch.' },
           { q: 'Are these pouches tobacco-free?', a: 'Formulated completely on plant fiber with medical pure crystalline extract.', question: 'Are these pouches tobacco-free?', answer: 'Formulated completely on plant fiber with medical pure crystalline extract.' },
           { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.', question: 'How long do subscriptions repeat?', answer: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.' }
         ] : undefined,
         faqs: sectionType === 'FAQs' ? [
-          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time express carrier tracking codes emailed instantly upon dispatch.' },
+          { q: 'Is delivery fully tracked?', a: 'Yes, all orders over shipping thresholds generate functional, real-time Royal Mail tracking codes emailed instantly upon dispatch.', question: 'Is delivery fully tracked?', answer: 'Yes, all orders over shipping thresholds generate functional, real-time Royal Mail tracking codes emailed instantly upon dispatch.' },
           { q: 'Are these pouches tobacco-free?', a: 'Formulated completely on plant fiber with medical pure crystalline extract.', question: 'Are these pouches tobacco-free?', answer: 'Formulated completely on plant fiber with medical pure crystalline extract.' },
           { q: 'How long do subscriptions repeat?', a: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.', question: 'How long do subscriptions repeat?', answer: 'Your tailored canister bundles renew automatically at your specific interval. Pause or cancel anytime for free.' }
         ] : undefined,

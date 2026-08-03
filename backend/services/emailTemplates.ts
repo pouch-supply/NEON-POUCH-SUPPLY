@@ -142,7 +142,7 @@ function renderOrderItemsTable(data: EmailTemplateData): string {
         <span style="font-weight: 600; color: #334155;">£${subtotal.toFixed(2)}</span>
       </div>
       <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;">
-        <span>Express Delivery</span>
+        <span>Royal Mail Delivery</span>
         <span style="font-weight: 600; color: #334155;">${delivery === 0 ? 'FREE' : `£${delivery.toFixed(2)}`}</span>
       </div>
       ${data.discountAmount ? `
@@ -189,7 +189,7 @@ export function renderOrderConfirmationTemplate(data: EmailTemplateData): string
         ${data.destination || 'United Kingdom'}
       </p>
       <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">
-        Method: ${data.deliveryMethod || 'Priority Express Courier Shipping'}
+        Method: ${data.deliveryMethod || 'Royal Mail Tracked 24/48'}
       </p>
     </div>
 

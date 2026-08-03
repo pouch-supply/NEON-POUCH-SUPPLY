@@ -294,7 +294,7 @@ export default function CustomerAccount({
         nextPayment: (loggedInCustomer as any).nextPayment || '19 June 2026',
         nextDelivery: (loggedInCustomer as any).nextDelivery || '24 June 2026',
         unlockedRewards: (loggedInCustomer as any).unlockedRewards || [
-          { id: 'reward_1', title: 'Free Express Delivery', desc: 'Complimentary shipping upgrade', redeemed: false, code: 'FREESHIP' },
+          { id: 'reward_1', title: 'Free Royal Mail Tracked Delivery', desc: 'Complimentary Royal Mail shipping upgrade', redeemed: false, code: 'FREESHIP' },
           { id: 'reward_2', title: '£5.00 Off Order', desc: 'Direct cash discount voucher', redeemed: false, code: 'POUCH5OFF' },
           { id: 'reward_3', title: 'Free Extra Can', desc: 'Unlock a free sample in next box', redeemed: false, code: 'FREECAN' }
         ],
@@ -560,11 +560,11 @@ export default function CustomerAccount({
               </form>
 
               {trackedOrder && (
-                trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
+                trackedOrder.carrier === 'Royal Mail' || trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
                   <div className="bg-[#f8fafc] border border-slate-200 p-4 rounded-2xl shadow-xs space-y-4">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-serif font-black text-xs text-slate-800">Express Courier</span>
+                        <span className="font-serif font-black text-xs text-slate-800">Royal Mail</span>
                         <span className="text-[8px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold uppercase">Tracked</span>
                       </div>
                       <span className="font-mono text-[10px] font-bold text-slate-500">{trackedOrder.trackingId}</span>
@@ -1280,12 +1280,12 @@ export default function CustomerAccount({
                     {trackerError && <p className="text-xs text-rose-500 font-bold">{trackerError}</p>}
 
                     {trackedOrder ? (
-                      trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
+                      trackedOrder.carrier === 'Royal Mail' || trackedOrder.carrier === 'Express Courier' || trackedOrder.trackingId ? (
                         <div className="bg-[#f8fafc] border-2 border-slate-800 rounded-3xl overflow-hidden shadow-xs">
-                          {/* Express Courier Brand Header */}
+                          {/* Royal Mail Brand Header */}
                           <div className="bg-slate-900 p-4 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div className="flex items-center gap-2">
-                              <span className="font-serif font-black tracking-widest text-lg">Express Courier</span>
+                              <span className="font-serif font-black tracking-widest text-lg">Royal Mail</span>
                               <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
                                 Track & Trace Live
                               </span>
@@ -1308,7 +1308,7 @@ export default function CustomerAccount({
                                 }`}>
                                   <span className="inline-block w-2.5 h-2.5 rounded-full bg-current" />
                                   {trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered & Signed' : 
-                                   trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'In Transit via Express Courier' : 'Awaiting Collection'}
+                                   trackedOrder.fulfillmentStatus === 'Fulfilled' ? 'In Transit via Royal Mail' : 'Awaiting Collection'}
                                 </span>
                               </div>
                               <div>
@@ -1463,12 +1463,12 @@ export default function CustomerAccount({
                                       // Generate and send simulated alert/update email
                                       const notificationEmail = {
                                         to: trackedOrder.customerEmail,
-                                        subject: `Express Courier Delivery Update - Order #${trackedOrder.id}`,
+                                        subject: `Royal Mail Delivery Update - Order #${trackedOrder.id}`,
                                         preview: `Your shipment with tracking reference ${trackedOrder.trackingId} has been updated: current status is ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered' : 'In Transit'}.`,
                                         body: `
                                           <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
                                             <div style="background-color: #0f172a; padding: 20px; text-align: center; color: white;">
-                                              <h2 style="margin: 0; font-size: 18px;">EXPRESS COURIER SERVICE ALERT</h2>
+                                              <h2 style="margin: 0; font-size: 18px;">ROYAL MAIL SERVICE ALERT</h2>
                                             </div>
                                             <div style="padding: 20px; font-size: 13px; line-height: 1.5; color: #334155;">
                                               <p>Hello ${trackedOrder.customerName},</p>
@@ -2067,7 +2067,7 @@ export default function CustomerAccount({
                           milestones: [
                             { order: 1, reward: "Members receive 10% OFF", code: "BRONZE1" },
                             { order: 3, reward: "FREE can of your choice", code: "BRONZE3" },
-                            { order: 5, reward: "Free Express Delivery on your next order", code: "BRONZE5" }
+                            { order: 5, reward: "Free Royal Mail Tracked Delivery on your next order", code: "BRONZE5" }
                           ]
                         },
                         {
