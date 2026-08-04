@@ -1420,6 +1420,33 @@ export const PagesTab: React.FC<PagesTabProps> = ({
                       </div>
                     )}
 
+                    {/* CONTACT FORM CONTROLS */}
+                    {currentlyEditingSection.type === 'Contact Form' && (
+                      <div className="space-y-2.5 bg-emerald-50/50 p-3 rounded-xl border border-emerald-200">
+                        <span className="block text-[10px] font-black text-emerald-800 uppercase tracking-wider">✉️ Contact Form Settings</span>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">Heading Title</label>
+                          <input
+                            type="text"
+                            value={currentlyEditingSection.settings.title || ''}
+                            onChange={(e) => handleUpdateSectionSettings('title', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white font-bold text-slate-800"
+                            placeholder="Get in Touch with Our Team"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-600 uppercase mb-1">Subheading Description</label>
+                          <textarea
+                            rows={2}
+                            value={currentlyEditingSection.settings.description || ''}
+                            onChange={(e) => handleUpdateSectionSettings('description', e.target.value)}
+                            className="w-full text-xs p-1.5 border rounded-lg bg-white text-slate-700 font-sans"
+                            placeholder="Have questions about your order or shipping? Fill out the form..."
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* FEATURED COLLECTION & COLLECTION LIST CONTROLS */}
                     {(currentlyEditingSection.type === 'Featured collection' || currentlyEditingSection.type === 'Collection list') && (
                       <div className="space-y-3 bg-indigo-50/50 p-3 rounded-xl border border-indigo-200">

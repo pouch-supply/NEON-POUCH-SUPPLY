@@ -54,7 +54,8 @@ export const AVAILABLE_SECTION_TEMPLATES = [
   { type: 'How it works', label: 'How it works', desc: 'Dynamic timeline workflow steps with custom images & layouts', icon: 'Compass' },
   { type: 'Trust badges', label: 'Trust Badges', desc: 'Elegant horizontal grid displaying core store guarantees like authenticity and premium quality', icon: 'Award' },
   { type: 'Plans', label: 'Subscription Plans', desc: 'Display the customizable 4-tier subscription plans grid', icon: 'LayoutGrid' },
-  { type: 'Clearance Sale', label: 'Clearance Sale', desc: 'Display selected clearance products with layouts like shop now grid', icon: 'Flame' }
+  { type: 'Clearance Sale', label: 'Clearance Sale', desc: 'Display selected clearance products with layouts like shop now grid', icon: 'Flame' },
+  { type: 'Contact Form', label: 'Contact Form', desc: 'Interactive customer inquiry form with name, email, subject, message, and Resend email connection', icon: 'Mail' }
 ] as const;
 
 export const getSectionLabel = (type: string): string => {
@@ -85,6 +86,7 @@ export const getSectionIcon = (type: string) => {
     case 'Trust badges': return <Award className="h-4 w-4 text-yellow-600 animate-pulse" />;
     case 'Plans': return <LayoutGrid className="h-4 w-4 text-amber-500 animate-pulse" />;
     case 'Clearance Sale': return <Flame className="h-4 w-4 text-red-500 animate-pulse" />;
+    case 'Contact Form': return <Mail className="h-4 w-4 text-emerald-600" />;
     default: return <FileCode className="h-4 w-4 text-slate-400" />;
   }
 };

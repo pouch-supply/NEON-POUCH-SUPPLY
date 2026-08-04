@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { Resend } from 'resend';
 import {
   getEmailSettings,
   saveEmailSettings,
@@ -231,6 +232,90 @@ router.post('/send-trigger', async (req: Request, res: Response) => {
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to dispatch email trigger' });
+  }
+});
+
+// POST /api/email/contact - Handle contact form submissions & send email via Resend
+router.post('/contact', async (req: Request, res: Response) => {
+  try {
+    const { name, email, subject, message, phone } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'Name, email, and message are required fields.' });
+    }
+
+    const settings = await getEmailSettings();
+    const adminEmail = settings.adminNotificationEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@pouch-supply.com';
+    const apiKey = settings.resendApiKey || process.env.RESEND_API_KEY || '';
+    const fromEmail = settings.fromEmail || process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <onboarding@resend.dev>';
+
+    const emailSubject = `📩 Contact Form Submission: ${subject || 'General Inquiry'} from ${name}`;
+    const htmlBody = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">New Contact Form Message</h2>
+        <p style="color: #475569; font-size: 14px;">You received a new message from your website contact page.</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+        <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #334155; width: 120px;">Name:</td>
+            <td style="padding: 8px 0; color: #0f172a;">${name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #334155;">Email:</td>
+            <td style="padding: 8px 0; color: #0f172a;"><a href="mailto:${email}" style="color: #2563eb;">${email}</a></td>
+          </tr>
+          ${phone ? `
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #334155;">Phone:</td>
+            <td style="padding: 8px 0; color: #0f172a;">${phone}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #334155;">Subject:</td>
+            <td style="padding: 8px 0; color: #0f172a;">${subject || 'General Inquiry'}</td>
+          </tr>
+        </table>
+        <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 6px;">
+          <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Message:</h4>
+          <p style="margin: 0; color: #334155; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${message}</p>
+        </div>
+        <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">Sent via Pouch Supply Co. Storefront Contact Form</p>
+      </div>
+    `;
+
+    let resendId: string | undefined = undefined;
+    if (apiKey) {
+      try {
+        const resend = new Resend(apiKey);
+        const sendRes = await resend.emails.send({
+          from: fromEmail,
+          to: [adminEmail],
+          replyTo: email,
+          subject: emailSubject,
+          html: htmlBody
+        });
+        resendId = sendRes.data?.id;
+      } catch (eErr: any) {
+        console.warn('[ContactForm] Resend delivery attempt warning:', eErr);
+      }
+    }
+
+    // Save to logs
+    const logs = await getEmailLogs();
+    const newLog = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'admin_new_order' as const,
+      recipient: adminEmail,
+      subject: emailSubject,
+      status: apiKey ? ('sent' as const) : ('simulated' as const),
+      resendId,
+      timestamp: new Date().toISOString(),
+      metadata: { contactForm: { name, email, subject, message, phone } }
+    };
+    await saveResource('email_logs', [newLog, ...(Array.isArray(logs) ? logs : [])]);
+
+    res.json({ success: true, message: 'Thank you for contacting us! Your message has been sent successfully.' });
+  } catch (err: any) {
+    console.error('[ContactForm] Error submitting contact form:', err);
+    res.status(500).json({ error: err.message || 'Failed to send message.' });
   }
 });
 

@@ -4,7 +4,7 @@ import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
 import { 
   ArrowRight, ShoppingCart, Star, Heart, FileText, Check, 
   ChevronDown, ChevronUp, Play, Sparkles, TrendingUp, Plus, Minus, ShieldCheck, Award, Eye, Flame, ArrowUpRight, BookOpen, Layers, ExternalLink,
-  Truck, Zap, Shield, Clock, Package, HelpCircle, Globe, Tag, ChevronLeft, ChevronRight, Lock, Gift, RefreshCw, Snowflake, Crown, Percent, Calendar
+  Truck, Zap, Shield, Clock, Package, HelpCircle, Globe, Tag, ChevronLeft, ChevronRight, Lock, Gift, RefreshCw, Snowflake, Crown, Percent, Calendar, Send, Mail, Phone, MapPin, AlertCircle, Loader2
 } from 'lucide-react';
 import PremiumSlideshow from './PremiumSlideshow';
 import PlansCanOverlay from './PlansCanOverlay';
@@ -1123,7 +1123,7 @@ function FeaturedCollectionSection({
         {/* Trust Badges and Browse All Brands button */}
         <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-4 w-full md:w-auto shrink-0">
           <button
-            onClick={() => onNavigate('frontend-shop')}
+            onClick={() => onNavigate('/pages/brands')}
             className="bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-black py-3 px-6 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 text-center w-full sm:w-auto"
           >
             <span className="uppercase tracking-widest text-[10px]">Browse All Brands</span>
@@ -1355,6 +1355,256 @@ interface PageRendererProps {
   onToggleWishlist: (productId: string) => void;
   onNavigate: (tab: string, arg?: string) => void; // for shop, subscribe etc.
   allBlogs?: BlogPost[];
+}
+
+interface ContactFormSectionProps {
+  sec: PageSection;
+}
+
+function ContactFormSection({ sec }: ContactFormSectionProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const title = sec.settings?.title || 'Get in Touch with Our Team';
+  const description = sec.settings?.description || 'Have questions about your order, shipping, or nicotine pouch brands? Fill out the form below or reach us directly. Our customer support team responds within 24 hours.';
+  const headingColor = sec.settings?.headingColor || '#0F172A';
+  const textColor = sec.settings?.textColor || '#475569';
+  const backgroundColor = sec.settings?.backgroundColor || '#FFFFFF';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      setStatus('error');
+      setErrorMessage('Please fill in all required fields (Name, Email, Message).');
+      return;
+    }
+
+    setStatus('submitting');
+    setErrorMessage('');
+
+    try {
+      const res = await fetch('/api/email/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStatus('success');
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      } else {
+        setStatus('error');
+        setErrorMessage(data.error || 'Failed to submit form. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('[ContactForm] Error submitting:', err);
+      setStatus('error');
+      setErrorMessage('Network error while sending message. Please check your connection.');
+    }
+  };
+
+  return (
+    <div className="py-12 md:py-16 w-full" style={{ backgroundColor }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          
+          {/* Left Column - Contact Information */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Mail className="h-3 w-3" /> Customer Support
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight" style={{ color: headingColor }}>
+                {title}
+              </h2>
+              <p className="text-xs sm:text-sm leading-relaxed" style={{ color: textColor }}>
+                {description}
+              </p>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-2.5 rounded-xl bg-white text-indigo-600 shadow-xs border border-slate-100">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Direct Email Desk</p>
+                  <a href="mailto:support@pouch-supply.com" className="text-xs sm:text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                    support@pouch-supply.com
+                  </a>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Average response time: &lt; 2 hours</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-2.5 rounded-xl bg-white text-emerald-600 shadow-xs border border-slate-100">
+                  <Phone className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Phone & WhatsApp Hotline</p>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">+44 20 7946 0912</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Mon - Fri: 9:00 AM - 6:00 PM GMT</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="p-2.5 rounded-xl bg-white text-amber-600 shadow-xs border border-slate-100">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Dispatch Depot & HQ</p>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">42 Baker Street, Marylebone</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">London, NW1 6XE, United Kingdom</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Contact Form */}
+          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+            {status === 'success' ? (
+              <div className="py-12 text-center space-y-4 animate-fade-in">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-sm">
+                  <Check className="h-8 w-8 stroke-[3]" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Message Received!</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Thank you for reaching out. A confirmation email has been logged and our customer care team will get back to you shortly.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStatus('idle')}
+                  className="bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl transition cursor-pointer"
+                >
+                  Send Another Message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-3">
+                  Send Us a Direct Inquiry
+                </h3>
+
+                {status === 'error' && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-700 font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                    <span>{errorMessage || 'Failed to submit form.'}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">
+                      Full Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Alex Mercer"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. alex@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">
+                      Phone Number (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. +44 7700 900077"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">
+                      Inquiry Subject
+                    </label>
+                    <select
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition cursor-pointer"
+                    >
+                      <option value="">Select Inquiry Topic...</option>
+                      <option value="Order Tracking & Shipping">Order Tracking & Shipping</option>
+                      <option value="Product & Brand Advice">Product & Brand Advice</option>
+                      <option value="Subscription & Recurring Delivery">Subscription & Recurring Delivery</option>
+                      <option value="Age Verification Query">Age Verification Query</option>
+                      <option value="Wholesale & Bulk Orders">Wholesale & Bulk Orders</option>
+                      <option value="General Support">General Support</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-600 mb-1">
+                    Your Message <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Tell us how we can help you with your order, product questions, or account..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition resize-none leading-relaxed"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={status === 'submitting'}
+                  className="w-full bg-[#0F172A] hover:bg-slate-800 disabled:bg-slate-400 text-white font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {status === 'submitting' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Sending Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>Submit Inquiry</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function PageRenderer({
@@ -2840,6 +3090,11 @@ export default function PageRenderer({
                       </div>
                     </div>
                   );
+                })()}
+
+                {/* 19. CONTACT FORM SECTION */}
+                {sec.type === 'Contact Form' && (() => {
+                  return <ContactFormSection sec={sec} />;
                 })()}
 
               </div>

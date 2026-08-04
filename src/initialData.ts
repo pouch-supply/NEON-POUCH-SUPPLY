@@ -203,6 +203,37 @@ export const DEFAULT_PAGES: CustomPage[] = [
         }
       }
     ]
+  },
+  {
+    id: 'contact',
+    title: 'Contact Us',
+    slug: 'contact',
+    visibility: 'Visible',
+    updatedAt: 'Aug 04, 2026',
+    sections: [
+      {
+        id: 'contact-sec-1',
+        type: 'Contact Form',
+        settings: {
+          fullWidth: false,
+          backgroundColor: '#FFFFFF',
+          headingColor: '#0F172A',
+          textColor: '#475569',
+          title: 'Get in Touch with Our Team',
+          description: 'Have questions about your order, shipping, or nicotine pouch brands? Fill out the form below or reach us directly. Our customer support team responds within 24 hours.'
+        }
+      },
+      {
+        id: 'contact-sec-2',
+        type: 'Trust badges',
+        settings: {
+          fullWidth: false,
+          backgroundColor: '#F8FAFC',
+          headingColor: '#0F172A',
+          textColor: '#64748B'
+        }
+      }
+    ]
   }
 ];
 

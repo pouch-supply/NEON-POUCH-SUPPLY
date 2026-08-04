@@ -297,6 +297,13 @@ export default function App() {
         finalPages = [...finalPages, defaultAbout];
       }
     }
+    // Guaranteed presence check for Contact page
+    if (!finalPages.some((p: any) => p && (p.slug === 'contact' || p.id === 'contact'))) {
+      const defaultContact = DEFAULT_PAGES.find((p: any) => p.slug === 'contact' || p.id === 'contact');
+      if (defaultContact) {
+        finalPages = [...finalPages, defaultContact];
+      }
+    }
     return finalPages;
   });
 
@@ -1984,8 +1991,13 @@ export default function App() {
             })()}
 
             {/* FRONTEND VIEW - CUSTOMIZABLE BUILDER SUBPAGES */}
-            {customPages.some(p => (p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, '')) && !p.isHomepage) && (() => {
-              const matchedPage = customPages.find(p => p.slug === currentTab || p.id === currentTab || p.slug === currentTab.replace(/^page-/, '') || p.id === currentTab.replace(/^page-/, ''));
+            {customPages.some(p => {
+              if (!p || p.isHomepage) return false;
+              const cleanTab = currentTab.replace(/^\/pages\//, '').replace(/^pages\//, '').replace(/^page-/, '');
+              return p.slug === currentTab || p.id === currentTab || p.slug === cleanTab || p.id === cleanTab;
+            }) && (() => {
+              const cleanTab = currentTab.replace(/^\/pages\//, '').replace(/^pages\//, '').replace(/^page-/, '');
+              const matchedPage = customPages.find(p => p && !p.isHomepage && (p.slug === currentTab || p.id === currentTab || p.slug === cleanTab || p.id === cleanTab));
               if (!matchedPage) return null;
               return (
                 <PageRenderer 
