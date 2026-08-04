@@ -8,6 +8,7 @@ import {
   Clock
 } from 'lucide-react';
 import SubscriptionIcon from './SubscriptionIcon';
+import AgeCheckedModal from './AgeCheckedModal';
 import { calculateDiscountAmount } from '../utils';
 
 interface CheckoutViewProps {
@@ -67,6 +68,31 @@ export default function CheckoutView({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // AgeChecked state
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState<boolean>(() => {
+    try {
+      const saved = sessionStorage.getItem('ps_agechecked_verified');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Boolean(parsed.verified);
+      }
+    } catch (e) {}
+    return false;
+  });
+  const [ageCheckedConfig, setAgeCheckedConfig] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/agechecked/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.config) {
+          setAgeCheckedConfig(data.config);
+        }
+      })
+      .catch(err => console.warn('[CheckoutView] Error loading AgeChecked config:', err));
+  }, []);
 
   // Polling for payment status
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -237,15 +263,7 @@ export default function CheckoutView({
   const finalTotalToPay = Math.max(0, finalTotal - storeCreditApplied);
 
   // Process payment with Worldpay HPP
-  const handlePay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate shipping info
-    if (!fullName || !email || !addressLine) {
-      setPaymentError('Please fill in your shipping and contact information.');
-      return;
-    }
-
+  const executePaymentProcess = async () => {
     // Handle zero-cost orders (store credit covers everything)
     if (finalTotalToPay === 0) {
       setIsProcessing(true);
@@ -359,6 +377,40 @@ export default function CheckoutView({
       setIsProcessingPayment(false);
       setPaymentError(error.message || 'Failed to process payment');
     }
+  };
+
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate shipping info
+    if (!fullName || !email || !addressLine) {
+      setPaymentError('Please fill in your shipping and contact information.');
+      return;
+    }
+
+    // Check AgeChecked age verification status
+    const isEnabled = ageCheckedConfig ? ageCheckedConfig.enabled : true;
+
+    if (isEnabled && !isAgeVerified) {
+      // Check if verified in sessionStorage
+      try {
+        const saved = sessionStorage.getItem('ps_agechecked_verified');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.verified) {
+            setIsAgeVerified(true);
+            await executePaymentProcess();
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Open AgeChecked verification modal
+      setShowAgeModal(true);
+      return;
+    }
+
+    await executePaymentProcess();
   };
 
   // Processing screen
@@ -849,6 +901,27 @@ export default function CheckoutView({
               </div>
             </div>
 
+            {/* Age Verification Badge */}
+            <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${
+              isAgeVerified 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                : 'bg-amber-50 border-amber-200 text-amber-900'
+            }`}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className={`h-4 w-4 shrink-0 ${isAgeVerified ? 'text-emerald-600' : 'text-amber-600'}`} />
+                <span>{isAgeVerified ? 'Age Verification Passed (18+ Compliant)' : 'Age Verification Required (18+)'}</span>
+              </div>
+              {!isAgeVerified && (
+                <button
+                  type="button"
+                  onClick={() => setShowAgeModal(true)}
+                  className="text-[10px] bg-amber-700 text-white px-2.5 py-1 rounded-lg hover:bg-amber-800 transition-all font-black uppercase cursor-pointer shrink-0"
+                >
+                  Verify
+                </button>
+              )}
+            </div>
+
             {/* Security badge */}
             <div className="border-t border-slate-100 pt-3.5 flex justify-center gap-4 text-slate-400 font-bold text-[9px] uppercase tracking-wider">
               <span className="flex items-center gap-1"><Lock className="h-3 w-3 text-emerald-500" /> SSL Encrypted</span>
@@ -859,6 +932,29 @@ export default function CheckoutView({
         </div>
 
       </div>
+
+      {/* AgeChecked Verification Modal */}
+      <AgeCheckedModal
+        isOpen={showAgeModal}
+        onClose={() => setShowAgeModal(false)}
+        minAge={ageCheckedConfig?.minAge || 18}
+        initialCustomerData={{
+          firstName: fullName.split(' ')[0] || '',
+          lastName: fullName.split(' ').slice(1).join(' ') || '',
+          email,
+          addressLine1: addressLine,
+          city,
+          postalCode: postcode
+        }}
+        onVerified={(_res) => {
+          setIsAgeVerified(true);
+          setShowAgeModal(false);
+          // Auto-continue to Worldpay payment after verification succeeds!
+          setTimeout(() => {
+            executePaymentProcess();
+          }, 300);
+        }}
+      />
 
     </div>
   );

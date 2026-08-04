@@ -428,3 +428,54 @@ export interface DevSettings {
   updatedAt?: string;
 }
 
+export interface AgeCheckedSettings {
+  enabled: boolean;
+  environment: 'staging' | 'live';
+  username: string;
+  password?: string;
+  publicKey: string;
+  secretKey?: string;
+  stagingUrl: string;
+  liveUrl: string;
+  minAge: number;
+  restrictAllProducts: boolean;
+  restrictedCategories: string[];
+  updatedAt?: string;
+}
+
+export interface AgeCheckedVerificationRequest {
+  firstName: string;
+  lastName: string;
+  dob?: string; // YYYY-MM-DD
+  addressLine1?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface AgeCheckedVerificationResult {
+  success: boolean;
+  verified: boolean;
+  ageCheckedId?: string;
+  status: 'APPROVED' | 'DECLINED' | 'PENDING' | 'EXPIRED' | 'ERROR';
+  reason?: string;
+  message?: string;
+  timestamp?: string;
+  customerAge?: number;
+}
+
+export interface AgeCheckedAuditLog {
+  id: string;
+  timestamp: string;
+  customerName: string;
+  customerEmail: string;
+  status: 'APPROVED' | 'DECLINED' | 'PENDING' | 'ERROR';
+  environment: 'staging' | 'live';
+  minAgeRequired: number;
+  reason?: string;
+  ageCheckedId?: string;
+}
+
+
