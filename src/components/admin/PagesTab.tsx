@@ -648,7 +648,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
             <div className="lg:col-span-2">
               <div className="bg-white border rounded-xl shadow-md min-h-[60vh] overflow-hidden">
                 
-                {/* Simulator browser Header Mockup */}
+                {/* Live browser frame header */}
                 <div className="bg-slate-100 border-b border-slate-200 p-3 px-4 flex justify-between items-center text-[10px] text-slate-400 font-bold tracking-wider">
                   <div className="flex gap-1.5 items-center">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
@@ -2825,7 +2825,7 @@ export const PagesTab: React.FC<PagesTabProps> = ({
 
                   </div>
                 ) : (
-                  <p className="text-[11px] text-slate-400 py-6 text-center">Click on any module section inside simulator preview to load options.</p>
+                  <p className="text-[11px] text-slate-400 py-6 text-center">Click on any module section in the live preview frame to load options.</p>
                 )}
 
               </div>

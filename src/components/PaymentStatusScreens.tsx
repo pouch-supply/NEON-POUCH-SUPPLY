@@ -315,7 +315,7 @@ export function PaymentFailedScreen({ onReturnToCheckout }: PaymentFailedScreenP
         <span className="text-red-800 uppercase text-[9px] font-black tracking-widest block">Error Reported by Gateway:</span>
         <p className="font-extrabold text-slate-800 text-[11.5px] leading-relaxed">{reason}</p>
         <p className="text-[10px] text-slate-500 leading-relaxed pt-1">
-          Suggestions: Check that cardholder address details are valid, check you have sufficient account funds, or toggle the "approved card" simulator setting on the gateway page to try again.
+          Suggestions: Check that cardholder billing details match your card issuing bank, ensure sufficient account funds, or try an alternative card.
         </p>
       </div>
 
@@ -339,7 +339,7 @@ export function PaymentFailedScreen({ onReturnToCheckout }: PaymentFailedScreenP
           }}
           className="flex-1 py-4 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-xl transition cursor-pointer shadow-md"
         >
-          Retry Payment on Simulator
+          Retry Payment Gateway
         </button>
       </div>
     </div>

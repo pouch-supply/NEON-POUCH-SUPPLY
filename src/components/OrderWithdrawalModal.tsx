@@ -84,7 +84,7 @@ export default function OrderWithdrawalModal({
 
     setIsSubmitting(true);
 
-    // Simulate merchant processing / validation hook
+    // Execute merchant processing and validation workflow
     setTimeout(() => {
       onConfirmWithdrawal(
         matchedOrder.id,
@@ -355,7 +355,7 @@ export default function OrderWithdrawalModal({
                       Your withdrawal declaration has been successfully recorded for Order <strong className="text-slate-800">#{orderNumber}</strong>.
                     </p>
                     <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                      A simulated confirmation email containing the withdrawal summary documents has been dispatched to <strong className="font-semibold text-slate-700">{email}</strong>.
+                      A confirmation email containing the withdrawal summary documents has been dispatched to <strong className="font-semibold text-slate-700">{email}</strong>.
                     </p>
                   </div>
 

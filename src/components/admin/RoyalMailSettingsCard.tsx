@@ -216,7 +216,7 @@ export const RoyalMailSettingsCard: React.FC = () => {
                 {settings.apiKey ? (
                   <span className="text-emerald-700 font-bold ml-1">✓ API Key Configured</span>
                 ) : (
-                  <span className="text-amber-700 font-bold ml-1"> (Using built-in graceful simulation until Key is added)</span>
+                  <span className="text-amber-700 font-bold ml-1"> (Click & Drop API Key pending configuration)</span>
                 )}
               </p>
             </div>

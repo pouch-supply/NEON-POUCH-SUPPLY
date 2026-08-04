@@ -787,7 +787,7 @@ export default function CustomerDrawer({
                             <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                               <Mail className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
                               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Authentication Required</p>
-                              <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-[200px] mx-auto">Please sign in to view simulated dispatched emails sent to your address.</p>
+                              <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-[200px] mx-auto">Please sign in to view dispatched order notifications sent to your address.</p>
                             </div>
                           ) : (() => {
                             const myEmails = emailsList.filter(e => e.to.toLowerCase() === loggedInCustomer.email.toLowerCase());
@@ -795,12 +795,12 @@ export default function CustomerDrawer({
                               <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                 <Mail className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Inbox Empty</p>
-                                <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-[200px] mx-auto">Dispatched transaction and withdrawal emails will show up here as live copies.</p>
+                                <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-[200px] mx-auto font-medium">Dispatched transaction receipts and order updates will show up here.</p>
                               </div>
                             ) : (
                               <div className="space-y-2.5">
                                 <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl text-[10px] text-indigo-800 font-medium leading-relaxed">
-                                  📬 <strong>Simulated Sandbox Inbox</strong>: Since actual transactional emails require live SMTP credentials, all confirmation emails are intercepted and mirrored below in real-time.
+                                  📬 <strong>Customer Account Notifications</strong>: Email receipts and order status dispatch notes sent to your address are stored here for reference.
                                 </div>
                                 {myEmails.map((email, idx) => (
                                   <div 
@@ -813,7 +813,7 @@ export default function CustomerDrawer({
                                     </div>
                                     <div className="flex-1 min-w-0 text-left">
                                       <div className="flex justify-between items-baseline">
-                                        <span className="text-[9px] font-black text-indigo-650 uppercase tracking-wide">From: PerfumeSampler</span>
+                                        <span className="text-[9px] font-black text-indigo-650 uppercase tracking-wide">From: Pouch Supply</span>
                                         <span className="text-[8.5px] font-mono text-slate-400 font-semibold">{email.date || 'Just now'}</span>
                                       </div>
                                       <h4 className="font-bold text-slate-800 text-xs mt-1 truncate">{email.subject}</h4>
@@ -855,7 +855,7 @@ export default function CustomerDrawer({
           >
             <div className="flex justify-between items-center pb-3 border-b border-slate-250">
               <div>
-                <span className="text-[8.5px] font-black uppercase tracking-widest text-indigo-650">SIMULATED SANDBOX EMAIL</span>
+                <span className="text-[8.5px] font-black uppercase tracking-widest text-indigo-650">OFFICIAL TRANSACTIONAL EMAIL</span>
                 <h4 className="text-xs font-extrabold text-slate-850 mt-0.5">Subject: {selectedEmail.subject}</h4>
               </div>
               <button

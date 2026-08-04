@@ -1390,115 +1390,6 @@ export default function CustomerAccount({
                                 ))}
                               </div>
                             </div>
-
-                            {/* Sandbox Simulator Interface */}
-                            {onUpdateOrder && (
-                              <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-3 border border-slate-800">
-                                <div className="flex justify-between items-center border-b border-slate-850 pb-2">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">Carrier Sandbox Service Simulation</span>
-                                  </div>
-                                  <span className="text-[9px] bg-slate-800 text-slate-300 font-bold py-0.5 px-2 rounded">TESTING PANEL</span>
-                                </div>
-                                <p className="text-[10px] text-slate-400 leading-normal">
-                                  Since this is a sandbox environment, you can act as the **delivery agent** to push transit state updates and test how customers track their pouches.
-                                </p>
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                  {trackedOrder.fulfillmentStatus === 'Unfulfilled' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const updatedOrder: Order = {
-                                          ...trackedOrder,
-                                          fulfillmentStatus: 'Fulfilled',
-                                          trackingHistory: [
-                                            {
-                                              status: 'Processed through local sorting office',
-                                              date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                              location: 'Heathrow Worldwide Distribution Centre',
-                                              description: 'Your package was processed at our primary MC hub and is now being dispatched to your nearest local mail delivery office.'
-                                            },
-                                            ...(trackedOrder.trackingHistory || [])
-                                          ]
-                                        };
-                                        onUpdateOrder(updatedOrder);
-                                        setTrackedOrder(updatedOrder);
-                                      }}
-                                      className="bg-[#e1192e] hover:bg-red-700 text-white text-[9.5px] font-black uppercase tracking-widest py-2 px-4 rounded-lg cursor-pointer flex items-center gap-1 transition-all"
-                                    >
-                                      🚚 Dispatch Package (Mark In Transit)
-                                    </button>
-                                  )}
-
-                                  {trackedOrder.fulfillmentStatus === 'Fulfilled' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const updatedOrder: Order = {
-                                          ...trackedOrder,
-                                          fulfillmentStatus: 'Delivered',
-                                          trackingHistory: [
-                                            {
-                                              status: 'Delivered and Signed For',
-                                              date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                              location: trackedOrder.destination.split(',')[0] || 'Customer Destination',
-                                              description: 'Delivered. Handed to customer at destination address and signed electronically.'
-                                            },
-                                            ...(trackedOrder.trackingHistory || [])
-                                          ]
-                                        };
-                                        onUpdateOrder(updatedOrder);
-                                        setTrackedOrder(updatedOrder);
-                                      }}
-                                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-[9.5px] font-black uppercase tracking-widest py-2 px-4 rounded-lg cursor-pointer flex items-center gap-1 transition-all"
-                                    >
-                                      📦 Deliver Package (Mark Delivered)
-                                    </button>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      // Generate and send simulated alert/update email
-                                      const notificationEmail = {
-                                        to: trackedOrder.customerEmail,
-                                        subject: `Royal Mail Delivery Update - Order #${trackedOrder.id}`,
-                                        preview: `Your shipment with tracking reference ${trackedOrder.trackingId} has been updated: current status is ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'Delivered' : 'In Transit'}.`,
-                                        body: `
-                                          <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-                                            <div style="background-color: #0f172a; padding: 20px; text-align: center; color: white;">
-                                              <h2 style="margin: 0; font-size: 18px;">ROYAL MAIL SERVICE ALERT</h2>
-                                            </div>
-                                            <div style="padding: 20px; font-size: 13px; line-height: 1.5; color: #334155;">
-                                              <p>Hello ${trackedOrder.customerName},</p>
-                                              <p>There is a new update on your <strong>Pouch Supply</strong> shipment tracked with reference <strong>${trackedOrder.trackingId}</strong>.</p>
-                                              <div style="background-color: #f8fafc; border-left: 4px solid #0f172a; padding: 12px; margin: 15px 0;">
-                                                <strong>Current Status:</strong> ${trackedOrder.fulfillmentStatus === 'Delivered' ? 'DELIVERED & SIGNED' : 'IN TRANSIT'}<br/>
-                                                <strong>Scan Location:</strong> ${trackedOrder.trackingHistory && trackedOrder.trackingHistory[0] ? trackedOrder.trackingHistory[0].location : 'En Route'}
-                                              </div>
-                                              <p>If you have questions, visit your account dashboard or contact <a href="mailto:scott@pouch-supply.com" style="color: #dc2626; text-decoration: none;">scott@pouch-supply.com</a>.</p>
-                                            </div>
-                                          </div>
-                                        `,
-                                        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                      };
-                                      
-                                      try {
-                                        const stored = localStorage.getItem('ps_simulated_emails');
-                                        const emails = stored ? JSON.parse(stored) : [];
-                                        localStorage.setItem('ps_simulated_emails', JSON.stringify([notificationEmail, ...emails]));
-                                        window.dispatchEvent(new CustomEvent('ps-emails-updated'));
-                                      } catch (e) {}
-                                      alert("Simulated email update alert sent!");
-                                    }}
-                                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9.5px] font-black uppercase tracking-widest py-2 px-4 rounded-lg cursor-pointer flex items-center gap-1 transition-all"
-                                  >
-                                    ✉️ Send Status Alert Email
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         </div>
                       ) : (
@@ -2494,8 +2385,23 @@ export default function CustomerAccount({
                       <p className="text-slate-400 text-[10.5px]">Manage your saved billing methods for seamless automatic box charges.</p>
                     </div>
                     <button 
-                      onClick={() => alert('New card authorization form loading... (Simulated)')}
-                      className="text-xs font-black text-[#dfa047] uppercase tracking-wider flex items-center gap-1 hover:underline"
+                      onClick={() => {
+                        const last4 = window.prompt("Enter 4-digit card number (e.g. 4242):", "4242");
+                        if (last4 && last4.trim().length === 4) {
+                          const newCard = {
+                            id: 'card_' + Date.now(),
+                            brand: 'VISA',
+                            last4: last4.trim(),
+                            exp: '12/28',
+                            default: false
+                          };
+                          setCustState((prev: any) => ({
+                            ...prev,
+                            savedCards: [...(prev.savedCards || []), newCard]
+                          }));
+                        }
+                      }}
+                      className="text-xs font-black text-[#dfa047] uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer"
                     >
                       <PlusCircle className="h-4 w-4" /> Add Card
                     </button>

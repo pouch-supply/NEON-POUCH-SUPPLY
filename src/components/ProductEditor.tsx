@@ -1233,7 +1233,7 @@ export default function ProductEditor({
             </div>
           )}
 
-          {/* Card 7: Advanced SEO simulation for Cans */}
+          {/* Card 7: Search Engine Snippet Preview for Cans */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
             <div className="flex justify-between items-start">
               <div>
@@ -1241,7 +1241,7 @@ export default function ProductEditor({
                   <Globe className="h-4 w-4 text-slate-500" />
                   <span>Search engine listing preview</span>
                 </h3>
-                <p className="text-[10px] text-slate-400 mt-1">Simulated query representation when listed in public indexes.</p>
+                <p className="text-[10px] text-slate-400 mt-1">Search result snippet preview as displayed in public search indexes.</p>
               </div>
               
               <button

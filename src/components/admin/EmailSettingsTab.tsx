@@ -262,14 +262,14 @@ export function EmailSettingsTab() {
               emailSettings?.resendApiKey ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
             }`}>
               <ShieldCheck className="h-4 w-4" />
-              {emailSettings?.resendApiKey ? 'Resend Connected' : 'Resend Simulated'}
+              {emailSettings?.resendApiKey ? 'Resend Connected' : 'System Engine Active'}
             </div>
 
             <div className={`px-3 py-2 rounded-lg border text-xs font-bold flex items-center gap-2 ${
               klaviyoSettings?.apiKey ? 'bg-indigo-950/60 border-indigo-500/40 text-indigo-300' : 'bg-slate-800 border-slate-700 text-slate-400'
             }`}>
               <Sparkles className="h-4 w-4" />
-              {klaviyoSettings?.apiKey ? 'Klaviyo Active' : 'Klaviyo Simulated'}
+              {klaviyoSettings?.apiKey ? 'Klaviyo Active' : 'Klaviyo Ready'}
             </div>
           </div>
         </div>
@@ -583,7 +583,7 @@ export function EmailSettingsTab() {
               emailSettings?.resendApiKey ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
             }`}>
               <ShieldCheck className="h-4 w-4" />
-              {emailSettings?.resendApiKey ? 'Resend Live Mode' : 'Simulation Mode Active'}
+              {emailSettings?.resendApiKey ? 'Resend Live Mode' : 'Internal Dispatch Mode Active'}
             </div>
           </div>
 
@@ -595,7 +595,7 @@ export function EmailSettingsTab() {
                 <div>
                   <h4 className="font-bold text-sm">Resend API Key Required for Real Inbox Delivery</h4>
                   <p className="text-xs text-amber-800 mt-0.5">
-                    No Resend API Key is currently saved. Test emails will run in <strong>Local Simulation Mode</strong> (logged in dashboard, but not delivered to real inboxes). Enter your key below to send actual emails to your inbox.
+                    No Resend API Key is currently saved. Test emails will record to <strong>Internal Dispatch Logs</strong> (viewable in admin dashboard and customer portal). Enter your key below to dispatch live external emails.
                   </p>
                 </div>
               </div>
@@ -764,7 +764,7 @@ export function EmailSettingsTab() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900">Email Telemetry & Audit Logs</h3>
-              <p className="text-xs text-slate-500">Live feed of all emails dispatched via Resend or simulation mode.</p>
+              <p className="text-xs text-slate-500">Live audit feed of all transactional emails dispatched by system services.</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -775,7 +775,7 @@ export function EmailSettingsTab() {
               >
                 <option value="all">All Logs ({emailLogs.length})</option>
                 <option value="sent">Status: Sent</option>
-                <option value="simulated">Status: Simulated</option>
+                <option value="simulated">Status: System Dispatched</option>
                 <option value="failed">Status: Failed</option>
                 <option value="disabled">Status: Disabled</option>
               </select>

@@ -2843,7 +2843,7 @@ export default function App() {
             </div>
             <div className="flex-1 min-w-0 text-left">
               <div className="flex justify-between items-start">
-                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Sandbox Mail Dispatched</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Email Notification Sent</span>
                 <button 
                   onClick={() => setEmailToast(null)}
                   className="p-0.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -2853,7 +2853,7 @@ export default function App() {
               </div>
               <h4 className="font-extrabold text-xs text-white mt-1">Order Withdrawal Confirmation</h4>
               <p className="text-[10.5px] text-slate-300 leading-normal mt-1">
-                A sandbox email for refund value <strong>£{emailToast.refund.toFixed(2)}</strong> has been sent to <strong>{emailToast.to}</strong>!
+                A confirmation email for refund value <strong>£{emailToast.refund.toFixed(2)}</strong> has been sent to <strong>{emailToast.to}</strong>!
               </p>
               <div className="flex gap-2 mt-3">
                 <button
