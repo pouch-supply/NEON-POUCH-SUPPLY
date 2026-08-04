@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Product, Order } from '../types';
+import { getWishlistProductTitle } from '../utils/mediaUtils';
 import { 
   X, User, LogIn, Heart, MapPin, Package, ShoppingBag, 
   Plus, Trash2, Eye, ShieldCheck, Sparkles, Smile, ArrowRight,
@@ -731,6 +732,8 @@ export default function CustomerDrawer({
                                   (p.concreteVariants && p.concreteVariants.some(v => String(v.id).toLowerCase() === pidStr || String(v.name).toLowerCase() === pidStr))
                                 );
                                 if (!prod) return null;
+                                const displayTitle = getWishlistProductTitle(prod, String(productId));
+
                                 return (
                                   <div 
                                     key={`cd-wish-${prod.id}-${wIdx}`} 
@@ -745,7 +748,7 @@ export default function CustomerDrawer({
                                       />
                                       <div className="min-w-0">
                                         <p className="text-[9.5px] text-slate-400 uppercase font-black tracking-wider leading-none">{prod.vendor}</p>
-                                        <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5 leading-tight">{prod.title}</p>
+                                        <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5 leading-tight" title={displayTitle}>{displayTitle}</p>
                                         <p className="text-xs text-indigo-700 font-extrabold mt-0.5">£{prod.price.toFixed(2)}</p>
                                       </div>
                                     </div>
@@ -765,7 +768,7 @@ export default function CustomerDrawer({
                                       </button>
                                       
                                       <button
-                                        onClick={() => onUpdateWishlist(prod.id, 'remove')}
+                                        onClick={() => onUpdateWishlist(String(productId), 'remove')}
                                         className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
                                         title="Remove item"
                                       >

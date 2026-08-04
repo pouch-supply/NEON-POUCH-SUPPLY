@@ -22,4 +22,32 @@ export function cleanBase64String(raw: string): string {
   return raw.replace(/^data:[^;]+;base64,/, '').trim();
 }
 
+export function getWishlistProductTitle(prod: any, productIdStored?: string): string {
+  if (!prod) return '';
+  const pidStr = String(productIdStored || '').trim().toLowerCase();
+  
+  let variantName = '';
+  if (prod.concreteVariants && Array.isArray(prod.concreteVariants) && prod.concreteVariants.length > 0) {
+    const matchedVar = prod.concreteVariants.find((v: any) => 
+      String(v.id).toLowerCase() === pidStr || 
+      String(v.name).toLowerCase() === pidStr ||
+      (v.strength && String(v.strength).toLowerCase() === pidStr)
+    );
+    if (matchedVar) {
+      variantName = matchedVar.name || matchedVar.strength || '';
+    }
+  }
+
+  if (!variantName) {
+    variantName = prod.variant || prod.variantName || prod.nicotineStrength || prod.strength || '';
+  }
+
+  const baseTitle = prod.title || '';
+  if (variantName && !baseTitle.toLowerCase().includes(variantName.toLowerCase())) {
+    return `${baseTitle} - ${variantName}`;
+  }
+  return baseTitle;
+}
+
+
 

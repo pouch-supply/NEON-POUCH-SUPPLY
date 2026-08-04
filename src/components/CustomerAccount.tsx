@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Product, Order, Discount } from '../types';
+import { getWishlistProductTitle } from '../utils/mediaUtils';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, LogIn, Heart, PlusCircle, Trash2, MapPin, Package, ShoppingBag, 
@@ -1523,6 +1524,8 @@ export default function CustomerAccount({
                           (p.concreteVariants && p.concreteVariants.some(v => String(v.id).toLowerCase() === pidStr || String(v.name).toLowerCase() === pidStr))
                         );
                         if (!prod) return null;
+                        const displayTitle = getWishlistProductTitle(prod, String(productId));
+
                         return (
                           <div 
                             key={`ca-wish-${prod.id}-${pidIdx}`} 
@@ -1533,7 +1536,7 @@ export default function CustomerAccount({
                                 <img 
                                   src={prod.image} 
                                   className="w-full h-full object-contain" 
-                                  alt={prod.title} 
+                                  alt={displayTitle} 
                                   referrerPolicy="no-referrer"
                                 />
                                 <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider bg-[#071d37] text-white px-2 py-0.5 rounded-full">
@@ -1541,7 +1544,7 @@ export default function CustomerAccount({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => onUpdateWishlist(prod.id, 'remove')}
+                                  onClick={() => onUpdateWishlist(String(productId), 'remove')}
                                   className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-rose-50 text-rose-500 rounded-full shadow-xs transition-colors cursor-pointer"
                                   title="Remove from Wishlist"
                                 >
@@ -1551,7 +1554,7 @@ export default function CustomerAccount({
 
                               <div>
                                 <p className="text-[9.5px] text-slate-400 uppercase font-black tracking-wider">{prod.category || 'Pouches'}</p>
-                                <h4 className="font-extrabold text-slate-900 text-xs truncate mt-0.5">{prod.title}</h4>
+                                <h4 className="font-extrabold text-slate-900 text-xs truncate mt-0.5" title={displayTitle}>{displayTitle}</h4>
                                 <p className="text-sm text-indigo-700 font-black mt-1">£{prod.price.toFixed(2)}</p>
                               </div>
                             </div>
@@ -1569,7 +1572,7 @@ export default function CustomerAccount({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => onUpdateWishlist(prod.id, 'remove')}
+                                onClick={() => onUpdateWishlist(String(productId), 'remove')}
                                 className="px-2.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer text-xs font-bold"
                                 title="Remove"
                               >

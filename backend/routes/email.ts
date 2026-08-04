@@ -420,14 +420,17 @@ router.post('/contact', async (req: Request, res: Response) => {
 
     await saveResource('email_logs', [adminLog, customerLog, ...(Array.isArray(logs) ? logs : [])]);
 
-    let responseNote = 'Thank you for contacting us! Your message has been sent successfully.';
+    let responseNote = 'Thank you for reaching out! Your message has been received, and our customer support team will get back to you shortly.';
+    let sandboxNotice: string | undefined = undefined;
+
     if (custStatus === 'failed' && custError?.toLowerCase().includes('testing emails')) {
-      responseNote = `Thank you! Your message was submitted. Note: Resend's free sandbox mode limits live email dispatches to your verified account address. Verify a domain in Resend to send live confirmation emails to all external customer addresses.`;
+      sandboxNotice = `Note: Resend's free onboarding mode limits live emails to your verified account address. Verify a custom domain in Resend (resend.com/domains) to dispatch live emails to all external customer inboxes.`;
     }
 
     res.json({
       success: true,
       message: responseNote,
+      sandboxNotice,
       adminStatus,
       customerStatus: custStatus,
       customerError: custError
