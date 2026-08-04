@@ -282,9 +282,12 @@ router.post('/contact', async (req: Request, res: Response) => {
     `;
 
     let resendId: string | undefined = undefined;
+    let custResendId: string | undefined = undefined;
+
     if (apiKey) {
       try {
         const resend = new Resend(apiKey);
+        // 1) Send notification email to store admin
         const sendRes = await resend.emails.send({
           from: fromEmail,
           to: [adminEmail],
@@ -293,14 +296,55 @@ router.post('/contact', async (req: Request, res: Response) => {
           html: htmlBody
         });
         resendId = sendRes.data?.id;
+
+        // 2) Send Thank You & Confirmation email directly to the customer
+        const custSubject = `Thank you for contacting Pouch Supply Co.!`;
+        const custHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+              <h1 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em;">Pouch Supply Co.</h1>
+              <p style="color: #64748b; font-size: 12px; margin-top: 4px;">Premium Nicotine Pouches & Fast Express Shipping</p>
+            </div>
+
+            <div style="padding: 24px 0;">
+              <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; font-weight: 700;">Hi ${name},</h2>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+                Thank you for reaching out to <strong>Pouch Supply Co.</strong>! We have received your inquiry regarding <strong>"${subject || 'General Inquiry'}"</strong> and our customer support team is reviewing it now.
+              </p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+                Our average response time is under 2 hours during business hours (Monday – Friday, 9:00 AM – 6:00 PM GMT).
+              </p>
+
+              <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Summary of your message:</h4>
+                <p style="margin: 0 0 6px 0; color: #475569; font-size: 13px;"><strong>Topic:</strong> ${subject || 'General Inquiry'}</p>
+                <p style="margin: 0; color: #475569; font-size: 13px; white-space: pre-wrap;"><strong>Message:</strong> ${message}</p>
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+              <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0;">Need to add extra details? Simply reply directly to this email.</p>
+              <p style="color: #94a3b8; font-size: 11px; margin: 0;">&copy; ${new Date().getFullYear()} Pouch Supply Co. All rights reserved.</p>
+            </div>
+          </div>
+        `;
+
+        const custSendRes = await resend.emails.send({
+          from: fromEmail,
+          to: [email],
+          replyTo: adminEmail,
+          subject: custSubject,
+          html: custHtml
+        });
+        custResendId = custSendRes.data?.id;
       } catch (eErr: any) {
         console.warn('[ContactForm] Resend delivery attempt warning:', eErr);
       }
     }
 
-    // Save to logs
+    // Save logs for both emails
     const logs = await getEmailLogs();
-    const newLog = {
+    const adminLog = {
       id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       type: 'admin_new_order' as const,
       recipient: adminEmail,
@@ -310,7 +354,18 @@ router.post('/contact', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       metadata: { contactForm: { name, email, subject, message, phone } }
     };
-    await saveResource('email_logs', [newLog, ...(Array.isArray(logs) ? logs : [])]);
+    const customerLog = {
+      id: `log_${Date.now()}_cust_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'order_confirmation' as const,
+      recipient: email,
+      subject: `Thank you for contacting Pouch Supply Co.!`,
+      status: apiKey ? ('sent' as const) : ('simulated' as const),
+      resendId: custResendId,
+      timestamp: new Date().toISOString(),
+      metadata: { contactFormReply: { name, email, subject, message } }
+    };
+
+    await saveResource('email_logs', [adminLog, customerLog, ...(Array.isArray(logs) ? logs : [])]);
 
     res.json({ success: true, message: 'Thank you for contacting us! Your message has been sent successfully.' });
   } catch (err: any) {

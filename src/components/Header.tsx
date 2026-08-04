@@ -523,7 +523,7 @@ export default function Header({
           <div className="flex items-center gap-5">
             <button
               type="button"
-              onClick={() => onTabChange('/pages/contact')}
+              onClick={() => onTabChange('contact')}
               className="hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0 p-0 text-[10px] text-slate-500 font-extrabold"
             >
               <HelpCircle className="h-3.5 w-3.5 text-indigo-500" /> 

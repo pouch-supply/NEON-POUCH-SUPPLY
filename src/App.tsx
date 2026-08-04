@@ -632,7 +632,9 @@ export default function App() {
       );
       url = `/collections/${col?.slug || col?.id || collectionId}`;
     } else {
-      url = `/pages/${tab}`;
+      const cleanSlug = tab.replace(/^\/+/, '').replace(/^pages\//, '');
+      url = `/pages/${cleanSlug}`;
+      targetTab = cleanSlug;
     }
 
     let currentPathname = '';
