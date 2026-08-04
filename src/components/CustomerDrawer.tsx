@@ -721,7 +721,7 @@ export default function CustomerDrawer({
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-2.5">
-                              {(loggedInCustomer.wishlist || []).map((productId) => {
+                              {(loggedInCustomer.wishlist || []).map((productId, wIdx) => {
                                 const pidStr = String(productId).trim().toLowerCase();
                                 const prod = allProducts.find(p => 
                                   String(p.id).toLowerCase() === pidStr || 
@@ -733,7 +733,7 @@ export default function CustomerDrawer({
                                 if (!prod) return null;
                                 return (
                                   <div 
-                                    key={prod.id} 
+                                    key={`cd-wish-${prod.id}-${wIdx}`} 
                                     className="bg-white border border-slate-200 p-3 rounded-2xl flex gap-3 items-center justify-between"
                                   >
                                     <div className="flex gap-2.5 items-center min-w-0">

@@ -245,8 +245,8 @@ router.post('/contact', async (req: Request, res: Response) => {
 
     const settings = await getEmailSettings();
     const adminEmail = settings.adminNotificationEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@pouch-supply.com';
-    const apiKey = settings.resendApiKey || process.env.RESEND_API_KEY || '';
-    const fromEmail = settings.fromEmail || process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <onboarding@resend.dev>';
+    const apiKey = (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
+    let fromEmail = (settings.fromEmail || process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <onboarding@resend.dev>').trim();
 
     const emailSubject = `📩 Contact Form Submission: ${subject || 'General Inquiry'} from ${name}`;
     const htmlBody = `
@@ -281,96 +281,182 @@ router.post('/contact', async (req: Request, res: Response) => {
       </div>
     `;
 
-    let resendId: string | undefined = undefined;
+    const custSubject = `Thank you for contacting Pouch Supply Co.!`;
+    const custHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+          <h1 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em;">Pouch Supply Co.</h1>
+          <p style="color: #64748b; font-size: 12px; margin-top: 4px;">Premium Nicotine Pouches & Fast Express Shipping</p>
+        </div>
+
+        <div style="padding: 24px 0;">
+          <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; font-weight: 700;">Hi ${name},</h2>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+            Thank you for reaching out to <strong>Pouch Supply Co.</strong>! We have received your inquiry regarding <strong>"${subject || 'General Inquiry'}"</strong> and our customer support team is reviewing it now.
+          </p>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+            Our average response time is under 2 hours during business hours (Monday – Friday, 9:00 AM – 6:00 PM GMT).
+          </p>
+
+          <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Summary of your message:</h4>
+            <p style="margin: 0 0 6px 0; color: #475569; font-size: 13px;"><strong>Topic:</strong> ${subject || 'General Inquiry'}</p>
+            <p style="margin: 0; color: #475569; font-size: 13px; white-space: pre-wrap;"><strong>Message:</strong> ${message}</p>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+          <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0;">Need to add extra details? Simply reply directly to this email.</p>
+          <p style="color: #94a3b8; font-size: 11px; margin: 0;">&copy; ${new Date().getFullYear()} Pouch Supply Co. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    let adminStatus: 'sent' | 'simulated' | 'failed' = 'simulated';
+    let adminResendId: string | undefined = undefined;
+    let adminError: string | undefined = undefined;
+
+    let custStatus: 'sent' | 'simulated' | 'failed' = 'simulated';
     let custResendId: string | undefined = undefined;
+    let custError: string | undefined = undefined;
 
     if (apiKey) {
+      const resend = new Resend(apiKey);
+
+      // 1) Send Admin Notification
       try {
-        const resend = new Resend(apiKey);
-        // 1) Send notification email to store admin
-        const sendRes = await resend.emails.send({
+        let sendRes = await resend.emails.send({
           from: fromEmail,
           to: [adminEmail],
           replyTo: email,
           subject: emailSubject,
           html: htmlBody
         });
-        resendId = sendRes.data?.id;
 
-        // 2) Send Thank You & Confirmation email directly to the customer
-        const custSubject = `Thank you for contacting Pouch Supply Co.!`;
-        const custHtml = `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-            <div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
-              <h1 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em;">Pouch Supply Co.</h1>
-              <p style="color: #64748b; font-size: 12px; margin-top: 4px;">Premium Nicotine Pouches & Fast Express Shipping</p>
-            </div>
+        if (sendRes.error && !fromEmail.includes('onboarding@resend.dev')) {
+          fromEmail = 'Pouch Supply Co. <onboarding@resend.dev>';
+          sendRes = await resend.emails.send({
+            from: fromEmail,
+            to: [adminEmail],
+            replyTo: email,
+            subject: emailSubject,
+            html: htmlBody
+          });
+        }
 
-            <div style="padding: 24px 0;">
-              <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; font-weight: 700;">Hi ${name},</h2>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-                Thank you for reaching out to <strong>Pouch Supply Co.</strong>! We have received your inquiry regarding <strong>"${subject || 'General Inquiry'}"</strong> and our customer support team is reviewing it now.
-              </p>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-                Our average response time is under 2 hours during business hours (Monday – Friday, 9:00 AM – 6:00 PM GMT).
-              </p>
+        if (sendRes.error) {
+          adminStatus = 'failed';
+          adminError = sendRes.error.message || String(sendRes.error);
+        } else if (sendRes.data?.id) {
+          adminStatus = 'sent';
+          adminResendId = sendRes.data.id;
+        }
+      } catch (err: any) {
+        adminStatus = 'failed';
+        adminError = err.message || String(err);
+      }
 
-              <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Summary of your message:</h4>
-                <p style="margin: 0 0 6px 0; color: #475569; font-size: 13px;"><strong>Topic:</strong> ${subject || 'General Inquiry'}</p>
-                <p style="margin: 0; color: #475569; font-size: 13px; white-space: pre-wrap;"><strong>Message:</strong> ${message}</p>
-              </div>
-            </div>
-
-            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
-              <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0;">Need to add extra details? Simply reply directly to this email.</p>
-              <p style="color: #94a3b8; font-size: 11px; margin: 0;">&copy; ${new Date().getFullYear()} Pouch Supply Co. All rights reserved.</p>
-            </div>
-          </div>
-        `;
-
-        const custSendRes = await resend.emails.send({
+      // 2) Send Customer Thank You Confirmation
+      try {
+        let custSendRes = await resend.emails.send({
           from: fromEmail,
           to: [email],
           replyTo: adminEmail,
           subject: custSubject,
           html: custHtml
         });
-        custResendId = custSendRes.data?.id;
-      } catch (eErr: any) {
-        console.warn('[ContactForm] Resend delivery attempt warning:', eErr);
+
+        if (custSendRes.error && !fromEmail.includes('onboarding@resend.dev')) {
+          fromEmail = 'Pouch Supply Co. <onboarding@resend.dev>';
+          custSendRes = await resend.emails.send({
+            from: fromEmail,
+            to: [email],
+            replyTo: adminEmail,
+            subject: custSubject,
+            html: custHtml
+          });
+        }
+
+        if (custSendRes.error) {
+          custStatus = 'failed';
+          custError = custSendRes.error.message || String(custSendRes.error);
+        } else if (custSendRes.data?.id) {
+          custStatus = 'sent';
+          custResendId = custSendRes.data.id;
+        }
+      } catch (err: any) {
+        custStatus = 'failed';
+        custError = err.message || String(err);
       }
+    } else {
+      adminError = 'No Resend API key configured (simulated mode)';
+      custError = 'No Resend API key configured (simulated mode)';
     }
 
     // Save logs for both emails
     const logs = await getEmailLogs();
     const adminLog = {
-      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: `log_${Date.now()}_admin_${Math.random().toString(36).substring(2, 6)}`,
       type: 'admin_new_order' as const,
       recipient: adminEmail,
       subject: emailSubject,
-      status: apiKey ? ('sent' as const) : ('simulated' as const),
-      resendId,
+      status: adminStatus,
+      resendId: adminResendId,
+      error: adminError,
       timestamp: new Date().toISOString(),
       metadata: { contactForm: { name, email, subject, message, phone } }
     };
     const customerLog = {
       id: `log_${Date.now()}_cust_${Math.random().toString(36).substring(2, 6)}`,
-      type: 'order_confirmation' as const,
+      type: 'welcome_email' as const,
       recipient: email,
-      subject: `Thank you for contacting Pouch Supply Co.!`,
-      status: apiKey ? ('sent' as const) : ('simulated' as const),
+      subject: custSubject,
+      status: custStatus,
       resendId: custResendId,
+      error: custError,
       timestamp: new Date().toISOString(),
       metadata: { contactFormReply: { name, email, subject, message } }
     };
 
     await saveResource('email_logs', [adminLog, customerLog, ...(Array.isArray(logs) ? logs : [])]);
 
-    res.json({ success: true, message: 'Thank you for contacting us! Your message has been sent successfully.' });
+    let responseNote = 'Thank you for contacting us! Your message has been sent successfully.';
+    if (custStatus === 'failed' && custError?.toLowerCase().includes('testing emails')) {
+      responseNote = `Thank you! Your message was submitted. Note: Resend's free sandbox mode limits live email dispatches to your verified account address. Verify a domain in Resend to send live confirmation emails to all external customer addresses.`;
+    }
+
+    res.json({
+      success: true,
+      message: responseNote,
+      adminStatus,
+      customerStatus: custStatus,
+      customerError: custError
+    });
   } catch (err: any) {
     console.error('[ContactForm] Error submitting contact form:', err);
     res.status(500).json({ error: err.message || 'Failed to send message.' });
+  }
+});
+
+// POST /api/email/subscribe - Handle newsletter subscription & send welcome email
+router.post('/subscribe', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email address is required.' });
+    }
+
+    const emailTrim = email.trim().toLowerCase();
+    const result = await sendWelcomeEmail(emailTrim, 'Valued Customer', 'WELCOME10');
+
+    res.json({
+      success: true,
+      message: 'Subscribed successfully! Welcome email dispatched.',
+      result
+    });
+  } catch (err: any) {
+    console.error('[Newsletter] Error subscribing:', err);
+    res.status(500).json({ error: err.message || 'Failed to process newsletter subscription.' });
   }
 });
 

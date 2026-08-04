@@ -1965,9 +1965,9 @@ export default function App() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                      {products.slice(0, 4).map(prod => (
+                      {products.slice(0, 4).map((prod, pIdx) => (
                         <div 
-                          key={prod.id} 
+                          key={`app-prod-${prod.id}-${pIdx}`} 
                           onClick={() => {
                             navigateToTab('frontend-shop');
                           }}

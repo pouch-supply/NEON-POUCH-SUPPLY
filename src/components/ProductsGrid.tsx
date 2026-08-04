@@ -864,7 +864,7 @@ export default function ProductsGrid({
                   ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5" 
                   : "space-y-4"
               }>
-                {filteredProducts.map(prod => {
+                {filteredProducts.map((prod, pIdx) => {
                   const inWishlist = isProductInWishlist(prod.id);
                   const strengthInfo = getProductStrength(prod);
                   
@@ -882,7 +882,7 @@ export default function ProductsGrid({
 
                   return (
                     <div 
-                      key={prod.id} 
+                      key={`pg-prod-${prod.id}-${pIdx}`} 
                       className={`bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4.5 flex transition-all group hover:shadow-sm relative ${
                         viewMode === 'grid' ? 'flex-col justify-between' : 'flex-row items-center gap-6 justify-between'
                       }`}
@@ -1145,7 +1145,7 @@ export default function ProductsGrid({
                 <div className="flex items-center gap-4 overflow-x-auto py-1.5 scrollbar-thin">
                   {products.slice(0, 5).map((p, idx) => (
                     <div 
-                      key={p.id || idx}
+                      key={`pg-rv-${p.id || idx}-${idx}`}
                       onClick={() => {
                         try {
                           window.history.pushState({}, '', `/products/${p.slug || p.id}`);

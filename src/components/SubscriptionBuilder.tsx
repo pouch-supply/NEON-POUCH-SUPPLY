@@ -588,7 +588,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
             {/* Display list of products belonging to selected brand/collection */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {filteredProducts.length > 0 ? (
-                filteredProducts.map(prod => {
+                filteredProducts.map((prod, pIdx) => {
                   const hasVariants = prod.concreteVariants && prod.concreteVariants.length > 0;
                   const currentVariantId = hasVariants 
                     ? (selectedVariantIdForProduct[prod.id] || prod.concreteVariants![0].id) 
@@ -604,7 +604,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
 
                   return (
                     <div 
-                      key={prod.id} 
+                      key={`sb-prod-${prod.id}-${pIdx}`} 
                       className={`border rounded-xl p-4 flex flex-col justify-between transition-all ${
                         countAllocated > 0 
                           ? 'border-indigo-500 bg-indigo-50/20 shadow-xs' 

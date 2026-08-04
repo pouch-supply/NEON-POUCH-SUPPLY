@@ -105,9 +105,9 @@ export default function Header({
                 <div className="md:col-span-2 space-y-3">
                   <h4 className="text-[10px] font-black uppercase text-indigo-650 tracking-wider">Matching Products ({filteredProducts.length})</h4>
                   <div className="space-y-2">
-                    {filteredProducts.map((p) => (
+                    {filteredProducts.map((p, pIdx) => (
                       <div
-                        key={p.id}
+                        key={`hdr-p-${p.id}-${pIdx}`}
                         onClick={() => {
                           onNavigateDetail?.('product-detail', p.slug || p.id);
                           setIsSearchOpen(false);
@@ -140,9 +140,9 @@ export default function Header({
                 <div className="space-y-3 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black uppercase text-indigo-650 tracking-wider">Collections ({filteredCollections.length})</h4>
                   <div className="space-y-2">
-                    {filteredCollections.map((c) => (
+                    {filteredCollections.map((c, cIdx) => (
                       <div
-                        key={c.id}
+                        key={`hdr-c-${c.id}-${cIdx}`}
                         onClick={() => {
                           onNavigateDetail?.('collection-detail', undefined, c.slug || c.id);
                           setIsSearchOpen(false);
@@ -212,11 +212,11 @@ export default function Header({
             { id: '3', label: 'Shop Now', tab: 'frontend-shop', type: 'tab' },
             { id: '4', label: 'All Brands', tab: 'frontend-brands', type: 'tab' },
             { id: '5', label: 'About', tab: 'about', type: 'tab' }
-          ]).map((item) => {
+          ]).map((item, iIdx) => {
             const itemTab = getMenuItemTab(item);
             return (
               <button
-                key={item.id}
+                key={`hdr-nav-${item.id}-${iIdx}`}
                 onClick={() => {
                   if (item.type === 'external' && item.url) {
                     window.open(item.url, '_blank');
@@ -375,7 +375,7 @@ export default function Header({
                     { id: '3', label: 'Shop Now', tab: 'frontend-shop', type: 'tab' },
                     { id: '4', label: 'All Brands', tab: 'frontend-brands', type: 'tab' },
                     { id: '5', label: 'About', tab: 'about', type: 'tab' }
-                  ]).map((item) => {
+                  ]).map((item, iIdx) => {
                     const itemTab = getMenuItemTab(item);
                     const isActive = currentTab === itemTab && !isAdminActive;
                     
@@ -389,7 +389,7 @@ export default function Header({
 
                     return (
                       <button
-                        key={item.id}
+                        key={`hdr-mnav-${item.id}-${iIdx}`}
                         onClick={() => {
                           if (item.type === 'external' && item.url) {
                             window.open(item.url, '_blank');

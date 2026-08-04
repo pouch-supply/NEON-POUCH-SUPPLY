@@ -14,7 +14,7 @@ export default function Footer({ onNavigate, layoutSettings }: FooterProps) {
   const [subscribed, setSubscribed] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     setErrorMsg('');
     if (!email || !email.includes('@')) {
       setErrorMsg('Please enter a valid email.');
@@ -22,6 +22,17 @@ export default function Footer({ onNavigate, layoutSettings }: FooterProps) {
     }
     klaviyoTrackNewsletterSubscribe(email);
     setSubscribed(true);
+
+    try {
+      await fetch('/api/email/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      });
+    } catch (err) {
+      console.warn('Newsletter subscribe email dispatch warning:', err);
+    }
+
     setEmail('');
   };
 

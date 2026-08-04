@@ -633,7 +633,7 @@ export default function CollectionDetailView({
                   ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5" 
                   : "space-y-4"
               }>
-                {collectionProducts.map(prod => {
+                {collectionProducts.map((prod, pIdx) => {
                   const inWishlist = isProductInWishlist(prod.id);
                   const strengthInfo = getProductStrength(prod);
                   
@@ -650,7 +650,7 @@ export default function CollectionDetailView({
 
                   return (
                     <div 
-                      key={prod.id} 
+                      key={`cdv-prod-${prod.id}-${pIdx}`} 
                       className={`bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4.5 flex transition-all group hover:shadow-sm relative ${
                         viewMode === 'grid' ? 'flex-col justify-between' : 'flex-row items-center gap-6 justify-between'
                       }`}

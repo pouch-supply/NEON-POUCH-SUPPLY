@@ -1513,7 +1513,7 @@ export default function CustomerAccount({
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {(loggedInCustomer.wishlist || []).map((productId) => {
+                      {(loggedInCustomer.wishlist || []).map((productId, pidIdx) => {
                         const pidStr = String(productId).trim().toLowerCase();
                         const prod = allProducts.find(p => 
                           String(p.id).toLowerCase() === pidStr || 
@@ -1525,7 +1525,7 @@ export default function CustomerAccount({
                         if (!prod) return null;
                         return (
                           <div 
-                            key={prod.id} 
+                            key={`ca-wish-${prod.id}-${pidIdx}`} 
                             className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4 flex flex-col justify-between space-y-3 transition-all hover:shadow-sm"
                           >
                             <div className="space-y-3">
@@ -1835,8 +1835,8 @@ export default function CustomerAccount({
                                     className="text-[10px] font-bold text-[#071d37] bg-white border border-slate-200 py-1.5 px-2.5 rounded-xl hover:border-[#dfa047] transition-all cursor-pointer outline-none focus:ring-1 focus:ring-[#071d37] max-w-[150px]"
                                   >
                                     <option value={item.productId}>🔄 Swap with...</option>
-                                    {allProducts.filter(p => p.id !== item.productId).map(p => (
-                                      <option key={p.id} value={p.id}>{p.title}</option>
+                                    {allProducts.filter(p => p.id !== item.productId).map((p, pIdx) => (
+                                      <option key={`ca-swap-${p.id}-${pIdx}`} value={p.id}>{p.title}</option>
                                     ))}
                                   </select>
                                 </div>
@@ -1881,8 +1881,8 @@ export default function CustomerAccount({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {allProducts.filter(prod => !(custState.subItems || []).some((item: any) => item.productId === prod.id)).map(prod => (
-                          <div key={prod.id} className="flex gap-3 bg-[#f4f6f9] border border-slate-100 p-3 rounded-2xl relative hover:shadow-xs transition-all">
+                        {allProducts.filter(prod => !(custState.subItems || []).some((item: any) => item.productId === prod.id)).map((prod, pIdx) => (
+                          <div key={`ca-subadd-${prod.id}-${pIdx}`} className="flex gap-3 bg-[#f4f6f9] border border-slate-100 p-3 rounded-2xl relative hover:shadow-xs transition-all">
                             <img 
                               src={prod.image} 
                               alt={prod.title} 

@@ -886,13 +886,13 @@ function ClearanceSaleSection({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayedProducts.map(prod => {
+          {displayedProducts.map((prod, pIdx) => {
             const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
             const clearancePrice = prod.price * 0.8; // 20% clearance discount
 
             return (
               <div 
-                key={prod.id} 
+                key={`clearance-${prod.id}-${pIdx}`} 
                 onClick={() => onNavigate(`/products/${prod.id}`)}
                 className="bg-white border-2 border-red-50 hover:border-red-400/80 rounded-2xl overflow-hidden p-4 space-y-4 group transition-all duration-300 relative flex flex-col justify-between cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:shadow-red-100/20"
               >
@@ -1186,13 +1186,13 @@ function FeaturedCollectionSection({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayedProducts.map(prod => {
+          {displayedProducts.map((prod, pIdx) => {
             const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
             const badge = getProductBadge(prod);
 
             return (
               <div 
-                key={prod.id} 
+                key={`feat-${prod.id}-${pIdx}`} 
                 onClick={() => onNavigate(`/products/${prod.id}`)}
                 className="bg-white border border-slate-200/85 rounded-2xl overflow-hidden p-4 space-y-4 group transition-all duration-300 relative flex flex-col justify-between cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:border-amber-400 hover:shadow-amber-100/10"
               >
@@ -1371,6 +1371,7 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successNote, setSuccessNote] = useState('');
 
   const title = sec.settings?.title || 'Get in Touch with Our Team';
   const description = sec.settings?.description || 'Have questions about your order, shipping, or nicotine pouch brands? Fill out the form below or reach us directly. Our customer support team responds within 24 hours.';
@@ -1388,6 +1389,7 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
 
     setStatus('submitting');
     setErrorMessage('');
+    setSuccessNote('');
 
     try {
       const res = await fetch('/api/email/contact', {
@@ -1399,6 +1401,7 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
       const data = await res.json();
       if (res.ok && data.success) {
         setStatus('success');
+        setSuccessNote(data.message || 'Thank you for reaching out! A confirmation email has been logged and our customer care team will get back to you shortly.');
         setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
       } else {
         setStatus('error');
@@ -1477,8 +1480,8 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Message Received!</h3>
-                  <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-                    Thank you for reaching out. A confirmation email has been logged and our customer care team will get back to you shortly.
+                  <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                    {successNote || 'Thank you for reaching out. A confirmation email has been logged and our customer care team will get back to you shortly.'}
                   </p>
                 </div>
                 <button
@@ -2305,8 +2308,8 @@ export default function PageRenderer({
                     </div>
 
                     <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none justify-start sm:justify-center">
-                      {allProducts.slice(0, 6).map(prod => (
-                        <div key={prod.id} className="w-28 shrink-0 bg-white border border-slate-100 p-2 rounded-xl text-center shadow-xs hover:shadow-md transition-shadow group">
+                      {allProducts.slice(0, 6).map((prod, pIdx) => (
+                        <div key={`reel-${prod.id}-${pIdx}`} className="w-28 shrink-0 bg-white border border-slate-100 p-2 rounded-xl text-center shadow-xs hover:shadow-md transition-shadow group">
                           <div className="h-20 w-20 bg-slate-50 hover:bg-slate-100 rounded-lg overflow-hidden mx-auto flex items-center justify-center transition-all">
                             <img 
                               src={cleanMediaUrl(prod.image) || PLACEHOLDER_IMAGE} 
@@ -2473,11 +2476,11 @@ export default function PageRenderer({
                           .filter(p => p.status === 'Active')
                           .filter(p => !targetCollectionId || selectedColl?.productIds.includes(p.id));
                         
-                        return filtered.slice(0, sec.settings.itemsCount || 4).map(prod => {
+                        return filtered.slice(0, sec.settings.itemsCount || 4).map((prod, pIdx) => {
                           const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
                           return (
                             <div 
-                              key={prod.id} 
+                              key={`coll-grid-${prod.id}-${pIdx}`} 
                               onClick={() => onNavigate(`/products/${prod.id}`)}
                               className="bg-white border border-slate-150 rounded-2xl overflow-hidden p-4 space-y-4 group hover:shadow-xl hover:border-slate-300 transition-all relative flex flex-col justify-between cursor-pointer"
                             >
