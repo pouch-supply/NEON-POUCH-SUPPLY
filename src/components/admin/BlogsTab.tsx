@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { BlogPost } from '../../types';
 import BlogContentEditor from '../BlogContentEditor';
+import ImageUploadInput from '../ImageUploadInput';
 
 interface BlogsTabProps {
   showAddBlog: boolean;
@@ -443,81 +444,12 @@ export const BlogsTab: React.FC<BlogsTabProps> = ({
 
                   {/* Image Card */}
                   <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-4 text-left">
-                    <label className="block text-slate-700 font-semibold text-xs mb-3">Image</label>
-                    
-                    {imageValue ? (
-                      <div className="relative border border-slate-200 rounded-xl overflow-hidden group bg-slate-50">
-                        <img 
-                          src={cleanMediaUrl(imageValue)} 
-                          alt="Blog Cover" 
-                          referrerPolicy="no-referrer"
-                          className="w-full h-36 object-cover" 
-                        />
-                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setImageValue('')}
-                            className="p-1.5 bg-white rounded-full hover:bg-rose-50 text-rose-600 transition cursor-pointer"
-                            title="Remove Image"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => {
-                          const fileEl = document.getElementById('blog-cover-file-input');
-                          if (fileEl) fileEl.click();
-                        }}
-                        className="border border-dashed border-slate-300 bg-white hover:bg-slate-50 p-6 rounded-xl text-center cursor-pointer flex flex-col items-center justify-center space-y-2 transition"
-                      >
-                        <input
-                          type="file"
-                          id="blog-cover-file-input"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = async () => {
-                                if (typeof reader.result === 'string') {
-                                  try {
-                                    const res = await fetch('/api/upload', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ data: reader.result })
-                                    });
-                                    if (res.ok) {
-                                      const info = await res.json();
-                                      if (info.url) {
-                                        setImageValue(info.url);
-                                        return;
-                                      }
-                                    }
-                                    setImageValue(reader.result);
-                                  } catch (err) {
-                                    console.warn('[BlogUpload] API upload failed:', err);
-                                    setImageValue(reader.result);
-                                  }
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-1.5 rounded-lg shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-                        >
-                          Add image
-                        </button>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          or drop an image to upload
-                        </span>
-                      </div>
-                    )}
+                    <ImageUploadInput
+                      label="Featured Cover Image"
+                      value={imageValue}
+                      onChange={(url) => setImageValue(url)}
+                      placeholder="Paste image URL or select from File Manager..."
+                    />
                   </div>
 
                   {/* Organization Card */}
