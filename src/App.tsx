@@ -454,8 +454,7 @@ export default function App() {
               const localHasSections = localPage && Array.isArray(localPage.sections) && localPage.sections.length > 0;
               
               let finalSections = serverPage.sections || [];
-              if (!serverHasSections && localHasSections) {
-                console.warn(`[Page Sync] Server page ${serverPage.title} (${serverPage.id}) had empty sections. Preserving local sections (${localPage.sections.length} sections).`);
+              if (localHasSections && (!serverHasSections || localPage.sections.length >= finalSections.length)) {
                 finalSections = localPage.sections;
               } else if (!serverHasSections && !localHasSections) {
                 const defaultPage = DEFAULT_PAGES.find(dp => dp.id === serverPage.id || dp.slug === serverPage.slug);

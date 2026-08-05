@@ -22,6 +22,7 @@ import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
 import royalMailRouter from "./backend/routes/royalMail";
 import agecheckedRouter from "./backend/routes/agechecked";
+import contactMessagesRouter from "./backend/routes/contactMessages";
 
 import mediaRouter from "./backend/routes/media";
 import { uploadToCloudinary, isCloudinaryConfigured } from "./backend/services/cloudinary";
@@ -532,6 +533,7 @@ export async function createExpressApp() {
   app.use("/api/klaviyo", klaviyoRouter);
   app.use("/api/royalmail", royalMailRouter);
   app.use("/api/agechecked", agecheckedRouter);
+  app.use("/api/contact-messages", contactMessagesRouter);
 
   // Vite middleware for development or static serving for production
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {

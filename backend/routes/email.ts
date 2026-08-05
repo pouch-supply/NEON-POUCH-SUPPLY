@@ -32,7 +32,7 @@ import {
   renderAdminNewOrderTemplate,
   EmailTemplateData
 } from '../services/emailTemplates';
-import { saveResource } from '../../serverDb';
+import { saveResource, saveSingleItem } from '../../serverDb';
 
 const router = Router();
 
@@ -419,6 +419,23 @@ router.post('/contact', async (req: Request, res: Response) => {
     };
 
     await saveResource('email_logs', [adminLog, customerLog, ...(Array.isArray(logs) ? logs : [])]);
+
+    // Save contact form submission directly into database resource contactMessages
+    try {
+      const contactMsgRecord = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name,
+        email,
+        phone: phone || '',
+        subject: subject || 'General Inquiry',
+        message,
+        status: 'Unread',
+        createdAt: new Date().toISOString()
+      };
+      await saveSingleItem('contactMessages', contactMsgRecord);
+    } catch (saveMsgErr) {
+      console.warn('[ContactForm] Failed to save contact submission to DB:', saveMsgErr);
+    }
 
     let responseNote = 'Thank you for reaching out! Your message has been received, and our customer support team will get back to you shortly.';
     let sandboxNotice: string | undefined = undefined;
