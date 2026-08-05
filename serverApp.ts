@@ -21,7 +21,6 @@ import structureRouter from "./backend/routes/structure";
 import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
 import royalMailRouter from "./backend/routes/royalMail";
-import agecheckedRouter from "./backend/routes/agechecked";
 import contactMessagesRouter from "./backend/routes/contactMessages";
 
 import mediaRouter from "./backend/routes/media";
@@ -532,7 +531,6 @@ export async function createExpressApp() {
   app.use("/api/email", emailRouter);
   app.use("/api/klaviyo", klaviyoRouter);
   app.use("/api/royalmail", royalMailRouter);
-  app.use("/api/agechecked", agecheckedRouter);
   app.use("/api/contact-messages", contactMessagesRouter);
 
   // Vite middleware for development or static serving for production

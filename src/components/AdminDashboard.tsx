@@ -30,7 +30,6 @@ import PagesTab from './admin/PagesTab';
 import DevelopmentTab from './admin/DevelopmentTab';
 import { DiagnosticsTab } from './admin/DiagnosticsTab';
 import { EmailSettingsTab } from './admin/EmailSettingsTab';
-import { AgeCheckedSettingsTab } from './admin/AgeCheckedSettingsTab';
 import { Activity } from 'lucide-react';
 
 export const AVAILABLE_SECTION_TEMPLATES = [
@@ -574,7 +573,7 @@ function HowItWorksSectionAdmin({ sec }: HowItWorksSectionAdminProps) {
   );
 }
 
-type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'email' | 'agechecked' | 'layout' | 'development' | 'diagnostics';
+type SidebarTab = 'analytics' | 'orders' | 'collections' | 'products' | 'pages' | 'blogs' | 'files' | 'customers' | 'discounts' | 'email' | 'layout' | 'development' | 'diagnostics';
 
 export default function AdminDashboard({
   products: parentProducts,
@@ -614,7 +613,6 @@ export default function AdminDashboard({
     customers: 'customers',
     discounts: 'discounts',
     email: 'email',
-    agechecked: 'age-verification',
     layout: 'layout',
     development: 'development',
     diagnostics: 'diagnostics'
@@ -636,8 +634,6 @@ export default function AdminDashboard({
     email: 'email',
     'email-settings': 'email',
     klaviyo: 'email',
-    agechecked: 'agechecked',
-    'age-verification': 'agechecked',
     layout: 'layout',
     development: 'development',
     dev: 'development',
@@ -3101,7 +3097,6 @@ export default function AdminDashboard({
                 { id: 'customers', label: 'Customers', icon: Users },
                 { id: 'discounts', label: 'Discounts', icon: Percent },
                 { id: 'email', label: 'Email & Marketing', icon: Mail },
-                { id: 'agechecked', label: 'Age Verification', icon: ShieldCheck },
                 { id: 'layout', label: 'Header & Footer', icon: Settings },
                 { id: 'development', label: 'Development Mode', icon: Terminal },
                 { id: 'diagnostics', label: 'DB Diagnostics', icon: Activity },
@@ -3726,11 +3721,6 @@ export default function AdminDashboard({
         removeMenuItem={removeMenuItem}
         localPages={localPages}
       />
-    )}
-
-    {/* AGE VERIFICATION AGECHECKED TAB */}
-    {activeTab === 'agechecked' && (
-      <AgeCheckedSettingsTab />
     )}
 
     {/* 11. DEVELOPMENT MODE TAB */}
