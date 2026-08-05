@@ -5,7 +5,7 @@ import {
   ShieldCheck, ArrowLeft, CreditCard, Lock, Terminal, 
   CheckCircle, AlertTriangle, AlertCircle, RefreshCw, 
   Truck, ShoppingCart, UserCheck, Check, X, Loader2,
-  Clock
+  Clock, ExternalLink
 } from 'lucide-react';
 import SubscriptionIcon from './SubscriptionIcon';
 import AgeCheckedModal from './AgeCheckedModal';
@@ -68,6 +68,7 @@ export default function CheckoutView({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [worldpayRedirectUrl, setWorldpayRedirectUrl] = useState<string | null>(null);
 
   // AgeChecked state
   const [showAgeModal, setShowAgeModal] = useState(false);
@@ -355,13 +356,23 @@ export default function CheckoutView({
 
       if (sessionRes.ok && sessionData.redirectUrl) {
         // Start polling for payment status
+        const url = sessionData.redirectUrl;
+        setWorldpayRedirectUrl(url);
         setIsProcessingPayment(true);
         pollPaymentStatus(generatedOrderId);
         
         // Redirect to Worldpay HPP
-        const url = sessionData.redirectUrl;
         if (url.startsWith('http://') || url.startsWith('https://')) {
-          window.location.href = url;
+          const isIframe = window.self !== window.top;
+          if (isIframe) {
+            try {
+              window.open(url, '_blank', 'noopener,noreferrer');
+            } catch (_e) {
+              window.location.href = url;
+            }
+          } else {
+            window.location.href = url;
+          }
           return;
         }
       }
@@ -423,30 +434,54 @@ export default function CheckoutView({
           </div>
           
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-slate-950">Processing Payment</h2>
+            <h2 className="text-2xl font-black text-slate-950">Processing Worldpay Payment</h2>
             <p className="text-slate-500 text-sm">
-              Please complete your payment on the Worldpay secure page.
+              Please complete your payment on the Worldpay secure portal.
             </p>
             <p className="text-slate-400 text-xs">
               Order #{orderId} • This page will update automatically once payment is confirmed.
             </p>
           </div>
 
+          {worldpayRedirectUrl && (
+            <div className="py-2">
+              <a
+                href={worldpayRedirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-wider shadow-md transition-all cursor-pointer"
+              >
+                <span>Open Worldpay Payment Page</span>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+          )}
+
           <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Waiting for payment confirmation...</span>
           </div>
 
-          <button
-            onClick={() => {
-              if (orderId) {
-                pollPaymentStatus(orderId);
-              }
-            }}
-            className="mt-4 text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline cursor-pointer"
-          >
-            Check status now
-          </button>
+          <div className="flex items-center justify-center gap-4 pt-3 border-t border-slate-100">
+            <button
+              onClick={() => {
+                if (orderId) {
+                  pollPaymentStatus(orderId);
+                }
+              }}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline cursor-pointer"
+            >
+              Check status now
+            </button>
+            <button
+              onClick={() => {
+                setIsProcessingPayment(false);
+              }}
+              className="text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+            >
+              Back to Checkout
+            </button>
+          </div>
         </div>
       </div>
     );
