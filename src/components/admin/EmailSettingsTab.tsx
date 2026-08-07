@@ -451,10 +451,10 @@ export function EmailSettingsTab() {
                 type="text"
                 value={emailSettings.fromEmail || ''}
                 onChange={(e) => setEmailSettings({ ...emailSettings, fromEmail: e.target.value })}
-                placeholder="Pouch Supply Co. <orders@pouch-supply.com>"
+                placeholder="Pouch Supply Co. <orders@support.pouch-supply.com>"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
-              <p className="text-[11px] text-slate-500">Verified sender domain in Resend. (Default onboarding sender: <code>onboarding@resend.dev</code>)</p>
+              <p className="text-[11px] text-slate-500">Verified sender domain in Resend (e.g. <code>Pouch Supply Co. &lt;orders@support.pouch-supply.com&gt;</code>).</p>
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -463,7 +463,7 @@ export function EmailSettingsTab() {
                 type="email"
                 value={emailSettings.adminNotificationEmail || ''}
                 onChange={(e) => setEmailSettings({ ...emailSettings, adminNotificationEmail: e.target.value })}
-                placeholder="admin@pouch-supply.com"
+                placeholder="admin@support.pouch-supply.com"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
               <p className="text-[11px] text-slate-500">Receives real-time alerts whenever a customer places an order or payment completes.</p>
@@ -707,7 +707,7 @@ export function EmailSettingsTab() {
                       <p className="font-extrabold text-xs text-blue-900 uppercase tracking-wider">You connected your domain in Resend? Follow final Step 3:</p>
                       <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700 pl-1">
                         <li>Go to the <strong>Configuration</strong> tab above in this Email Settings menu.</li>
-                        <li>Change <strong>From Email Address</strong> from <code className="bg-slate-100 px-1 rounded font-mono">onboarding@resend.dev</code> to your domain address (e.g., <code className="bg-slate-100 px-1 rounded font-mono">Pouch Supply Co. &lt;orders@yourdomain.com&gt;</code>).</li>
+                        <li>Change <strong>From Email Address</strong> to your domain address (e.g., <code className="bg-slate-100 px-1 rounded font-mono">Pouch Supply Co. &lt;orders@support.pouch-supply.com&gt;</code>).</li>
                         <li>Click <strong>Save Configuration</strong>.</li>
                       </ol>
                       <p className="text-[11px] text-emerald-800 font-bold pt-1">

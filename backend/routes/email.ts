@@ -252,9 +252,9 @@ router.post('/contact', async (req: Request, res: Response) => {
     }
 
     const settings = await getEmailSettings();
-    const adminEmail = settings.adminNotificationEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@pouch-supply.com';
+    const adminEmail = settings.adminNotificationEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@support.pouch-supply.com';
     const apiKey = (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
-    let fromEmail = (settings.fromEmail || process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <onboarding@resend.dev>').trim();
+    let fromEmail = (settings.fromEmail || process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <orders@support.pouch-supply.com>').trim();
 
     const emailSubject = `📩 Contact Form Submission: ${subject || 'General Inquiry'} from ${name}`;
     const htmlBody = `

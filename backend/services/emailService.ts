@@ -56,8 +56,8 @@ export interface EmailLogEntry {
 const DEFAULT_SETTINGS: EmailSettings = {
   enabled: true,
   resendApiKey: process.env.RESEND_API_KEY || '',
-  fromEmail: process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <onboarding@resend.dev>',
-  adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@pouch-supply.com',
+  fromEmail: process.env.RESEND_FROM_EMAIL || 'Pouch Supply Co. <orders@support.pouch-supply.com>',
+  adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@support.pouch-supply.com',
   templates: {
     order_confirmation: { enabled: true, subject: 'Order Confirmation - Pouch Supply Co.' },
     order_processing: { enabled: true, subject: 'Order Processing - Pouch Supply Co.' },
@@ -243,7 +243,7 @@ export async function sendEmail(
     const resend = new Resend(apiKey);
     let fromEmail = (fromEmailOverride && fromEmailOverride.trim() !== '')
       ? fromEmailOverride.trim()
-      : (settings.fromEmail || 'Pouch Supply Co. <onboarding@resend.dev>').trim();
+      : (settings.fromEmail || 'Pouch Supply Co. <orders@support.pouch-supply.com>').trim();
 
     console.log(`[EmailService] Sending '${type}' via Resend to '${recipient}' (From: ${fromEmail})...`);
 
