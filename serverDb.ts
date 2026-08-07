@@ -342,65 +342,87 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
         }
       });
     } else if (norm === 'collections') {
-      await prisma.collection.upsert({
-        where: { id },
-        update: {
-          title: item.title || 'Untitled Collection',
-          description: item.description || null,
-          type: item.type || 'Manual',
-          image: item.image || null,
-          productIds: Array.isArray(item.productIds) ? item.productIds : [],
-          slug: item.slug || id,
-          seoTitle: item.seoTitle || null,
-          seoDescription: item.seoDescription || null,
-          data: item
-        },
-        create: {
-          id,
-          title: item.title || 'Untitled Collection',
-          description: item.description || null,
-          type: item.type || 'Manual',
-          image: item.image || null,
-          productIds: Array.isArray(item.productIds) ? item.productIds : [],
-          slug: item.slug || id,
-          seoTitle: item.seoTitle || null,
-          seoDescription: item.seoDescription || null,
-          data: item
+      const colSlug = item.slug || id;
+      try {
+        await prisma.collection.upsert({
+          where: { id },
+          update: {
+            title: item.title || 'Untitled Collection',
+            description: item.description || null,
+            type: item.type || 'Manual',
+            image: item.image || null,
+            productIds: Array.isArray(item.productIds) ? item.productIds : [],
+            slug: colSlug,
+            seoTitle: item.seoTitle || null,
+            seoDescription: item.seoDescription || null,
+            data: item
+          },
+          create: {
+            id,
+            title: item.title || 'Untitled Collection',
+            description: item.description || null,
+            type: item.type || 'Manual',
+            image: item.image || null,
+            productIds: Array.isArray(item.productIds) ? item.productIds : [],
+            slug: colSlug,
+            seoTitle: item.seoTitle || null,
+            seoDescription: item.seoDescription || null,
+            data: item
+          }
+        });
+      } catch (colErr: any) {
+        if (colErr?.code === 'P2002') {
+          await prisma.collection.upsert({
+            where: { id },
+            update: { slug: `${colSlug}-${id}`, data: item },
+            create: { id, title: item.title || 'Untitled Collection', slug: `${colSlug}-${id}`, data: item }
+          }).catch(() => {});
         }
-      });
+      }
     } else if (norm === 'blogs') {
-      await prisma.blogPost.upsert({
-        where: { id },
-        update: {
-          title: item.title || 'Untitled Blog',
-          slug: item.slug || id,
-          excerpt: item.excerpt || null,
-          content: item.content || '',
-          image: item.image || null,
-          author: item.author || null,
-          category: item.category || null,
-          status: item.status || 'Active',
-          publishedAt: item.publishedAt || null,
-          readTime: item.readTime || null,
-          tags: Array.isArray(item.tags) ? item.tags : [],
-          data: item
-        },
-        create: {
-          id,
-          title: item.title || 'Untitled Blog',
-          slug: item.slug || id,
-          excerpt: item.excerpt || null,
-          content: item.content || '',
-          image: item.image || null,
-          author: item.author || null,
-          category: item.category || null,
-          status: item.status || 'Active',
-          publishedAt: item.publishedAt || null,
-          readTime: item.readTime || null,
-          tags: Array.isArray(item.tags) ? item.tags : [],
-          data: item
+      const blogSlug = item.slug || id;
+      try {
+        await prisma.blogPost.upsert({
+          where: { id },
+          update: {
+            title: item.title || 'Untitled Blog',
+            slug: blogSlug,
+            excerpt: item.excerpt || null,
+            content: item.content || '',
+            image: item.image || null,
+            author: item.author || null,
+            category: item.category || null,
+            status: item.status || 'Active',
+            publishedAt: item.publishedAt || null,
+            readTime: item.readTime || null,
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            data: item
+          },
+          create: {
+            id,
+            title: item.title || 'Untitled Blog',
+            slug: blogSlug,
+            excerpt: item.excerpt || null,
+            content: item.content || '',
+            image: item.image || null,
+            author: item.author || null,
+            category: item.category || null,
+            status: item.status || 'Active',
+            publishedAt: item.publishedAt || null,
+            readTime: item.readTime || null,
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            data: item
+          }
+        });
+      } catch (bErr: any) {
+        if (bErr?.code === 'P2002') {
+          await prisma.blogPost.upsert({
+            where: { id },
+            update: { slug: `${blogSlug}-${id}`, data: item },
+            create: { id, title: item.title || 'Untitled Blog', slug: `${blogSlug}-${id}`, content: '', data: item }
+          }).catch(() => {});
         }
-      });
+      }
     } else if (norm === 'discounts') {
       await prisma.discount.upsert({
         where: { id },
@@ -427,36 +449,74 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
         }
       });
     } else if (norm === 'customers') {
-      await prisma.customer.upsert({
-        where: { id },
-        update: {
-          name: item.name || 'Customer',
-          email: item.email || `${id}@pouch-supply.com`,
-          subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
-          location: item.location || null,
-          ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
-          amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
-          addresses: Array.isArray(item.addresses) ? item.addresses : [],
-          wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
-          referralCode: item.referralCode || null,
-          storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
-          data: item
-        },
-        create: {
-          id,
-          name: item.name || 'Customer',
-          email: item.email || `${id}@pouch-supply.com`,
-          subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
-          location: item.location || null,
-          ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
-          amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
-          addresses: Array.isArray(item.addresses) ? item.addresses : [],
-          wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
-          referralCode: item.referralCode || null,
-          storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
-          data: item
+      const emailVal = (item.email && item.email.trim()) ? item.email.trim().toLowerCase() : `cust-${id}@pouch-supply.com`;
+      try {
+        await prisma.customer.upsert({
+          where: { email: emailVal },
+          update: {
+            name: item.name || 'Customer',
+            subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+            location: item.location || null,
+            ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+            amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+            addresses: Array.isArray(item.addresses) ? item.addresses : [],
+            wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+            referralCode: item.referralCode || null,
+            storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+            data: item
+          },
+          create: {
+            id,
+            name: item.name || 'Customer',
+            email: emailVal,
+            subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+            location: item.location || null,
+            ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+            amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+            addresses: Array.isArray(item.addresses) ? item.addresses : [],
+            wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+            referralCode: item.referralCode || null,
+            storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+            data: item
+          }
+        });
+      } catch (cErr: any) {
+        if (cErr?.code === 'P2002') {
+          const safeEmail = `cust-${id}@pouch-supply.com`;
+          await prisma.customer.upsert({
+            where: { id },
+            update: {
+              name: item.name || 'Customer',
+              email: safeEmail,
+              subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+              location: item.location || null,
+              ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+              amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+              addresses: Array.isArray(item.addresses) ? item.addresses : [],
+              wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+              referralCode: item.referralCode || null,
+              storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+              data: item
+            },
+            create: {
+              id,
+              name: item.name || 'Customer',
+              email: safeEmail,
+              subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+              location: item.location || null,
+              ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+              amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+              addresses: Array.isArray(item.addresses) ? item.addresses : [],
+              wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+              referralCode: item.referralCode || null,
+              storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+              data: item
+            }
+          }).catch(e => console.warn('[Prisma Customer Sync] Fallback error:', e?.message));
+        } else {
+          console.warn('[Prisma Customer Sync] Warning:', cErr?.message);
         }
-      });
+      }
     } else if (norm === 'orders') {
       await prisma.order.upsert({
         where: { id },
@@ -501,26 +561,37 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
         }
       });
     } else if (norm === 'custompages' || norm === 'pages') {
-      await prisma.customPage.upsert({
-        where: { id },
-        update: {
-          title: item.title || 'Untitled Page',
-          slug: item.slug || id,
-          visibility: item.visibility || 'Visible',
-          isHomepage: Boolean(item.isHomepage),
-          sections: item.sections || [],
-          data: item
-        },
-        create: {
-          id,
-          title: item.title || 'Untitled Page',
-          slug: item.slug || id,
-          visibility: item.visibility || 'Visible',
-          isHomepage: Boolean(item.isHomepage),
-          sections: item.sections || [],
-          data: item
+      const pageSlug = item.slug || id;
+      try {
+        await prisma.customPage.upsert({
+          where: { id },
+          update: {
+            title: item.title || 'Untitled Page',
+            slug: pageSlug,
+            visibility: item.visibility || 'Visible',
+            isHomepage: Boolean(item.isHomepage),
+            sections: item.sections || [],
+            data: item
+          },
+          create: {
+            id,
+            title: item.title || 'Untitled Page',
+            slug: pageSlug,
+            visibility: item.visibility || 'Visible',
+            isHomepage: Boolean(item.isHomepage),
+            sections: item.sections || [],
+            data: item
+          }
+        });
+      } catch (pErr: any) {
+        if (pErr?.code === 'P2002') {
+          await prisma.customPage.upsert({
+            where: { id },
+            update: { slug: `${pageSlug}-${id}`, data: item },
+            create: { id, title: item.title || 'Untitled Page', slug: `${pageSlug}-${id}`, sections: [], data: item }
+          }).catch(() => {});
         }
-      });
+      }
     } else if (norm === 'analytics' || norm === 'analyticsrecords' || norm === 'analyticsrecord') {
       await prisma.analyticsRecord.upsert({
         where: { id },
