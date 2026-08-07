@@ -282,6 +282,268 @@ function normalizeResourceName(resource: string): string {
   return resource;
 }
 
+async function syncToPrismaModel(resource: string, item: any): Promise<void> {
+  if (!item) return;
+  const id = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
+  const norm = resource.toLowerCase();
+
+  try {
+    if (norm === 'products') {
+      await prisma.product.upsert({
+        where: { id },
+        update: {
+          title: item.title || 'Untitled Product',
+          description: item.description || null,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          compareAtPrice: typeof item.compareAtPrice === 'number' ? item.compareAtPrice : parseFloat(item.compareAtPrice) || 0,
+          inventory: typeof item.inventory === 'number' ? item.inventory : parseInt(item.inventory) || 0,
+          sku: item.sku || null,
+          category: item.category || null,
+          vendor: item.vendor || null,
+          status: item.status || 'Active',
+          image: item.image || null,
+          weight: typeof item.weight === 'number' ? item.weight : parseFloat(item.weight) || 0,
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          media: Array.isArray(item.media) ? item.media : [],
+          variants: item.variants || null,
+          concreteVariants: item.concreteVariants || null,
+          barcode: item.barcode || null,
+          slug: item.slug || id,
+          seoTitle: item.seoTitle || null,
+          seoDescription: item.seoDescription || null,
+          strength: item.strength || null,
+          flavour: item.flavour || null,
+          data: item
+        },
+        create: {
+          id,
+          title: item.title || 'Untitled Product',
+          description: item.description || null,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          compareAtPrice: typeof item.compareAtPrice === 'number' ? item.compareAtPrice : parseFloat(item.compareAtPrice) || 0,
+          inventory: typeof item.inventory === 'number' ? item.inventory : parseInt(item.inventory) || 0,
+          sku: item.sku || null,
+          category: item.category || null,
+          vendor: item.vendor || null,
+          status: item.status || 'Active',
+          image: item.image || null,
+          weight: typeof item.weight === 'number' ? item.weight : parseFloat(item.weight) || 0,
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          media: Array.isArray(item.media) ? item.media : [],
+          variants: item.variants || null,
+          concreteVariants: item.concreteVariants || null,
+          barcode: item.barcode || null,
+          slug: item.slug || id,
+          seoTitle: item.seoTitle || null,
+          seoDescription: item.seoDescription || null,
+          strength: item.strength || null,
+          flavour: item.flavour || null,
+          data: item
+        }
+      });
+    } else if (norm === 'collections') {
+      await prisma.collection.upsert({
+        where: { id },
+        update: {
+          title: item.title || 'Untitled Collection',
+          description: item.description || null,
+          type: item.type || 'Manual',
+          image: item.image || null,
+          productIds: Array.isArray(item.productIds) ? item.productIds : [],
+          slug: item.slug || id,
+          seoTitle: item.seoTitle || null,
+          seoDescription: item.seoDescription || null,
+          data: item
+        },
+        create: {
+          id,
+          title: item.title || 'Untitled Collection',
+          description: item.description || null,
+          type: item.type || 'Manual',
+          image: item.image || null,
+          productIds: Array.isArray(item.productIds) ? item.productIds : [],
+          slug: item.slug || id,
+          seoTitle: item.seoTitle || null,
+          seoDescription: item.seoDescription || null,
+          data: item
+        }
+      });
+    } else if (norm === 'blogs') {
+      await prisma.blogPost.upsert({
+        where: { id },
+        update: {
+          title: item.title || 'Untitled Blog',
+          slug: item.slug || id,
+          excerpt: item.excerpt || null,
+          content: item.content || '',
+          image: item.image || null,
+          author: item.author || null,
+          category: item.category || null,
+          status: item.status || 'Active',
+          publishedAt: item.publishedAt || null,
+          readTime: item.readTime || null,
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          data: item
+        },
+        create: {
+          id,
+          title: item.title || 'Untitled Blog',
+          slug: item.slug || id,
+          excerpt: item.excerpt || null,
+          content: item.content || '',
+          image: item.image || null,
+          author: item.author || null,
+          category: item.category || null,
+          status: item.status || 'Active',
+          publishedAt: item.publishedAt || null,
+          readTime: item.readTime || null,
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          data: item
+        }
+      });
+    } else if (norm === 'discounts') {
+      await prisma.discount.upsert({
+        where: { id },
+        update: {
+          title: item.title || item.code || 'Discount',
+          status: item.status || 'Active',
+          method: item.method || 'Code',
+          eligibility: item.eligibility || 'All',
+          type: item.type || 'Percentage',
+          used: typeof item.used === 'number' ? item.used : 0,
+          details: item.details || null,
+          data: item
+        },
+        create: {
+          id,
+          title: item.title || item.code || 'Discount',
+          status: item.status || 'Active',
+          method: item.method || 'Code',
+          eligibility: item.eligibility || 'All',
+          type: item.type || 'Percentage',
+          used: typeof item.used === 'number' ? item.used : 0,
+          details: item.details || null,
+          data: item
+        }
+      });
+    } else if (norm === 'customers') {
+      await prisma.customer.upsert({
+        where: { id },
+        update: {
+          name: item.name || 'Customer',
+          email: item.email || `${id}@pouch-supply.com`,
+          subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+          location: item.location || null,
+          ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+          amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+          addresses: Array.isArray(item.addresses) ? item.addresses : [],
+          wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+          referralCode: item.referralCode || null,
+          storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+          data: item
+        },
+        create: {
+          id,
+          name: item.name || 'Customer',
+          email: item.email || `${id}@pouch-supply.com`,
+          subscriptionStatus: item.subscriptionStatus || 'Not subscribed',
+          location: item.location || null,
+          ordersCount: typeof item.ordersCount === 'number' ? item.ordersCount : 0,
+          amountSpent: typeof item.amountSpent === 'number' ? item.amountSpent : 0,
+          addresses: Array.isArray(item.addresses) ? item.addresses : [],
+          wishlist: Array.isArray(item.wishlist) ? item.wishlist : [],
+          referralCode: item.referralCode || null,
+          storeCredit: typeof item.storeCredit === 'number' ? item.storeCredit : 0,
+          data: item
+        }
+      });
+    } else if (norm === 'orders') {
+      await prisma.order.upsert({
+        where: { id },
+        update: {
+          customerName: item.customerName || 'Valued Customer',
+          customerEmail: item.customerEmail || 'customer@pouch-supply.com',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          fulfillmentStatus: item.fulfillmentStatus || 'Unfulfilled',
+          paymentStatus: item.paymentStatus || 'Paid',
+          worldpayTxId: item.worldpayTxId || item.gatewayTxId || null,
+          worldpayAuthCode: item.worldpayAuthCode || item.gatewayAuthCode || null,
+          gatewayTxId: item.gatewayTxId || item.worldpayTxId || null,
+          gatewayAuthCode: item.gatewayAuthCode || item.worldpayAuthCode || null,
+          cardBrand: item.cardBrand || 'Card',
+          total: typeof item.total === 'number' ? item.total : parseFloat(item.total) || 0,
+          storeCreditApplied: typeof item.storeCreditApplied === 'number' ? item.storeCreditApplied : parseFloat(item.storeCreditApplied) || 0,
+          destination: item.destination || 'United Kingdom',
+          date: item.date || new Date().toISOString(),
+          deliveryMethod: item.deliveryMethod || 'Royal Mail Tracked 24/48',
+          items: item.items || [],
+          data: item
+        },
+        create: {
+          id,
+          customerName: item.customerName || 'Valued Customer',
+          customerEmail: item.customerEmail || 'customer@pouch-supply.com',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          fulfillmentStatus: item.fulfillmentStatus || 'Unfulfilled',
+          paymentStatus: item.paymentStatus || 'Paid',
+          worldpayTxId: item.worldpayTxId || item.gatewayTxId || null,
+          worldpayAuthCode: item.worldpayAuthCode || item.gatewayAuthCode || null,
+          gatewayTxId: item.gatewayTxId || item.worldpayTxId || null,
+          gatewayAuthCode: item.gatewayAuthCode || item.worldpayAuthCode || null,
+          cardBrand: item.cardBrand || 'Card',
+          total: typeof item.total === 'number' ? item.total : parseFloat(item.total) || 0,
+          storeCreditApplied: typeof item.storeCreditApplied === 'number' ? item.storeCreditApplied : parseFloat(item.storeCreditApplied) || 0,
+          destination: item.destination || 'United Kingdom',
+          date: item.date || new Date().toISOString(),
+          deliveryMethod: item.deliveryMethod || 'Royal Mail Tracked 24/48',
+          items: item.items || [],
+          data: item
+        }
+      });
+    } else if (norm === 'custompages' || norm === 'pages') {
+      await prisma.customPage.upsert({
+        where: { id },
+        update: {
+          title: item.title || 'Untitled Page',
+          slug: item.slug || id,
+          visibility: item.visibility || 'Visible',
+          isHomepage: Boolean(item.isHomepage),
+          sections: item.sections || [],
+          data: item
+        },
+        create: {
+          id,
+          title: item.title || 'Untitled Page',
+          slug: item.slug || id,
+          visibility: item.visibility || 'Visible',
+          isHomepage: Boolean(item.isHomepage),
+          sections: item.sections || [],
+          data: item
+        }
+      });
+    } else if (norm === 'analytics' || norm === 'analyticsrecords' || norm === 'analyticsrecord') {
+      await prisma.analyticsRecord.upsert({
+        where: { id },
+        update: {
+          metric: item.metric || 'page_view',
+          value: typeof item.value === 'number' ? item.value : parseFloat(item.value) || 1,
+          period: item.period || null,
+          metadata: item.metadata || item,
+        },
+        create: {
+          id,
+          metric: item.metric || 'page_view',
+          value: typeof item.value === 'number' ? item.value : parseFloat(item.value) || 1,
+          period: item.period || null,
+          metadata: item.metadata || item,
+        }
+      });
+    }
+  } catch (mErr: any) {
+    console.warn(`[Prisma Model Sync] ${norm} sync warning:`, mErr?.message);
+  }
+}
+
 export async function fetchResource(resource: string): Promise<any[]> {
   const normResource = normalizeResourceName(resource);
   const isConnected = await getDb();
@@ -297,6 +559,12 @@ export async function fetchResource(resource: string): Promise<any[]> {
         const list = records.map(r => r.data as any);
         memoryCache[normResource] = list;
         persistMemoryCacheToBackup();
+
+        // Background sync to direct Prisma model table as well
+        for (const item of list) {
+          syncToPrismaModel(normResource, item).catch(() => {});
+        }
+
         return list;
       }
 
@@ -320,6 +588,7 @@ export async function fetchResource(resource: string): Promise<any[]> {
               data: item
             }
           });
+          syncToPrismaModel(normResource, item).catch(() => {});
         }
       }
       return defaultList;
@@ -363,6 +632,9 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
             data: item
           }
         });
+
+        // Dual sync to dedicated Prisma model table
+        syncToPrismaModel(normResource, item).catch(() => {});
       }
 
       // Delete items removed from list

@@ -164,6 +164,30 @@ async function updateOrderPaymentStatus(
     console.error(`[Worldpay] StoreResource update error for order ${orderId}:`, resourceErr);
   }
 
+  // 3. Fallback: If order did not exist in database prior to payment success, create it now!
+  if (!updatedOrder) {
+    try {
+      console.log(`[Worldpay] Order ${orderId} was not found in database. Constructing and saving new order record now...`);
+      const { saveSingleOrder } = await import('./orders');
+      updatedOrder = await saveSingleOrder({
+        id: orderId,
+        orderId,
+        paymentStatus,
+        fulfillmentStatus: 'Unfulfilled',
+        gatewayTxId: details.transactionId,
+        gatewayAuthCode: details.authCode,
+        worldpayTxId: details.transactionId,
+        worldpayAuthCode: details.authCode,
+        cardBrand: details.cardBrand || 'Card',
+        tags: ['Storefront', 'Worldpay Online Order'],
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      console.log(`[Worldpay] Created missing order ${orderId} with status '${paymentStatus}' successfully.`);
+    } catch (createErr: any) {
+      console.error(`[Worldpay] Failed creating missing order ${orderId}:`, createErr?.message);
+    }
+  }
+
   return updatedOrder;
 }
 
@@ -384,6 +408,28 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
         error: 'Worldpay response did not include a valid Hosted Payment Page redirect URL.',
         details: responseBody
       });
+    }
+
+    // Immediately pre-save order as Pending so it's guaranteed to be in Neon PostgreSQL database
+    try {
+      const { saveSingleOrder } = await import('./orders');
+      await saveSingleOrder({
+        id: orderId || transactionReference,
+        customerName: customerName || 'Valued Customer',
+        customerEmail: customerEmail || 'customer@pouch-supply.com',
+        destination: (req.body.destination || req.body.address) || 'United Kingdom',
+        items: Array.isArray(items) ? items : [],
+        total: typeof amount === 'number' ? amount : parseFloat(amount) || 0,
+        paymentStatus: 'Pending',
+        fulfillmentStatus: 'Unfulfilled',
+        discountApplied: req.body.discountApplied || null,
+        cardBrand: 'Card',
+        tags: ['Storefront', 'Worldpay Online Order'],
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      console.log(`[Worldpay HPP] Pre-saved order ${orderId || transactionReference} as Pending in Neon PostgreSQL database.`);
+    } catch (preSaveErr: any) {
+      console.warn('[Worldpay HPP] Warning pre-saving order:', preSaveErr?.message);
     }
 
     return res.status(200).json({

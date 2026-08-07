@@ -14,7 +14,7 @@ import { trackPurchaseCompleted, trackOrderRefunded } from "../services/klaviyoS
 
 const router = Router();
 
-async function saveSingleOrder(orderData: any) {
+export async function saveSingleOrder(orderData: any) {
   const id = String(orderData.id || orderData.orderId || `PS${Math.floor(Math.random() * 90000 + 10000)}`);
   
   // Check existing order status to detect changes
