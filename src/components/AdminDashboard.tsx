@@ -837,6 +837,54 @@ export default function AdminDashboard({
     }
   }, [layoutSettings]);
 
+  useEffect(() => {
+    if (Array.isArray(parentOrders)) {
+      setLocalOrders(parentOrders);
+    }
+  }, [parentOrders]);
+
+  useEffect(() => {
+    if (Array.isArray(parentProducts) && parentProducts.length > 0) {
+      setLocalProducts(parentProducts);
+    }
+  }, [parentProducts]);
+
+  useEffect(() => {
+    if (Array.isArray(parentCollections) && parentCollections.length > 0) {
+      setLocalCollections(parentCollections);
+    }
+  }, [parentCollections]);
+
+  useEffect(() => {
+    if (Array.isArray(parentCustomPages) && parentCustomPages.length > 0) {
+      setLocalPages(parentCustomPages);
+    }
+  }, [parentCustomPages]);
+
+  useEffect(() => {
+    if (Array.isArray(parentDiscounts) && parentDiscounts.length > 0) {
+      setLocalDiscounts(parentDiscounts);
+    }
+  }, [parentDiscounts]);
+
+  useEffect(() => {
+    if (Array.isArray(parentCustomers) && parentCustomers.length > 0) {
+      setLocalCustomers(parentCustomers);
+    }
+  }, [parentCustomers]);
+
+  useEffect(() => {
+    if (Array.isArray(parentBlogs) && parentBlogs.length > 0) {
+      setLocalBlogs(parentBlogs);
+    }
+  }, [parentBlogs]);
+
+  useEffect(() => {
+    if (Array.isArray(parentFiles) && parentFiles.length > 0) {
+      setLocalFiles(parentFiles);
+    }
+  }, [parentFiles]);
+
   const [layoutSavedToast, setLayoutSavedToast] = useState(false);
   const [testingCloudinary, setTestingCloudinary] = useState(false);
   const [cloudinaryTestResult, setCloudinaryTestResult] = useState<{ success: boolean; message: string } | null>(null);

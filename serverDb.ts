@@ -544,6 +544,67 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
   }
 }
 
+async function fetchFromPrismaModel(resource: string): Promise<any[]> {
+  const norm = resource.toLowerCase();
+  try {
+    if (norm === 'orders') {
+      const dbOrders = await prisma.order.findMany();
+      return dbOrders.map(o => {
+        if (o.data && typeof o.data === 'object' && !Array.isArray(o.data)) {
+          return { ...(o.data as object), id: o.id };
+        }
+        return {
+          id: o.id,
+          customerName: o.customerName,
+          customerEmail: o.customerEmail,
+          tags: o.tags,
+          fulfillmentStatus: o.fulfillmentStatus,
+          paymentStatus: o.paymentStatus,
+          worldpayTxId: o.worldpayTxId,
+          worldpayAuthCode: o.worldpayAuthCode,
+          gatewayTxId: o.gatewayTxId,
+          gatewayAuthCode: o.gatewayAuthCode,
+          cardBrand: o.cardBrand,
+          total: o.total,
+          storeCreditApplied: o.storeCreditApplied,
+          destination: o.destination,
+          date: o.date,
+          deliveryMethod: o.deliveryMethod,
+          items: o.items,
+          trackingId: o.trackingId,
+          carrier: o.carrier,
+          trackingHistory: o.trackingHistory,
+          discountApplied: o.discountApplied
+        };
+      });
+    } else if (norm === 'products') {
+      const items = await prisma.product.findMany();
+      return items.map(p => (p.data && typeof p.data === 'object') ? { ...(p.data as object), id: p.id } : p);
+    } else if (norm === 'collections') {
+      const items = await prisma.collection.findMany();
+      return items.map(c => (c.data && typeof c.data === 'object') ? { ...(c.data as object), id: c.id } : c);
+    } else if (norm === 'blogs') {
+      const items = await prisma.blogPost.findMany();
+      return items.map(b => (b.data && typeof b.data === 'object') ? { ...(b.data as object), id: b.id } : b);
+    } else if (norm === 'discounts') {
+      const items = await prisma.discount.findMany();
+      return items.map(d => (d.data && typeof d.data === 'object') ? { ...(d.data as object), id: d.id } : d);
+    } else if (norm === 'customers') {
+      const items = await prisma.customer.findMany();
+      return items.map(c => (c.data && typeof c.data === 'object') ? { ...(c.data as object), id: c.id } : c);
+    } else if (norm === 'custompages' || norm === 'pages') {
+      const items = await prisma.customPage.findMany();
+      return items.map(cp => (cp.data && typeof cp.data === 'object') ? { ...(cp.data as object), id: cp.id } : cp);
+    } else if (norm === 'analytics' || norm === 'analyticsrecords' || norm === 'analyticsrecord') {
+      const items = await prisma.analyticsRecord.findMany();
+      return items.map(a => (a.metadata && typeof a.metadata === 'object') ? { ...(a.metadata as object), id: a.id } : a);
+    }
+  } catch (err: any) {
+    console.warn(`[fetchFromPrismaModel] ${norm} query warning:`, err?.message);
+  }
+  return [];
+}
+
 export async function fetchResource(resource: string): Promise<any[]> {
   const normResource = normalizeResourceName(resource);
   const isConnected = await getDb();
@@ -555,8 +616,38 @@ export async function fetchResource(resource: string): Promise<any[]> {
         orderBy: { createdAt: 'asc' }
       });
 
-      if (records && records.length > 0) {
-        const list = records.map(r => r.data as any);
+      const storeResourceList = (records || []).map(r => r.data as any);
+      const directModelList = await fetchFromPrismaModel(normResource);
+
+      // Merge by ID to ensure items in direct Prisma model (e.g. Order table) are included
+      const mergedMap = new Map<string, any>();
+      for (const item of storeResourceList) {
+        if (!item) continue;
+        const key = String(item.id || item.slug || item.orderId || '');
+        if (key) mergedMap.set(key, item);
+      }
+      for (const item of directModelList) {
+        if (!item) continue;
+        const key = String(item.id || item.slug || item.orderId || '');
+        if (key) {
+          if (!mergedMap.has(key)) {
+            mergedMap.set(key, item);
+            // Sync missing item back to StoreResource table
+            prisma.storeResource.upsert({
+              where: { resource_itemId: { resource: normResource, itemId: key } },
+              update: { data: item },
+              create: { resource: normResource, itemId: key, data: item }
+            }).catch(() => {});
+          } else {
+            // Prefer item with more populated details or keep storeResource
+            const existing = mergedMap.get(key);
+            mergedMap.set(key, { ...existing, ...item });
+          }
+        }
+      }
+
+      if (mergedMap.size > 0) {
+        const list = Array.from(mergedMap.values());
         memoryCache[normResource] = list;
         persistMemoryCacheToBackup();
 

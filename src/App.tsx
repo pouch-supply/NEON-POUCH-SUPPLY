@@ -405,7 +405,16 @@ export default function App() {
           loadedCollectionsSuccess.current = true;
         }
         if (Array.isArray(ordersRes) && ordersRes.length > 0) {
-          setOrders(ordersRes);
+          setOrders(prevLocalOrders => {
+            const serverMap = new Map(ordersRes.map((o: any) => [String(o.id), o]));
+            const merged = [...ordersRes];
+            for (const localOrd of prevLocalOrders) {
+              if (localOrd && localOrd.id && !serverMap.has(String(localOrd.id))) {
+                merged.unshift(localOrd);
+              }
+            }
+            return merged;
+          });
           loadedOrdersSuccess.current = true;
         }
         if (Array.isArray(filesRes)) {
