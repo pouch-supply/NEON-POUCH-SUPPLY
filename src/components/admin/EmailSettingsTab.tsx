@@ -675,34 +675,49 @@ export function EmailSettingsTab() {
 
           {/* Info Banner explaining Resend Sandbox Recipient Limitation & How to allow ANY email */}
           {emailSettings?.resendApiKey && (
-            <div className="p-4 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-xs space-y-3">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-1.5">
-                  <p className="font-extrabold text-sm text-blue-950">Where are emails delivered & How to send to ANY email address?</p>
-                  
-                  <p className="text-blue-900 leading-relaxed">
-                    <strong>1. Where do test emails go?</strong> They are sent directly to the specified recipient inbox (e.g., <strong>scottkivlinpouch@gmail.com</strong>). Please check your <em>Primary inbox, Spam/Junk folder, and Promotions tab</em> in Gmail.
-                  </p>
-
-                  <p className="text-blue-900 leading-relaxed">
-                    <strong>2. Why did sending to other emails fail?</strong> Resend's free default sender (<code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">onboarding@resend.dev</code>) only permits sending to your registered Resend account owner email (<strong className="underline">scottkivlinpouch@gmail.com</strong>) to prevent spam.
-                  </p>
-
-                  <div className="p-3 bg-white/90 rounded-lg border border-blue-200 text-blue-950 space-y-1">
-                    <p className="font-extrabold text-xs text-blue-900 uppercase tracking-wider">How to unlock sending to ANY email address (3 simple steps):</p>
-                    <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700 pl-1">
-                      <li>Log into Resend and go to <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="font-bold underline text-blue-700 hover:text-blue-900">resend.com/domains</a> to add your domain (e.g., <code className="bg-slate-100 px-1 rounded font-mono">pouch-supply.com</code>).</li>
-                      <li>Add the required DNS records at your domain registrar to verify ownership.</li>
-                      <li>In this dashboard, switch to the <strong>Configuration</strong> tab above and set <strong>From Email</strong> to your domain address (e.g., <code className="bg-slate-100 px-1 rounded font-mono">orders@pouch-supply.com</code>).</li>
-                    </ol>
-                    <p className="text-[11px] text-emerald-800 font-bold pt-1">
-                      ✓ Once your custom domain is verified, Resend allows sending live emails to ANY customer address!
+            emailSettings.fromEmail && !emailSettings.fromEmail.includes('resend.dev') ? (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-sm text-emerald-950">Custom Sender Domain Active!</p>
+                    <p className="text-emerald-900 leading-relaxed">
+                      Your sender email is configured to <code className="bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-bold text-emerald-950">{emailSettings.fromEmail}</code>.
+                      Once verified in Resend (<a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline font-bold text-emerald-700">resend.com/domains</a>), Resend delivers live customer emails (order confirmations, welcomes, cancellations, refunds, exchanges) directly to ANY customer email address.
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 text-xs space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5">
+                    <p className="font-extrabold text-sm text-blue-950">Where are emails delivered & How to send to ANY email address?</p>
+                    
+                    <p className="text-blue-900 leading-relaxed">
+                      <strong>1. Where do test emails go?</strong> They are sent directly to the specified recipient inbox (e.g., <strong>scottkivlinpouch@gmail.com</strong>). Please check your <em>Primary inbox, Spam/Junk folder, and Promotions tab</em> in Gmail.
+                    </p>
+
+                    <p className="text-blue-900 leading-relaxed">
+                      <strong>2. Why did sending to other emails fail?</strong> Resend's free default sender (<code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">onboarding@resend.dev</code>) only permits sending to your registered Resend account owner email (<strong className="underline">scottkivlinpouch@gmail.com</strong>) to prevent spam.
+                    </p>
+
+                    <div className="p-3 bg-white/90 rounded-lg border border-blue-200 text-blue-950 space-y-1">
+                      <p className="font-extrabold text-xs text-blue-900 uppercase tracking-wider">You connected your domain in Resend? Follow final Step 3:</p>
+                      <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700 pl-1">
+                        <li>Go to the <strong>Configuration</strong> tab above in this Email Settings menu.</li>
+                        <li>Change <strong>From Email Address</strong> from <code className="bg-slate-100 px-1 rounded font-mono">onboarding@resend.dev</code> to your domain address (e.g., <code className="bg-slate-100 px-1 rounded font-mono">Pouch Supply Co. &lt;orders@yourdomain.com&gt;</code>).</li>
+                        <li>Click <strong>Save Configuration</strong>.</li>
+                      </ol>
+                      <p className="text-[11px] text-emerald-800 font-bold pt-1">
+                        ✓ Once saved, your app will send emails from your custom domain to ALL customer addresses!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
