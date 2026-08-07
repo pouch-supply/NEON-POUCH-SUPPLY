@@ -9,6 +9,7 @@ import {
   renderDeliveredTemplate,
   renderOrderCancelledTemplate,
   renderOrderRefundedTemplate,
+  renderOrderExchangedTemplate,
   renderPasswordResetTemplate,
   renderEmailVerificationTemplate,
   renderWelcomeTemplate,
@@ -23,6 +24,7 @@ export type EmailTemplateType =
   | 'order_delivered'
   | 'order_cancelled'
   | 'order_refunded'
+  | 'order_exchanged'
   | 'password_reset'
   | 'email_verification'
   | 'welcome_email'
@@ -64,6 +66,7 @@ const DEFAULT_SETTINGS: EmailSettings = {
     order_delivered: { enabled: true, subject: 'Order Delivered - Pouch Supply Co.' },
     order_cancelled: { enabled: true, subject: 'Order Cancellation Notice - Pouch Supply Co.' },
     order_refunded: { enabled: true, subject: 'Refund Confirmation - Pouch Supply Co.' },
+    order_exchanged: { enabled: true, subject: 'Order Exchange Notice - Pouch Supply Co.' },
     password_reset: { enabled: true, subject: 'Reset Your Password - Pouch Supply Co.' },
     email_verification: { enabled: true, subject: 'Verify Your Email Address - Pouch Supply Co.' },
     welcome_email: { enabled: true, subject: 'Welcome to Pouch Supply Co. - 10% Off Inside' },
@@ -194,6 +197,9 @@ export async function sendEmail(
       break;
     case 'order_refunded':
       html = renderOrderRefundedTemplate(data);
+      break;
+    case 'order_exchanged':
+      html = renderOrderExchangedTemplate(data);
       break;
     case 'password_reset':
       html = renderPasswordResetTemplate(data);
@@ -422,6 +428,19 @@ export async function sendOrderRefundedEmail(orderData: any, refundAmount?: numb
     refundReason: reason
   };
   return sendEmail('order_refunded', recipient, data);
+}
+
+export async function sendOrderExchangedEmail(orderData: any, exchangeDetails?: string, reason?: string) {
+  const recipient = orderData.customerEmail || 'customer@pouch-supply.com';
+  const data: EmailTemplateData = {
+    customerName: orderData.customerName,
+    customerEmail: orderData.customerEmail,
+    orderId: orderData.id,
+    items: orderData.items,
+    total: orderData.total,
+    refundReason: exchangeDetails || reason || 'Product exchange initiated'
+  };
+  return sendEmail('order_exchanged', recipient, data);
 }
 
 export async function sendPasswordResetEmail(email: string, name?: string, resetToken?: string, resetLink?: string) {

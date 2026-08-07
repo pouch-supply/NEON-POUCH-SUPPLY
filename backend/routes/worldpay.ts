@@ -573,18 +573,22 @@ const handleWorldpayCallback = async (req: Request, res: Response) => {
   if (status === 'SUCCESS' || status === 'PENDING' || status === 'AUTHORIZED') {
     if (status === 'SUCCESS' || status === 'AUTHORIZED') {
       try {
-        await updateOrderPaymentStatus(orderId, 'Paid', {
+        const updated = await updateOrderPaymentStatus(orderId, 'Paid', {
           transactionId: `CALLBACK_${orderId}`,
           authCode: 'CALLBACK_SUCCESS'
         });
+        if (updated) {
+          const { sendOrderConfirmationEmail } = await import('../services/emailService');
+          sendOrderConfirmationEmail(updated).catch(err => console.warn('[Worldpay Callback Email Error]', err));
+        }
       } catch (error) {
         console.error('[Worldpay Callback] Failed to update order status to Paid:', error);
       }
     }
-    return res.redirect(`/payment/processing?orderId=${encodeURIComponent(orderId)}`);
+    return res.redirect(`/payment/success?orderId=${encodeURIComponent(orderId)}`);
   }
 
-  return res.redirect(`/payment/processing?orderId=${encodeURIComponent(orderId)}`);
+  return res.redirect(`/payment/success?orderId=${encodeURIComponent(orderId)}`);
 };
 
 router.get('/callback', handleWorldpayCallback);

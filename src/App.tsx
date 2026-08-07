@@ -1241,6 +1241,20 @@ export default function App() {
   // --- Customer login and details update ---
   const handleCustomerLogin = (customer: Customer) => {
     setLoggedInCustomer(customer);
+    // Send welcome / login email notification to customer's email
+    if (customer && customer.email) {
+      fetch('/api/email/send-trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'welcome_email',
+          customerEmail: customer.email,
+          customerName: customer.name || 'Valued Customer'
+        })
+      }).then(r => r.json())
+        .then(data => console.log('[Login Welcome Email] Dispatched:', data))
+        .catch(err => console.warn('[Login Welcome Email] Dispatch failed:', err));
+    }
   };
 
   const handleCustomerLogout = () => {
@@ -2718,6 +2732,7 @@ export default function App() {
         onAddToCart={handleAddToCart}
         allProducts={products}
         orders={orders}
+        onUpdateOrder={handleUpdateOrder}
         onAddAddress={handleAddAddress}
         onRemoveAddress={handleRemoveAddress}
         onOpenCart={() => setCartOpen(true)}

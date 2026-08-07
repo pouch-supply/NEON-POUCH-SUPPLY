@@ -67,7 +67,7 @@ export interface Order {
   customerName: string;
   customerEmail: string;
   tags: string[];
-  fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered';
+  fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered' | 'Cancelled';
   paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
   gatewayTxId?: string;
   gatewayAuthCode?: string;

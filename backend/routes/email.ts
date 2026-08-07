@@ -13,6 +13,7 @@ import {
   sendDeliveredEmail,
   sendOrderCancelledEmail,
   sendOrderRefundedEmail,
+  sendOrderExchangedEmail,
   sendPasswordResetEmail,
   sendEmailVerificationEmail,
   sendWelcomeEmail,
@@ -26,6 +27,7 @@ import {
   renderDeliveredTemplate,
   renderOrderCancelledTemplate,
   renderOrderRefundedTemplate,
+  renderOrderExchangedTemplate,
   renderPasswordResetTemplate,
   renderEmailVerificationTemplate,
   renderWelcomeTemplate,
@@ -143,6 +145,9 @@ router.post('/preview', (req: Request, res: Response) => {
       case 'order_refunded':
         html = renderOrderRefundedTemplate(data);
         break;
+      case 'order_exchanged':
+        html = renderOrderExchangedTemplate(data);
+        break;
       case 'password_reset':
         html = renderPasswordResetTemplate(data);
         break;
@@ -212,6 +217,9 @@ router.post('/send-trigger', async (req: Request, res: Response) => {
         break;
       case 'order_refunded':
         result = await sendOrderRefundedEmail(orderData || req.body, refundAmount, reason);
+        break;
+      case 'order_exchanged':
+        result = await sendOrderExchangedEmail(orderData || req.body, req.body.exchangeDetails, reason);
         break;
       case 'password_reset':
         result = await sendPasswordResetEmail(customerEmail || req.body.email, customerName);

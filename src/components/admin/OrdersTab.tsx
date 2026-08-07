@@ -207,37 +207,85 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    const updated = parentOrders.map(o => {
-                      if (o.id === selectedOrder.id) {
-                        return { ...o, paymentStatus: 'Refunded' as const };
-                      }
-                      return o;
-                    });
+                    const updatedOrder = { ...selectedOrder, paymentStatus: 'Refunded' as const };
+                    const updated = parentOrders.map(o => o.id === selectedOrder.id ? updatedOrder : o);
                     parentOnUpdateOrders(updated);
-                    setSelectedOrder({ ...selectedOrder, paymentStatus: 'Refunded' });
+                    setSelectedOrder(updatedOrder);
                     
                     const refundComment = "Order was fully refunded.";
                     setTimelineComments(prev => ({
                       ...prev,
                       [selectedOrder.id]: [{ text: refundComment, date: 'Just now' }, ...(prev[selectedOrder.id] || [])]
                     }));
+
+                    // Send refund email trigger
+                    fetch('/api/email/send-trigger', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'order_refunded',
+                        orderData: updatedOrder,
+                        refundAmount: updatedOrder.total,
+                        reason: 'Admin issued refund'
+                      })
+                    }).catch(err => console.warn('[Admin Refund Email Error]', err));
                   }}
                   className="py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-3xs cursor-pointer"
                 >
                   Refund
                 </button>
+
+                <button
+                  onClick={() => {
+                    const updatedOrder = { ...selectedOrder, fulfillmentStatus: 'Cancelled' as const, paymentStatus: 'Refunded' as const };
+                    const updated = parentOrders.map(o => o.id === selectedOrder.id ? updatedOrder : o);
+                    parentOnUpdateOrders(updated);
+                    setSelectedOrder(updatedOrder);
+
+                    const cancelComment = "Order was cancelled by admin.";
+                    setTimelineComments(prev => ({
+                      ...prev,
+                      [selectedOrder.id]: [{ text: cancelComment, date: 'Just now' }, ...(prev[selectedOrder.id] || [])]
+                    }));
+
+                    // Send cancellation email trigger
+                    fetch('/api/email/send-trigger', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'order_cancelled',
+                        orderData: updatedOrder,
+                        reason: 'Admin cancelled order'
+                      })
+                    }).catch(err => console.warn('[Admin Cancel Email Error]', err));
+                  }}
+                  className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-bold transition-all shadow-3xs cursor-pointer"
+                >
+                  Cancel Order
+                </button>
                 
                 <button
                   onClick={() => {
-                    const returnComment = "Customer initiated a return for items.";
+                    const returnComment = "Exchange processed for order items.";
                     setTimelineComments(prev => ({
                       ...prev,
                       [selectedOrder.id]: [{ text: returnComment, date: 'Just now' }, ...(prev[selectedOrder.id] || [])]
                     }));
+
+                    // Send exchange email trigger
+                    fetch('/api/email/send-trigger', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'order_exchanged',
+                        orderData: selectedOrder,
+                        exchangeDetails: 'Admin initiated warranty item exchange'
+                      })
+                    }).catch(err => console.warn('[Admin Exchange Email Error]', err));
                   }}
                   className="py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-3xs cursor-pointer"
                 >
-                  Return
+                  Exchange Item
                 </button>
                 
                 <div className="relative group">

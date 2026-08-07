@@ -351,6 +351,34 @@ export function renderOrderRefundedTemplate(data: EmailTemplateData): string {
   ` + renderBaseFooter();
 }
 
+// 7b. Exchange Template
+export function renderOrderExchangedTemplate(data: EmailTemplateData): string {
+  const name = data.customerName || 'Valued Customer';
+  const orderId = data.orderId || 'PS10001';
+
+  return renderBaseHeader(`Order Exchange Processed #${orderId}`, `Exchange confirmation for ${name}`) + `
+    <div class="card" style="background-color: #f0f9ff; border-color: #bae6fd;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 12px; color: #0369a1; font-weight: 700;">EXCHANGE CONFIRMED</span>
+          <div style="font-size: 16px; font-weight: 900; color: #0c4a6e;">Order #${orderId} Exchanged</div>
+        </div>
+        <div>
+          <span class="badge badge-info">Exchanged</span>
+        </div>
+      </div>
+      ${data.refundReason ? `<p style="font-size: 12px; color: #0284c7; margin-top: 8px;">Exchange Details: ${data.refundReason}</p>` : ''}
+    </div>
+
+    <h3 style="font-size: 13px; text-transform: uppercase; color: #64748b; margin-top: 16px;">Exchanged Items</h3>
+    ${renderOrderItemsTable(data)}
+
+    <p style="font-size: 13px; color: #475569; margin-top: 16px;">
+      Your exchange request has been processed and your replacement items are being prepared for dispatch with priority courier delivery.
+    </p>
+  ` + renderBaseFooter();
+}
+
 // 8. Password Reset Template
 export function renderPasswordResetTemplate(data: EmailTemplateData): string {
   const name = data.customerName || 'Customer';

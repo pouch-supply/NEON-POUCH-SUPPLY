@@ -20,6 +20,7 @@ interface CustomerDrawerProps {
   onAddToCart: (product: Product, quantity: number) => void;
   allProducts: Product[];
   orders: Order[];
+  onUpdateOrder?: (updated: Order) => void;
   onAddAddress: (address: string) => void;
   onRemoveAddress: (index: number) => void;
   onOpenCart: () => void;
@@ -38,6 +39,7 @@ export default function CustomerDrawer({
   onAddToCart,
   allProducts,
   orders,
+  onUpdateOrder,
   onAddAddress,
   onRemoveAddress,
   onOpenCart,
@@ -621,6 +623,81 @@ export default function CustomerDrawer({
                                                 );
                                               })}
                                             </div>
+                                          </div>
+
+                                          {/* Customer Activity Actions & Email Trigger Section */}
+                                          <div className="pt-2 flex flex-wrap gap-1.5 items-center justify-end">
+                                            <button
+                                              onClick={() => {
+                                                const updated: Order = {
+                                                  ...order,
+                                                  fulfillmentStatus: 'Cancelled',
+                                                  paymentStatus: 'Refunded'
+                                                };
+                                                if (onUpdateOrder) onUpdateOrder(updated);
+                                                fetch('/api/email/send-trigger', {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    type: 'order_cancelled',
+                                                    orderData: updated,
+                                                    reason: 'Customer initiated order cancellation'
+                                                  })
+                                                }).then(r => r.json()).then(() => {
+                                                  alert(`Order #${order.id} cancelled. A confirmation email has been sent to ${order.customerEmail}.`);
+                                                }).catch(e => console.warn(e));
+                                              }}
+                                              className="py-1 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer"
+                                            >
+                                              Cancel Order
+                                            </button>
+
+                                            <button
+                                              onClick={() => {
+                                                const updatedTags = Array.isArray(order.tags) ? [...order.tags] : [];
+                                                if (!updatedTags.includes('Exchange Requested')) updatedTags.push('Exchange Requested');
+                                                const updated: Order = { ...order, tags: updatedTags };
+                                                if (onUpdateOrder) onUpdateOrder(updated);
+                                                fetch('/api/email/send-trigger', {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    type: 'order_exchanged',
+                                                    orderData: updated,
+                                                    exchangeDetails: 'Pouch variant swap requested by customer'
+                                                  })
+                                                }).then(r => r.json()).then(() => {
+                                                  alert(`Exchange request logged for Order #${order.id}. An exchange confirmation email has been sent to ${order.customerEmail}.`);
+                                                }).catch(e => console.warn(e));
+                                              }}
+                                              className="py-1 px-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer"
+                                            >
+                                              Request Exchange
+                                            </button>
+
+                                            <button
+                                              onClick={() => {
+                                                const updatedTags = Array.isArray(order.tags) ? [...order.tags] : [];
+                                                if (!updatedTags.includes('Withdrawal Requested')) updatedTags.push('Withdrawal Requested');
+                                                const updated: Order = { ...order, paymentStatus: 'Refunded', tags: updatedTags };
+                                                if (onUpdateOrder) onUpdateOrder(updated);
+                                                fetch('/api/email/send-trigger', {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    type: 'order_refunded',
+                                                    orderData: updated,
+                                                    refundAmount: order.total,
+                                                    reason: 'Customer requested refund / withdrawal'
+                                                  })
+                                                }).then(r => r.json()).then(() => {
+                                                  alert(`Refund processed for Order #${order.id}. A refund email has been sent to ${order.customerEmail}.`);
+                                                }).catch(e => console.warn(e));
+                                              }}
+                                              className="py-1 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer"
+                                            >
+                                              Request Refund
+                                            </button>
                                           </div>
                                         </div>
                                       </motion.div>
