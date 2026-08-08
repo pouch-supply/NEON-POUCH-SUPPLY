@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Product, Order, Discount } from '../types';
 import { getWishlistProductTitle } from '../utils/mediaUtils';
+import { parseOrderTime } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, LogIn, Heart, PlusCircle, Trash2, MapPin, Package, ShoppingBag, 
@@ -82,7 +83,9 @@ export default function CustomerAccount({
   ];
 
   const myOrders = loggedInCustomer 
-    ? orders.filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase()) 
+    ? orders
+        .filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase())
+        .sort((a, b) => parseOrderTime(b) - parseOrderTime(a))
     : [];
   const ordersCount = myOrders.length;
 

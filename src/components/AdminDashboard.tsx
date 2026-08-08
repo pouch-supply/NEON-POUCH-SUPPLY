@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import ImageUploadInput, { renderMediaThumbnail, isVideoUrl, isPdfOrDocUrl } from './ImageUploadInput';
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
+import { parseOrderTime } from '../utils';
 import CollectionEditor from './CollectionEditor';
 import ProductEditor from './ProductEditor';
 import BlogContentEditor from './BlogContentEditor';
@@ -3064,14 +3065,7 @@ export default function AdminDashboard({
       return matchQuery && o.fulfillmentStatus === orderStatusFilter;
     });
 
-    return list.sort((a, b) => {
-      const timeA = a.date ? new Date(a.date).getTime() : 0;
-      const timeB = b.date ? new Date(b.date).getTime() : 0;
-      if (timeA && timeB && !isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
-        return timeB - timeA;
-      }
-      return String(b.id).localeCompare(String(a.id));
-    });
+    return list.sort((a, b) => parseOrderTime(b) - parseOrderTime(a));
   }, [orders, orderQuery, orderStatusFilter]);
 
   const filteredProductsAdmin = useMemo(() => {

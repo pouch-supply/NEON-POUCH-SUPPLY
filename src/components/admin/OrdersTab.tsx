@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send, Trash2, RotateCcw, CheckSquare, Square
 } from 'lucide-react';
 import { Order } from '../../types';
+import { parseOrderTime } from '../../utils';
 import { RoyalMailOrderActions } from './RoyalMailOrderActions';
 
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&q=80&w=300";
@@ -60,14 +61,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
   // Ensure newly created orders ALWAYS show at the very top (sorted newest first)
   const sortedFilteredOrders = useMemo(() => {
-    return [...filteredOrders].sort((a, b) => {
-      const timeA = a.date ? new Date(a.date).getTime() : 0;
-      const timeB = b.date ? new Date(b.date).getTime() : 0;
-      if (timeA && timeB && !isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
-        return timeB - timeA;
-      }
-      return String(b.id).localeCompare(String(a.id));
-    });
+    return [...filteredOrders].sort((a, b) => parseOrderTime(b) - parseOrderTime(a));
   }, [filteredOrders]);
 
   const allVisibleSelected = sortedFilteredOrders.length > 0 && sortedFilteredOrders.every(o => selectedOrderIds.includes(String(o.id)));

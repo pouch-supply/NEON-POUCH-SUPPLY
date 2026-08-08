@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, Product, Order } from '../types';
 import { getWishlistProductTitle } from '../utils/mediaUtils';
+import { parseOrderTime } from '../utils';
 import { 
   X, User, LogIn, Heart, MapPin, Package, ShoppingBag, 
   Plus, Trash2, Eye, ShieldCheck, Sparkles, Smile, ArrowRight,
@@ -148,7 +149,9 @@ export default function CustomerDrawer({
   };
 
   const myOrders = loggedInCustomer 
-    ? orders.filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase()) 
+    ? orders
+        .filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase())
+        .sort((a, b) => parseOrderTime(b) - parseOrderTime(a))
     : [];
 
   const handleAddAddressSubmit = (e: React.FormEvent) => {

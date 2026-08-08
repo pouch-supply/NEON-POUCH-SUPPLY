@@ -619,11 +619,9 @@ async function fetchFromPrismaModel(resource: string): Promise<any[]> {
   const norm = resource.toLowerCase();
   try {
     if (norm === 'orders') {
-      const dbOrders = await prisma.order.findMany();
+      const dbOrders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
       return dbOrders.map(o => {
-        if (o.data && typeof o.data === 'object' && !Array.isArray(o.data)) {
-          return { ...(o.data as object), id: o.id };
-        }
+        const itemData = (o.data && typeof o.data === 'object' && !Array.isArray(o.data)) ? (o.data as object) : {};
         return {
           id: o.id,
           customerName: o.customerName,
@@ -645,7 +643,9 @@ async function fetchFromPrismaModel(resource: string): Promise<any[]> {
           trackingId: o.trackingId,
           carrier: o.carrier,
           trackingHistory: o.trackingHistory,
-          discountApplied: o.discountApplied
+          discountApplied: o.discountApplied,
+          ...itemData,
+          createdAt: o.createdAt ? o.createdAt.toISOString() : undefined
         };
       });
     } else if (norm === 'products') {

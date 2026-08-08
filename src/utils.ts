@@ -157,3 +157,29 @@ export function calculateDiscountAmount(
       return Math.min(5.00, subtotal);
   }
 }
+
+export function parseOrderTime(o: any): number {
+  if (!o) return 0;
+  if (o.createdAt) {
+    const t = new Date(o.createdAt).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  if (o.timestamp && typeof o.timestamp === 'number') {
+    return o.timestamp;
+  }
+  if (o.date) {
+    let t = new Date(o.date).getTime();
+    if (!isNaN(t) && t > 0) return t;
+
+    // Clean up " at " e.g. "Aug 8, 2026 at 12:04 AM" or "8 Aug 2026 at 12:04"
+    const cleaned = String(o.date).replace(/ at /i, ' ');
+    t = new Date(cleaned).getTime();
+    if (!isNaN(t) && t > 0) return t;
+
+    if (String(o.date).toLowerCase().includes('today')) {
+      return Date.now();
+    }
+  }
+  const numericId = parseInt(String(o.id || '').replace(/\D/g, '')) || 0;
+  return numericId;
+}

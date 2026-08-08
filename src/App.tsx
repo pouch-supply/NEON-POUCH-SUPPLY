@@ -1347,6 +1347,7 @@ export default function App() {
       total: paymentDetails.total,
       destination: paymentDetails.address,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAt: new Date().toISOString(),
       deliveryMethod: 'Royal Mail Tracked 24/48',
       items: paymentDetails.items,
       trackingId: generatedTrackingId,
