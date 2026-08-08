@@ -94,6 +94,11 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         setSelectedOrderIds([]);
         parentOnUpdateOrders(remainingOrders);
 
+        // Send explicit DELETE requests to API for each order
+        ordersToDelete.forEach(o => {
+          fetch(`/api/orders/${o.id}`, { method: 'DELETE' }).catch(err => console.warn('Failed API DELETE for order:', o.id, err));
+        });
+
         // Auto hide undo banner after 20s
         setTimeout(() => {
           setRecentlyDeletedOrders([]);
@@ -113,6 +118,9 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
           setSelectedOrder(null);
         }
         parentOnUpdateOrders(parentOrders.filter(o => o.id !== orderToDelete.id));
+
+        // Send explicit DELETE request to API
+        fetch(`/api/orders/${orderToDelete.id}`, { method: 'DELETE' }).catch(err => console.warn('Failed API DELETE for order:', orderToDelete.id, err));
 
         setTimeout(() => {
           setRecentlyDeletedOrders([]);

@@ -799,7 +799,7 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
         syncToPrismaModel(normResource, item).catch(() => {});
       }
 
-      // Delete items removed from list
+      // Delete items removed from list in StoreResource
       await prisma.storeResource.deleteMany({
         where: {
           resource: normResource,
@@ -808,6 +808,24 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
           }
         }
       });
+
+      // Delete items removed from list in dedicated Prisma tables
+      const norm = normResource.toLowerCase();
+      if (norm === 'orders') {
+        await prisma.order.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'products') {
+        await prisma.product.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'collections') {
+        await prisma.collection.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'customers') {
+        await prisma.customer.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'blogs') {
+        await prisma.blogPost.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'discounts') {
+        await prisma.discount.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'custompages' || norm === 'pages') {
+        await prisma.customPage.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      }
     } catch (err) {
       console.error(`[Neon DB] Error saving resource ${normResource}:`, err);
     }
@@ -870,6 +888,7 @@ export async function saveSingleItem(resource: string, item: any): Promise<any> 
           data: item
         }
       });
+      syncToPrismaModel(normResource, item).catch(() => {});
     } catch (err) {
       console.error(`[Neon DB] Error saving single item ${normResource}/${itemId}:`, err);
     }
@@ -896,6 +915,23 @@ export async function deleteSingleItem(resource: string, id: string): Promise<bo
           itemId: id
         }
       });
+
+      const norm = normResource.toLowerCase();
+      if (norm === 'orders') {
+        await prisma.order.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'products') {
+        await prisma.product.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'collections') {
+        await prisma.collection.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'customers') {
+        await prisma.customer.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'blogs') {
+        await prisma.blogPost.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'discounts') {
+        await prisma.discount.deleteMany({ where: { id } }).catch(() => {});
+      } else if (norm === 'custompages' || norm === 'pages') {
+        await prisma.customPage.deleteMany({ where: { id } }).catch(() => {});
+      }
     } catch (err) {
       console.error(`[Neon DB] Error deleting single item ${normResource}/${id}:`, err);
     }

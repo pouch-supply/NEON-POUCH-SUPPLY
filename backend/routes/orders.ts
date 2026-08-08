@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { fetchResource, saveResource, getDb } from "../../serverDb";
+import { fetchResource, saveResource, deleteSingleItem, getDb } from "../../serverDb";
 import {
   sendOrderConfirmationEmail,
   sendOrderProcessingEmail,
@@ -179,10 +179,34 @@ router.post("/", async (req: Request, res: Response) => {
     const payload = req.body;
 
     if (Array.isArray(payload)) {
-      const savedOrders = [];
-      for (const item of payload) {
-        savedOrders.push(await saveSingleOrder(item));
-      }
+      const formattedOrders = payload.map((orderData: any) => {
+        const id = String(orderData.id || orderData.orderId || `PS${Math.floor(Math.random() * 90000 + 10000)}`);
+        return {
+          id,
+          customerName: orderData.customerName || 'Valued Customer',
+          customerEmail: orderData.customerEmail || 'customer@pouch-supply.com',
+          tags: Array.isArray(orderData.tags) ? orderData.tags : ['Storefront', 'Online Order'],
+          fulfillmentStatus: orderData.fulfillmentStatus || 'Unfulfilled',
+          paymentStatus: orderData.paymentStatus || (orderData.total === 0 ? 'Paid' : 'Pending'),
+          worldpayTxId: orderData.worldpayTxId || orderData.gatewayTxId || null,
+          worldpayAuthCode: orderData.worldpayAuthCode || orderData.gatewayAuthCode || null,
+          gatewayTxId: orderData.gatewayTxId || orderData.worldpayTxId || null,
+          gatewayAuthCode: orderData.gatewayAuthCode || orderData.worldpayAuthCode || null,
+          cardBrand: orderData.cardBrand || 'Card',
+          total: typeof orderData.total === 'number' ? orderData.total : parseFloat(orderData.total) || 0,
+          storeCreditApplied: typeof orderData.storeCreditApplied === 'number' ? orderData.storeCreditApplied : parseFloat(orderData.storeCreditApplied) || 0,
+          destination: orderData.destination || orderData.address || 'United Kingdom',
+          date: orderData.date || (new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+          deliveryMethod: orderData.deliveryMethod || 'Royal Mail Tracked 24/48',
+          items: orderData.items || [],
+          discountApplied: orderData.discountApplied || null,
+          trackingNumber: orderData.trackingNumber || null,
+          carrier: orderData.carrier || null,
+          data: orderData.data || {}
+        };
+      });
+
+      const savedOrders = await saveResource('orders', formattedOrders);
       return res.json(savedOrders);
     } else if (payload && typeof payload === 'object') {
       const savedOrder = await saveSingleOrder(payload);
@@ -193,6 +217,22 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("[Orders Router] POST Error:", err);
     res.status(500).json({ error: err.message || "Failed to persist orders" });
+  }
+});
+
+// DELETE /:id - Permanently delete a single order
+router.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteSingleItem("orders", id);
+    if (deleted) {
+      return res.json({ success: true, deletedId: id });
+    } else {
+      return res.status(404).json({ error: "Order not found or could not be deleted" });
+    }
+  } catch (err: any) {
+    console.error("[Orders Router] DELETE Error:", err);
+    res.status(500).json({ error: err.message || "Failed to delete order" });
   }
 });
 
