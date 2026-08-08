@@ -1,5 +1,6 @@
-import React from 'react';
-import { Search, Download, Upload, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Download, Upload, Plus, Eye, User, Mail, MapPin, Package, ShoppingBag, X, Check, ArrowRight } from 'lucide-react';
+import { Order } from '../../types';
 
 interface CustomerItem {
   id: string;
@@ -22,6 +23,7 @@ interface CustomersTabProps {
   handleAddCustomerSubmit: (e: React.FormEvent) => void;
   newCustomerForm: { name: string; email: string; location: string; subscriptionStatus: 'Subscribed' | 'Not subscribed' | 'Unsubscribed' };
   setNewCustomerForm: React.Dispatch<React.SetStateAction<{ name: string; email: string; location: string; subscriptionStatus: 'Subscribed' | 'Not subscribed' | 'Unsubscribed' }>>;
+  orders?: Order[];
 }
 
 export const CustomersTab: React.FC<CustomersTabProps> = ({
@@ -34,8 +36,16 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
   showAddCustomer,
   handleAddCustomerSubmit,
   newCustomerForm,
-  setNewCustomerForm
+  setNewCustomerForm,
+  orders = []
 }) => {
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem | null>(null);
+
+  // Get matching orders for selected customer
+  const customerOrders = selectedCustomer 
+    ? orders.filter(o => o.customerEmail.toLowerCase() === selectedCustomer.email.toLowerCase() || o.customerName.toLowerCase() === selectedCustomer.name.toLowerCase())
+    : [];
+
   return (
     <div className="space-y-6">
       
@@ -95,7 +105,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                 <th className="p-4 text-center">Subscription Status</th>
                 <th className="p-4 text-center">Total Orders Count</th>
                 <th className="p-4 text-right font-sans">Total Spent Amount</th>
-                <th className="p-4 text-center">Reference profile</th>
+                <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -105,9 +115,18 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                 </tr>
               ) : (
                 filteredCustomers.map(cust => (
-                  <tr key={cust.id} className="hover:bg-slate-50/50">
-                    <td className="p-4 font-black text-slate-900">{cust.name}</td>
-                    <td className="p-4 text-slate-500">{cust.email}</td>
+                  <tr 
+                    key={cust.id} 
+                    onClick={() => setSelectedCustomer(cust)}
+                    className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                  >
+                    <td className="p-4 font-black text-slate-900 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[11px] shrink-0">
+                        {cust.name.slice(0, 1).toUpperCase()}
+                      </div>
+                      <span>{cust.name}</span>
+                    </td>
+                    <td className="p-4 text-slate-500 font-medium">{cust.email}</td>
                     <td className="p-4 text-slate-700">{cust.location}</td>
                     <td className="p-4 text-center">
                       <span className={`inline-block py-0.5 px-2 rounded-full font-bold text-[9px] uppercase tracking-wider ${
@@ -116,9 +135,19 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                         {cust.subscriptionStatus}
                       </span>
                     </td>
-                    <td className="p-4 text-center font-bold text-slate-800">{cust.ordersCount} buys</td>
+                    <td className="p-4 text-center font-bold text-slate-800">{cust.ordersCount} orders</td>
                     <td className="p-4 text-right font-extrabold text-slate-950">£{cust.amountSpent.toFixed(2)}</td>
-                    <td className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase">Registered</td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCustomer(cust);
+                        }}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-1 px-2.5 rounded-lg text-[10.5px] inline-flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <Eye className="h-3 w-3" /> View Details
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -126,6 +155,111 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Customer Detail Drawer / Modal */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full shadow-2xl overflow-hidden animate-scale my-8">
+            
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-5 sm:p-6 flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-black text-amber-400 shrink-0">
+                  {selectedCustomer.name.slice(0, 1).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">{selectedCustomer.name}</h3>
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <Mail className="h-3 w-3" /> {selectedCustomer.email}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedCustomer(null)}
+                className="text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-lg cursor-pointer transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 text-xs font-sans text-slate-800">
+              
+              {/* Quick Summary Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Orders</span>
+                  <strong className="text-slate-900 text-sm font-black">{selectedCustomer.ordersCount}</strong>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Spent</span>
+                  <strong className="text-emerald-700 text-sm font-black">£{selectedCustomer.amountSpent.toFixed(2)}</strong>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Subscription</span>
+                  <span className={`inline-block text-[9px] font-black uppercase py-0.5 px-2 rounded-full ${
+                    selectedCustomer.subscriptionStatus === 'Subscribed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {selectedCustomer.subscriptionStatus}
+                  </span>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Location</span>
+                  <strong className="text-slate-800 text-xs font-bold block truncate">{selectedCustomer.location || 'UK'}</strong>
+                </div>
+              </div>
+
+              {/* Order History Section */}
+              <div className="space-y-3">
+                <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center justify-between border-b border-slate-150 pb-2">
+                  <span>Order History ({customerOrders.length})</span>
+                </h4>
+
+                {customerOrders.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-6 text-center text-slate-400">
+                    <ShoppingBag className="h-6 w-6 mx-auto mb-2 text-slate-300" />
+                    <p>No associated order records found for this customer email.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {customerOrders.map(ord => (
+                      <div key={ord.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-900 text-xs">#{ord.id}</span>
+                            <span className="text-[10px] text-slate-400">{ord.date}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            {ord.items ? `${ord.items.length} item(s)` : 'Order Items'} • Status: <strong className="text-slate-800">{ord.fulfillmentStatus}</strong>
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
+                          <span className="font-black text-slate-900 text-xs">£{ord.total.toFixed(2)}</span>
+                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                            ord.fulfillmentStatus === 'Fulfilled' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {ord.fulfillmentStatus}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Customer Actions */}
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-150">
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs transition cursor-pointer"
+                >
+                  Close Profile
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Customer Modal */}
       {showAddCustomer && (

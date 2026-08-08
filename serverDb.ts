@@ -932,23 +932,35 @@ export async function saveUploadedImage(id: string, base64Data: string, mimeType
   return `/uploads/${id}`;
 }
 
-export async function getUploadedImage(id: string): Promise<{ base64Data: string; mimeType: string } | null> {
-  if (memoryImages[id]) return memoryImages[id];
+export async function getUploadedImage(idOrFilename: string): Promise<{ base64Data: string; mimeType: string } | null> {
+  if (memoryImages[idOrFilename]) return memoryImages[idOrFilename];
+
+  const dotIndex = idOrFilename.lastIndexOf('.');
+  const idNoExt = dotIndex !== -1 ? idOrFilename.substring(0, dotIndex) : idOrFilename;
+  if (memoryImages[idNoExt]) return memoryImages[idNoExt];
+
   const isConnected = await getDb();
   if (isConnected) {
     try {
       const record = await prisma.storeResource.findFirst({
         where: {
           resource: 'uploaded_images',
-          itemId: id
+          OR: [
+            { itemId: idOrFilename },
+            { itemId: idNoExt }
+          ]
         }
       });
       if (record && record.data) {
         const data = record.data as any;
-        memoryImages[id] = { base64Data: data.base64Data, mimeType: data.mimeType };
-        return memoryImages[id];
+        const result = { base64Data: data.base64Data, mimeType: data.mimeType };
+        memoryImages[idOrFilename] = result;
+        memoryImages[idNoExt] = result;
+        return result;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Neon DB] Failed to retrieve uploaded image:', e);
+    }
   }
   return null;
 }

@@ -460,15 +460,16 @@ export default function App() {
               const localPage = localMap.get(serverPage.id) || prevLocalPages.find(p => p.slug === serverPage.slug);
               
               const serverHasSections = Array.isArray(serverPage.sections) && serverPage.sections.length > 0;
-              const localHasSections = localPage && Array.isArray(localPage.sections) && localPage.sections.length > 0;
-              
               let finalSections = serverPage.sections || [];
-              if (localHasSections && (!serverHasSections || localPage.sections.length >= finalSections.length)) {
-                finalSections = localPage.sections;
-              } else if (!serverHasSections && !localHasSections) {
-                const defaultPage = DEFAULT_PAGES.find(dp => dp.id === serverPage.id || dp.slug === serverPage.slug);
-                if (defaultPage && defaultPage.sections) {
-                  finalSections = defaultPage.sections;
+              if (!serverHasSections) {
+                const localPage = localMap.get(serverPage.id) || prevLocalPages.find(p => p.slug === serverPage.slug);
+                if (localPage && Array.isArray(localPage.sections) && localPage.sections.length > 0) {
+                  finalSections = localPage.sections;
+                } else {
+                  const defaultPage = DEFAULT_PAGES.find(dp => dp.id === serverPage.id || dp.slug === serverPage.slug);
+                  if (defaultPage && defaultPage.sections) {
+                    finalSections = defaultPage.sections;
+                  }
                 }
               }
               

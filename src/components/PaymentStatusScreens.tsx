@@ -178,12 +178,16 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
   const [order, setOrder] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [txId, setTxId] = useState('');
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const parsedOrderId = params.get('orderId') || 'PS-TEMP';
     const parsedAmount = params.get('amount') || '0.00';
+    const parsedTxId = params.get('txId') || params.get('transactionId') || params.get('worldpayTxId') || '';
     setOrderId(parsedOrderId);
     setAmount(parsedAmount);
+    setTxId(parsedTxId);
 
     // Fetch the order from db to show authentic rich confirmation details!
     const fetchOrder = async () => {
@@ -194,6 +198,10 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
           const found = list.find(o => o.id === parsedOrderId);
           if (found) {
             setOrder(found);
+            const foundAny = found as any;
+            if (!parsedTxId && (foundAny.worldpayTxId || foundAny.gatewayTxId)) {
+              setTxId(foundAny.worldpayTxId || foundAny.gatewayTxId || '');
+            }
           }
         }
       } catch (err) {
@@ -204,6 +212,8 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
     };
     fetchOrder();
   }, []);
+
+  const effectiveTxId = txId || (order?.worldpayTxId || order?.gatewayTxId || `WP-TXN-${(orderId || '8841').slice(-6).toUpperCase()}`);
 
   return (
     <div className="max-w-xl mx-auto my-12 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center space-y-6 font-sans">
@@ -216,6 +226,18 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
         <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
           Your credit card was authorized, and your order has been received. A detailed transaction receipt has been dispatched to your email address.
         </p>
+      </div>
+
+      {/* Prominent Order & Transaction Badges */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900 text-white rounded-2xl p-4 shadow-md text-left">
+        <div className="bg-slate-800/80 border border-slate-700/80 p-3 rounded-xl">
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Customer Order ID</span>
+          <strong className="text-amber-400 text-sm font-mono tracking-tight block">#{orderId}</strong>
+        </div>
+        <div className="bg-slate-800/80 border border-slate-700/80 p-3 rounded-xl">
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Transaction ID</span>
+          <strong className="text-emerald-400 text-xs font-mono tracking-tight block truncate" title={effectiveTxId}>{effectiveTxId}</strong>
+        </div>
       </div>
 
       {/* Real receipt breakdown */}

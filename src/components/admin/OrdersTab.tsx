@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Download, Upload, Search, Eye, ArrowLeft, AlertTriangle, 
-  ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send
+  ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send, Trash2, RotateCcw, CheckSquare, Square
 } from 'lucide-react';
 import { Order } from '../../types';
 import { RoyalMailOrderActions } from './RoyalMailOrderActions';
@@ -55,8 +55,130 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   setCarrierInput,
   showConfirmDeleteModal
 }) => {
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [recentlyDeletedOrders, setRecentlyDeletedOrders] = useState<Order[]>([]);
+
+  // Ensure newly created orders ALWAYS show at the very top (sorted newest first)
+  const sortedFilteredOrders = useMemo(() => {
+    return [...filteredOrders].sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      if (timeA && timeB && !isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
+  }, [filteredOrders]);
+
+  const allVisibleSelected = sortedFilteredOrders.length > 0 && sortedFilteredOrders.every(o => selectedOrderIds.includes(String(o.id)));
+
+  const handleToggleSelectAll = () => {
+    if (allVisibleSelected) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(sortedFilteredOrders.map(o => String(o.id)));
+    }
+  };
+
+  const handleToggleSelectOrder = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedOrderIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteOrders = () => {
+    if (selectedOrderIds.length === 0) return;
+    showConfirmDeleteModal(
+      "Bulk Delete Selected Orders",
+      `Are you sure you want to delete ${selectedOrderIds.length} selected order(s)? You can immediately restore them using the Undo button.`,
+      () => {
+        const ordersToDelete = parentOrders.filter(o => selectedOrderIds.includes(String(o.id)));
+        const remainingOrders = parentOrders.filter(o => !selectedOrderIds.includes(String(o.id)));
+
+        setRecentlyDeletedOrders(ordersToDelete);
+        setSelectedOrderIds([]);
+        parentOnUpdateOrders(remainingOrders);
+
+        // Auto hide undo banner after 20s
+        setTimeout(() => {
+          setRecentlyDeletedOrders([]);
+        }, 20000);
+      }
+    );
+  };
+
+  const handleDeleteSingleOrder = (orderToDelete: Order, e: React.MouseEvent) => {
+    e.stopPropagation();
+    showConfirmDeleteModal(
+      `Delete Order #${orderToDelete.id}`,
+      `Are you sure you want to delete Order #${orderToDelete.id}? An undo option will be available to restore it.`,
+      () => {
+        setRecentlyDeletedOrders([orderToDelete]);
+        if (selectedOrder && selectedOrder.id === orderToDelete.id) {
+          setSelectedOrder(null);
+        }
+        parentOnUpdateOrders(parentOrders.filter(o => o.id !== orderToDelete.id));
+
+        setTimeout(() => {
+          setRecentlyDeletedOrders([]);
+        }, 20000);
+      }
+    );
+  };
+
+  const handleUndoDelete = () => {
+    if (recentlyDeletedOrders.length === 0) return;
+    const restoredMap = new Map();
+    [...recentlyDeletedOrders, ...parentOrders].forEach(o => restoredMap.set(String(o.id), o));
+    parentOnUpdateOrders(Array.from(restoredMap.values()));
+    setRecentlyDeletedOrders([]);
+  };
+
   return (
     <div className="space-y-6">
+
+      {/* Persistent Undo Banner */}
+      {recentlyDeletedOrders.length > 0 && (
+        <div className="bg-amber-900 text-amber-50 border border-amber-700/80 p-3.5 px-5 rounded-xl shadow-lg flex items-center justify-between gap-4 animate-slide-down">
+          <div className="flex items-center gap-2.5 text-xs font-bold">
+            <Trash2 className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>Successfully deleted {recentlyDeletedOrders.length} order(s).</span>
+          </div>
+          <button
+            onClick={handleUndoDelete}
+            className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-black py-1.5 px-3.5 rounded-lg text-xs inline-flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Undo Delete
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Delete Selection Floating Action Bar */}
+      {selectedOrderIds.length > 0 && (
+        <div className="bg-slate-900 text-white p-3 px-5 rounded-xl border border-slate-800 shadow-xl flex items-center justify-between gap-4">
+          <div className="text-xs font-bold text-slate-200">
+            <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md font-black text-[11px] mr-2">
+              {selectedOrderIds.length}
+            </span>
+            order(s) selected for bulk action
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkDeleteOrders}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3.5 rounded-lg text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm transition"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete Selected ({selectedOrderIds.length})
+            </button>
+            <button
+              onClick={() => setSelectedOrderIds([])}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition"
+            >
+              Deselect
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Table actions header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
@@ -118,6 +240,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-200 text-[10px] text-slate-450 font-black uppercase tracking-widest">
+                <th className="p-4 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={handleToggleSelectAll}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                    title="Select / Deselect all"
+                  />
+                </th>
                 <th className="p-4">Order ID</th>
                 <th className="p-4">Created Date</th>
                 <th className="p-4">Customer</th>
@@ -127,46 +258,67 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.length === 0 ? (
+              {sortedFilteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">No matching orders found.</td>
+                  <td colSpan={7} className="text-center py-12 text-slate-400">No matching orders found.</td>
                 </tr>
               ) : (
-                filteredOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-slate-50/50">
-                    <td className="p-4 font-extrabold text-slate-900">
-                      <div>{order.id}</div>
-                      {Array.isArray(order.tags) && order.tags.includes('Withdrawal Requested') && (
-                        <span className="inline-block text-[8.5px] bg-rose-50 text-rose-700 border border-rose-150 uppercase font-black px-1.5 py-0.5 rounded mt-1 animate-pulse select-none">
-                          Withdrawal Pending
+                sortedFilteredOrders.map(order => {
+                  const isSelected = selectedOrderIds.includes(String(order.id));
+                  return (
+                    <tr 
+                      key={order.id} 
+                      className={`hover:bg-slate-50/70 transition-colors ${isSelected ? 'bg-amber-50/50' : ''}`}
+                    >
+                      <td className="p-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => handleToggleSelectOrder(String(order.id), e as any)}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                        />
+                      </td>
+                      <td className="p-4 font-extrabold text-slate-900">
+                        <div>{order.id}</div>
+                        {Array.isArray(order.tags) && order.tags.includes('Withdrawal Requested') && (
+                          <span className="inline-block text-[8.5px] bg-rose-50 text-rose-700 border border-rose-150 uppercase font-black px-1.5 py-0.5 rounded mt-1 animate-pulse select-none">
+                            Withdrawal Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-slate-500 font-medium">{order.date}</td>
+                      <td className="p-4">
+                        <p className="font-bold text-slate-850">{order.customerName}</p>
+                        <p className="text-[10px] text-slate-400">{order.customerEmail}</p>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`inline-block text-[10px] uppercase font-bold py-0.5 px-2 rounded-full tracking-wider ${
+                          order.fulfillmentStatus === 'Fulfilled' 
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' 
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {order.fulfillmentStatus}
                         </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-slate-500">{order.date}</td>
-                    <td className="p-4">
-                      <p className="font-bold text-slate-850">{order.customerName}</p>
-                      <p className="text-[10px] text-slate-400">{order.customerEmail}</p>
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className={`inline-block text-[10px] uppercase font-bold py-0.5 px-2 rounded-full tracking-wider ${
-                        order.fulfillmentStatus === 'Fulfilled' 
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' 
-                          : 'bg-amber-100 text-amber-800 border border-amber-200'
-                      }`}>
-                        {order.fulfillmentStatus}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right font-extrabold text-slate-900">£{order.total.toFixed(2)}</td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-250 hover:text-slate-900 text-slate-600 py-1 px-2.5 rounded-lg font-bold flex items-center gap-1 mx-auto cursor-pointer"
-                      >
-                        <Eye className="h-3 w-3" /> View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="p-4 text-right font-extrabold text-slate-900">£{order.total.toFixed(2)}</td>
+                      <td className="p-4 text-center flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-250 hover:text-slate-900 text-slate-600 py-1 px-2.5 rounded-lg font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="h-3 w-3" /> View
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteSingleOrder(order, e)}
+                          className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 p-1.5 rounded-lg transition cursor-pointer"
+                          title="Delete Order"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

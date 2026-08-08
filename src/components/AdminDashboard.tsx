@@ -3055,7 +3055,7 @@ export default function AdminDashboard({
 
   // Filters listings
   const filteredOrders = useMemo(() => {
-    return orders.filter(o => {
+    const list = orders.filter(o => {
       const matchQuery = o.id.toLowerCase().includes(orderQuery.toLowerCase()) || 
                          o.customerName.toLowerCase().includes(orderQuery.toLowerCase()) ||
                          o.customerEmail.toLowerCase().includes(orderQuery.toLowerCase());
@@ -3063,14 +3063,32 @@ export default function AdminDashboard({
       if (orderStatusFilter === 'All') return matchQuery;
       return matchQuery && o.fulfillmentStatus === orderStatusFilter;
     });
+
+    return list.sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      if (timeA && timeB && !isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
   }, [orders, orderQuery, orderStatusFilter]);
 
   const filteredProductsAdmin = useMemo(() => {
-    return products.filter(p => 
+    const filtered = products.filter(p => 
       p.title.toLowerCase().includes(productQuery.toLowerCase()) ||
       p.vendor.toLowerCase().includes(productQuery.toLowerCase()) ||
       p.sku.toLowerCase().includes(productQuery.toLowerCase())
     );
+
+    return filtered.sort((a, b) => {
+      const idA = parseInt(String(a.id).replace(/\D/g, '')) || 0;
+      const idB = parseInt(String(b.id).replace(/\D/g, '')) || 0;
+      if (idA && idB && idA !== idB) {
+        return idB - idA;
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
   }, [products, productQuery]);
 
   const filteredCollections = useMemo(() => {
@@ -3679,6 +3697,7 @@ export default function AdminDashboard({
             handleAddCustomerSubmit={handleAddCustomerSubmit}
             newCustomerForm={newCustomerForm}
             setNewCustomerForm={setNewCustomerForm}
+            orders={orders}
           />
         )}
 
