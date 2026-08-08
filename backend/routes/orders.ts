@@ -120,11 +120,12 @@ export async function saveSingleOrder(orderData: any) {
   return formattedOrder;
 }
 
-// GET all orders
+// GET all orders - only return valid paid or refunded orders
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const data = await fetchResource("orders");
-    res.json(data);
+    const data: any[] = (await fetchResource("orders")) || [];
+    const validOrders = data.filter((o: any) => o && (o.paymentStatus === 'Paid' || o.paymentStatus === 'Refunded'));
+    res.json(validOrders);
   } catch (err: any) {
     console.error("[Orders Router] GET Error:", err);
     res.status(500).json({ error: err.message || "Failed to fetch orders" });

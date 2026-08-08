@@ -27,6 +27,7 @@ import ProductDetailView from './components/ProductDetailView';
 import CollectionDetailView from './components/CollectionDetailView';
 import CheckoutView from './components/CheckoutView';
 import { FolderStructureView } from './components/FolderStructureView';
+import { parseOrderTime } from './utils';
 import { SecureGatewaySimulator, PaymentSuccessScreen, PaymentFailedScreen, PaymentCancelledScreen } from './components/PaymentStatusScreens';
 import { 
   Sparkles, ShieldCheck, Truck, RefreshCw, Star, ArrowRight, Package, ShoppingCart, Check, Heart, User, CheckCircle2, Save, AlertTriangle, Search, Undo, Mail, X
@@ -899,9 +900,28 @@ export default function App() {
 
     window.addEventListener('app-image-uploaded', handleFileOrImageUploaded);
     window.addEventListener('app-file-uploaded', handleFileOrImageUploaded);
+
+    const handleOrderCompleted = async () => {
+      try {
+        const res = await fetch('/api/orders');
+        if (res.ok) {
+          const freshOrders = await res.json();
+          if (Array.isArray(freshOrders)) {
+            const sorted = [...freshOrders].sort((a, b) => parseOrderTime(b) - parseOrderTime(a));
+            setOrders(sorted);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to refresh orders on order-completed event:', err);
+      }
+    };
+
+    window.addEventListener('order-completed', handleOrderCompleted);
+
     return () => {
       window.removeEventListener('app-image-uploaded', handleFileOrImageUploaded);
       window.removeEventListener('app-file-uploaded', handleFileOrImageUploaded);
+      window.removeEventListener('order-completed', handleOrderCompleted);
     };
   }, []);
 

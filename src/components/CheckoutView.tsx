@@ -329,13 +329,11 @@ export default function CheckoutView({
       setIsProcessing(false);
 
       if (sessionRes.ok && sessionData.redirectUrl) {
-        // Start polling for payment status
+        // Redirect to Worldpay HPP or Test Gateway
         const url = sessionData.redirectUrl;
         setWorldpayRedirectUrl(url);
-        setIsProcessingPayment(true);
-        pollPaymentStatus(generatedOrderId);
+        setIsProcessingPayment(false);
         
-        // Redirect to Worldpay HPP
         if (url.startsWith('http://') || url.startsWith('https://')) {
           const isIframe = window.self !== window.top;
           if (isIframe) {
@@ -347,6 +345,11 @@ export default function CheckoutView({
           } else {
             window.location.href = url;
           }
+          return;
+        } else {
+          // Relative test gateway navigation
+          window.history.pushState({}, '', url);
+          window.dispatchEvent(new Event('popstate'));
           return;
         }
       }
