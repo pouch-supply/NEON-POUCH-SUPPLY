@@ -39,45 +39,84 @@
   --color-slate-950: #101112;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f6f6f7;
+  color: #1a1c1d;
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: #1c2d50;
+  color: #ffffff;
+}
+
+/* Polished Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f2f4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c2c7cc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9fa5aa;
 }
 
 /* Custom styled utility classes matching Professional Polish exactly */
 .stat-card {
   background: white;
   border: 1px solid #e1e3e5;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   color: #4a4d50;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: all 0.15s ease;
 }
 
 .sidebar-item:hover {
   background: #edeeef;
+  color: #1a1c1d;
 }
 
 .sidebar-item.active {
-  background: #edeeef;
-  color: #1a1c1d;
+  background: #1c2d50;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .status-badge {
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .bg-success-subtle {
@@ -92,7 +131,7 @@ body {
 
 .chart-bar {
   background: #1c2d50;
-  border-radius: 2px 2px 0 0;
+  border-radius: 4px 4px 0 0;
 }
 
 @keyframes marquee {
@@ -126,4 +165,30 @@ body {
 .animate-slide-in-right {
   animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Glass & Card Elevation Utilities */
+.glass-header {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark-glass-header {
+  background: rgba(7, 29, 55, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.card-elevated {
+  background: #ffffff;
+  border: 1px solid #e1e3e5;
+  box-shadow: 0 2px 8px -2px rgba(7, 29, 55, 0.05), 0 1px 4px -1px rgba(7, 29, 55, 0.03);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-elevated:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(7, 29, 55, 0.1), 0 2px 8px -2px rgba(7, 29, 55, 0.04);
+}
+
 
