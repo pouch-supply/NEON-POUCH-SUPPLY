@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, X, Image as ImageIcon, HardDrive, Search, Check, FolderOpen, Plus, RefreshCw, Film, FileText, FileCode, File, Video } from 'lucide-react';
 import { cleanMediaUrl } from '../utils/mediaUtils';
 import { FileEntry } from '../types';
@@ -498,8 +499,8 @@ export default function ImageUploadInput({
       )}
 
       {/* FILE MANAGER PICKER MODAL */}
-      {isPickerOpen && (
-        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 font-sans animate-in fade-in duration-150">
+      {isPickerOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 font-sans animate-in fade-in duration-150">
           <div 
             className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
@@ -731,7 +732,8 @@ export default function ImageUploadInput({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
