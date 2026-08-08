@@ -238,7 +238,13 @@ export default function CheckoutView({
   const finalTotalToPay = Math.max(0, finalTotal - storeCreditApplied);
 
   // Process payment with Worldpay HPP
-  const executePaymentProcess = async () => {
+  const executePaymentProcess = async (paymentMode: 'live' | 'test' = 'live') => {
+    // Validate shipping info
+    if (!fullName || !email || !addressLine) {
+      setPaymentError('Please fill in your shipping and contact information.');
+      return;
+    }
+
     // Handle zero-cost orders (store credit covers everything)
     if (finalTotalToPay === 0) {
       setIsProcessing(true);
@@ -301,10 +307,11 @@ export default function CheckoutView({
         endpoint: '/api/worldpay/session',
         method: 'POST',
         orderId: generatedOrderId,
-        amount: finalTotalToPay.toFixed(2)
+        amount: finalTotalToPay.toFixed(2),
+        mode: paymentMode
       });
 
-      // Initialize Worldpay HPP session directly without creating an unconfirmed pending order
+      // Initialize Worldpay HPP session with explicit payment mode
       const sessionRes = await fetch('/api/worldpay/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -319,7 +326,9 @@ export default function CheckoutView({
             productTitle: item.productTitle,
             price: item.price,
             quantity: item.quantity
-          }))
+          })),
+          mode: paymentMode,
+          paymentMode: paymentMode
         })
       });
 
@@ -355,7 +364,7 @@ export default function CheckoutView({
       }
 
       // Handle error if payment gateway is not configured or session fails
-      setPaymentError(sessionData.error || sessionData.message || 'Payment gateway is currently not configured or session failed. No order was generated.');
+      setPaymentError(sessionData.message || sessionData.error || 'Payment gateway is currently not configured or session failed. No order was generated.');
       setIsProcessingPayment(false);
       
     } catch (error: any) {
@@ -369,14 +378,7 @@ export default function CheckoutView({
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate shipping info
-    if (!fullName || !email || !addressLine) {
-      setPaymentError('Please fill in your shipping and contact information.');
-      return;
-    }
-
-    await executePaymentProcess();
+    await executePaymentProcess('live');
   };
 
   // Processing screen
@@ -659,64 +661,127 @@ export default function CheckoutView({
             </div>
           </div>
 
-          {/* Payment Section */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-indigo-600" /> 2. Secure Payment
-              </h3>
-            </div>
+            {/* Payment Section */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-indigo-600" /> 2. Select Payment Method
+                </h3>
+              </div>
 
-            {/* Payment Info */}
-            <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shadow-inner">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-850">Secure Checkout</h4>
-                <p className="text-[11px] text-slate-500 leading-relaxed max-w-md mx-auto">
-                  You will be securely redirected to Worldpay to complete your payment. Your card details are processed in a PCI-DSS compliant environment.
-                </p>
-              </div>
-              <div className="flex justify-center gap-6 text-[10px] text-slate-400 font-extrabold uppercase">
-                <span>✓ 256-bit SSL</span>
-                <span>✓ 3D Secure 2.0</span>
-                <span>✓ PCI Level 1</span>
-              </div>
-            </div>
-
-            {/* Payment Button */}
-            <form onSubmit={handlePay} className="space-y-4">
-              {paymentError && (
-                <div className="flex gap-2 items-center bg-red-50 border border-red-150 p-3.5 rounded-xl text-xs font-bold text-red-650">
-                  <AlertCircle className="h-4.5 w-4.5 shrink-0" />
-                  <span>{paymentError}</span>
+              {/* Payment Info */}
+              <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-5 text-center space-y-3">
+                <div className="mx-auto w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shadow-inner">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
-              )}
+                <div className="space-y-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-850">Worldpay Payment Gateways</h4>
+                  <p className="text-[11px] text-slate-500 leading-relaxed max-w-md mx-auto">
+                    Choose <strong>Pay with Worldpay – Live</strong> to process an authentic payment, or <strong>Pay with Worldpay – Test</strong> to simulate full checkout and order creation.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-6 text-[10px] text-slate-400 font-extrabold uppercase">
+                  <span>✓ 256-bit SSL</span>
+                  <span>✓ 3D Secure 2.0</span>
+                  <span>✓ PCI Level 1</span>
+                </div>
+              </div>
 
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <>
-                    <RefreshCw className="h-4.5 w-4.5 animate-spin" />
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-4 w-4 text-emerald-400" />
-                    <span>
-                      {finalTotalToPay === 0
-                        ? `Complete Order (Free)`
-                        : `Pay £${finalTotalToPay.toFixed(2)}`}
-                    </span>
-                  </>
+              {/* Payment Buttons */}
+              <div className="space-y-4">
+                {paymentError && (
+                  <div className="flex gap-2 items-center bg-red-50 border border-red-150 p-3.5 rounded-xl text-xs font-bold text-red-650">
+                    <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+                    <span>{paymentError}</span>
+                  </div>
                 )}
-              </button>
-            </form>
-          </div>
+
+                {finalTotalToPay === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => executePaymentProcess('live')}
+                    disabled={isProcessing}
+                    className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:cursor-not-allowed"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <RefreshCw className="h-4.5 w-4.5 animate-spin" />
+                        <span>Processing Order...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4 text-emerald-400" />
+                        <span>Complete Order with Store Credit (£0.00)</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="space-y-3.5">
+                    {/* Option 1: Pay with Worldpay – Live */}
+                    <div className="p-4 border-2 border-slate-900 bg-slate-50/50 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center text-xs font-black text-slate-900 uppercase">
+                        <span className="flex items-center gap-1.5">
+                          <Lock className="h-4 w-4 text-emerald-600" /> Option 1: Live Payment
+                        </span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">LIVE</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Redirects to official Worldpay Access Hosted Payment Page to securely authorize your credit card.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => executePaymentProcess('live')}
+                        disabled={isProcessing}
+                        className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                            <span>Connecting to Worldpay Live...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4 text-emerald-400" />
+                            <span>Pay with Worldpay – Live (£{finalTotalToPay.toFixed(2)})</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Option 2: Pay with Worldpay – Test */}
+                    <div className="p-4 border-2 border-amber-400/80 bg-amber-50/40 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center text-xs font-black text-amber-950 uppercase">
+                        <span className="flex items-center gap-1.5">
+                          <ShieldCheck className="h-4 w-4 text-amber-600" /> Option 2: Test Sandbox
+                        </span>
+                        <span className="bg-amber-200 text-amber-900 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">TEST / SANDBOX</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        Simulates the complete payment authorization, receipt page, email dispatch, and order creation flow without charging real money.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => executePaymentProcess('test')}
+                        disabled={isProcessing}
+                        className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                            <span>Launching Worldpay Sandbox...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-4 w-4 text-amber-200" />
+                            <span>Pay with Worldpay – Test (£{finalTotalToPay.toFixed(2)})</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
           {/* Developer logs */}
           {showLogs && (

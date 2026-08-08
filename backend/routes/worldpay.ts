@@ -23,10 +23,18 @@ interface PendingCheckout {
 const pendingCheckoutsMap = new Map<string, PendingCheckout>();
 
 // Helper to determine Worldpay Environment and Credentials
-function getEnvironmentConfig() {
+function getEnvironmentConfig(requestedMode?: 'live' | 'test') {
   const envMode = (process.env.WORLDPAY_ENVIRONMENT || 'live').toLowerCase();
   const testModeFlag = (process.env.WORLDPAY_TEST_MODE || '').toLowerCase() === 'true';
-  const isTestMode = envMode === 'test' || envMode === 'sandbox' || testModeFlag;
+
+  let isTestMode = false;
+  if (requestedMode === 'test') {
+    isTestMode = true;
+  } else if (requestedMode === 'live') {
+    isTestMode = false;
+  } else {
+    isTestMode = envMode === 'test' || envMode === 'sandbox' || testModeFlag;
+  }
 
   const entity = isTestMode
     ? (process.env.WORLDPAY_TEST_ENTITY || process.env.WORLDPAY_ENTITY || process.env.WORLDPAY_ENTITY_ID || 'TEST_ENTITY_PS')
@@ -40,10 +48,6 @@ function getEnvironmentConfig() {
     ? (process.env.WORLDPAY_TEST_API_PASSWORD || process.env.WORLDPAY_API_PASSWORD || '')
     : (process.env.WORLDPAY_API_PASSWORD || '');
 
-  const apiKey = isTestMode
-    ? (process.env.WORLDPAY_TEST_API_KEY || process.env.WORLDPAY_API_KEY || '')
-    : (process.env.WORLDPAY_API_KEY || '');
-
   const baseUrl = (
     isTestMode
       ? (process.env.WORLDPAY_TEST_BASE_URL || 'https://try.access.worldpay.com')
@@ -53,8 +57,6 @@ function getEnvironmentConfig() {
   let authHeader: string | null = null;
   if (username && password) {
     authHeader = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
-  } else if (apiKey) {
-    authHeader = `Bearer ${apiKey}`;
   }
 
   return {
@@ -63,7 +65,6 @@ function getEnvironmentConfig() {
     entity,
     username,
     password,
-    apiKey,
     baseUrl,
     authHeader,
     checkoutId: process.env.WORLDPAY_CHECKOUT_ID || process.env.NEXT_PUBLIC_WORLDPAY_CHECKOUT_ID || ''
@@ -186,7 +187,6 @@ router.get('/config', (_req: Request, res: Response) => {
     entityMasked: cfg.entity ? `${cfg.entity.substring(0, 4)}***` : 'Not Configured',
     checkoutIdMasked: cfg.checkoutId ? `${cfg.checkoutId.substring(0, 6)}***` : 'Not Configured',
     hasBasicAuth: Boolean(cfg.username && cfg.password),
-    hasBearerAuth: Boolean(cfg.apiKey),
     provider: `Worldpay Access (${cfg.environment.toUpperCase()})`
   });
 });
@@ -205,10 +205,12 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       discountApplied,
       storeCreditApplied,
       origin: bodyOrigin,
-      mode = 'guest'
+      mode,
+      paymentMode
     } = req.body;
 
-    const cfg = getEnvironmentConfig();
+    const requestedMode: 'live' | 'test' = (paymentMode || mode || '').toLowerCase() === 'test' ? 'test' : 'live';
+    const cfg = getEnvironmentConfig(requestedMode);
 
     const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
     const host = (req.headers['x-forwarded-host'] as string) || req.get('host') || 'localhost:3000';
@@ -240,8 +242,8 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
 
     pendingCheckoutsMap.set(transactionReference, pendingPayload);
 
-    // TEST MODE OR MISSING LIVE CREDENTIALS: Redirect to Test Gateway Simulator
-    if (cfg.isTestMode || !cfg.authHeader || !cfg.entity) {
+    // TEST MODE REQUESTED OR ENFORCED
+    if (cfg.isTestMode) {
       console.log(`[Worldpay Session] Creating TEST / SANDBOX checkout for Order: ${transactionReference}`);
       const testGatewayUrl = `${origin}/payment/gateway?orderId=${encodeURIComponent(transactionReference)}&amount=${encodeURIComponent(pendingPayload.total.toFixed(2))}&mode=test`;
 
@@ -254,6 +256,15 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
         provider: 'Worldpay Access Test Sandbox',
         environment: 'test',
         isTestMode: true
+      });
+    }
+
+    // LIVE MODE REQUESTED: Check for missing live credentials
+    if (!cfg.authHeader || !cfg.entity) {
+      return res.status(400).json({
+        success: false,
+        message: 'Live Worldpay Access API credentials are not configured in environment variables (WORLDPAY_ENTITY, WORLDPAY_API_USERNAME, WORLDPAY_API_PASSWORD).',
+        error: 'Live Worldpay credentials missing.'
       });
     }
 
