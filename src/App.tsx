@@ -1171,7 +1171,19 @@ export default function App() {
       }
       return `${cleanTitle} (Qty:${i.quantity})`;
     }).join(', ');
-    const desc = `${packName} [${frequency}] - (${listSummary})`;
+
+    const freqDiscountPct = frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10);
+    const desc = `${packName} [${frequency} - ${freqDiscountPct}% OFF] - (${listSummary})`;
+
+    const now = new Date();
+    const nextPaymentDate = new Date(now);
+    if (frequency === 'Weekly') {
+      nextPaymentDate.setDate(now.getDate() + 7);
+    } else if (frequency === 'Bi-Weekly') {
+      nextPaymentDate.setDate(now.getDate() + 14);
+    } else {
+      nextPaymentDate.setDate(now.getDate() + 30);
+    }
 
     setCartItems(prev => [
       ...prev,
@@ -1181,8 +1193,13 @@ export default function App() {
         price: flatPrice,
         image: PLACEHOLDER_IMAGE,
         quantity: 1,
-        vendor: 'Subscription Pack'
-      }
+        vendor: 'Subscription Pack',
+        isSubscription: true,
+        subscriptionPlan: packName,
+        subscriptionFrequency: frequency,
+        frequencyDiscount: `${freqDiscountPct}%`,
+        nextPaymentDate: nextPaymentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      } as any
     ]);
     setCartOpen(true);
   };

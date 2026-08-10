@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Download, Upload, Search, Eye, ArrowLeft, AlertTriangle, 
-  ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send, Trash2, RotateCcw, CheckSquare, Square
+  ChevronDown, ChevronUp, MoreHorizontal, Calendar, Truck, Tag, MessageSquare, Send, Trash2, RotateCcw, CheckSquare, Square,
+  RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { Order } from '../../types';
 import { parseOrderTime } from '../../utils';
@@ -58,11 +59,81 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 }) => {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [recentlyDeletedOrders, setRecentlyDeletedOrders] = useState<Order[]>([]);
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'All' | 'Standard' | 'Subscription'>('All');
+
+  // Helper to detect if an order is a subscription order
+  const isSubOrder = (order: Order) => {
+    if (order.isSubscription) return true;
+    if (Array.isArray(order.tags) && order.tags.some(t => t.toLowerCase().includes('subscription'))) return true;
+    if (Array.isArray(order.items) && order.items.some((i: any) => 
+      i.isSubscription || 
+      i.vendor === 'Subscription Pack' || 
+      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+    )) return true;
+    return false;
+  };
+
+  // Helper to extract subscription metadata for detailed display
+  const getSubscriptionDetails = (order: Order) => {
+    if (order.subscriptionDetails) return order.subscriptionDetails;
+
+    const subItem = order.items?.find((i: any) => 
+      i.isSubscription || 
+      i.vendor === 'Subscription Pack' || 
+      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+    ) as any;
+
+    let planName = subItem?.subscriptionPlan || 'LITE Plan';
+    let frequency = subItem?.subscriptionFrequency || 'Bi-Weekly';
+    let frequencyDiscount = subItem?.frequencyDiscount || '10%';
+
+    const title = (subItem?.productTitle || '').toLowerCase();
+    if (title.includes('core')) planName = 'CORE Plan';
+    else if (title.includes('pro')) planName = 'PRO Plan';
+    else if (title.includes('ultimate')) planName = 'ULTIMATE Plan';
+    else if (title.includes('lite')) planName = 'LITE Plan';
+
+    if (title.includes('weekly') && !title.includes('bi')) {
+      frequency = 'Weekly';
+      frequencyDiscount = '5%';
+    } else if (title.includes('bi-weekly') || title.includes('by weekly') || title.includes('2 week')) {
+      frequency = 'Bi-Weekly';
+      frequencyDiscount = '10%';
+    } else if (title.includes('month') || title.includes('one month')) {
+      frequency = 'One Month';
+      frequencyDiscount = '12%';
+    }
+
+    const baseDate = order.createdAt ? new Date(order.createdAt) : new Date();
+    const nextDate = new Date(baseDate);
+    if (frequency === 'Weekly') {
+      nextDate.setDate(baseDate.getDate() + 7);
+    } else if (frequency === 'Bi-Weekly') {
+      nextDate.setDate(baseDate.getDate() + 14);
+    } else {
+      nextDate.setDate(baseDate.getDate() + 30);
+    }
+
+    return {
+      planName,
+      frequency,
+      frequencyDiscount,
+      paymentStatus: order.paymentStatus || 'Paid',
+      lastPaymentDate: baseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      nextPaymentDate: nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+  };
 
   // Ensure newly created orders ALWAYS show at the very top (sorted newest first)
   const sortedFilteredOrders = useMemo(() => {
-    return [...filteredOrders].sort((a, b) => parseOrderTime(b) - parseOrderTime(a));
-  }, [filteredOrders]);
+    let list = [...filteredOrders];
+    if (orderTypeFilter === 'Subscription') {
+      list = list.filter(isSubOrder);
+    } else if (orderTypeFilter === 'Standard') {
+      list = list.filter(o => !isSubOrder(o));
+    }
+    return list.sort((a, b) => parseOrderTime(b) - parseOrderTime(a));
+  }, [filteredOrders, orderTypeFilter]);
 
   const allVisibleSelected = sortedFilteredOrders.length > 0 && sortedFilteredOrders.every(o => selectedOrderIds.includes(String(o.id)));
 
@@ -183,21 +254,61 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
       )}
       
       {/* Table actions header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
-        <div className="flex flex-wrap gap-1">
-          {(['All', 'Unfulfilled', 'Fulfilled'] as const).map(tab => (
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Fulfillment Status Tabs */}
+          <div className="flex flex-wrap gap-1">
+            {(['All', 'Unfulfilled', 'Fulfilled'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setOrderStatusFilter(tab)}
+                className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  orderStatusFilter === tab 
+                    ? 'bg-slate-900 border-slate-900 text-white' 
+                    : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {tab} ({tab === 'All' ? orders.length : orders.filter(o => o.fulfillmentStatus === tab).length})
+              </button>
+            ))}
+          </div>
+
+          <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+
+          {/* Customer / Subscription Toggle Pills */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
             <button
-              key={tab}
-              onClick={() => setOrderStatusFilter(tab)}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                orderStatusFilter === tab 
-                  ? 'bg-slate-900 border-slate-900 text-white' 
-                  : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
+              onClick={() => setOrderTypeFilter('All')}
+              className={`py-1 px-2.5 rounded-lg font-bold transition-all cursor-pointer ${
+                orderTypeFilter === 'All'
+                  ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {tab} ({tab === 'All' ? orders.length : orders.filter(o => o.fulfillmentStatus === tab).length})
+              All
             </button>
-          ))}
+            <button
+              onClick={() => setOrderTypeFilter('Standard')}
+              className={`py-1 px-2.5 rounded-lg font-bold transition-all cursor-pointer ${
+                orderTypeFilter === 'Standard'
+                  ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Standard
+            </button>
+            <button
+              onClick={() => setOrderTypeFilter('Subscription')}
+              className={`py-1 px-3 rounded-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
+                orderTypeFilter === 'Subscription'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-indigo-700 hover:bg-indigo-50 font-black'
+              }`}
+            >
+              <RefreshCw className="w-3 h-3" />
+              Subscriptions ({orders.filter(isSubOrder).length})
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -281,7 +392,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                         />
                       </td>
                       <td className="p-4 font-extrabold text-slate-900">
-                        <div>{order.id}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>#{order.id}</span>
+                          {isSubOrder(order) && (
+                            <span className="inline-flex items-center gap-1 text-[8.5px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                              <RefreshCw className="w-2.5 h-2.5" />
+                              Subscription ({getSubscriptionDetails(order).planName})
+                            </span>
+                          )}
+                        </div>
                         {Array.isArray(order.tags) && order.tags.includes('Withdrawal Requested') && (
                           <span className="inline-block text-[8.5px] bg-rose-50 text-rose-700 border border-rose-150 uppercase font-black px-1.5 py-0.5 rounded mt-1 animate-pulse select-none">
                             Withdrawal Pending
@@ -292,6 +411,11 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       <td className="p-4">
                         <p className="font-bold text-slate-850">{order.customerName}</p>
                         <p className="text-[10px] text-slate-400">{order.customerEmail}</p>
+                        {isSubOrder(order) && (
+                          <div className="mt-1 text-[10px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-md px-1.5 py-0.5 inline-block">
+                            🔄 {getSubscriptionDetails(order).frequency} ({getSubscriptionDetails(order).frequencyDiscount} OFF)
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 text-center">
                         <span className={`inline-block text-[10px] uppercase font-bold py-0.5 px-2 rounded-full tracking-wider ${
@@ -473,6 +597,58 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
             
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-6">
+
+              {/* SUBSCRIPTION CUSTOMER ORDER DETAILS PANEL */}
+              {isSubOrder(selectedOrder) && (() => {
+                const subDetails = getSubscriptionDetails(selectedOrder);
+                return (
+                  <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-lg border border-slate-800 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-400/30 text-indigo-400">
+                          <RefreshCw className="w-5 h-5 animate-spin-slow" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-sm tracking-tight text-white uppercase">Subscription Customer Order</h3>
+                            <span className="text-[9.5px] bg-emerald-500 text-slate-950 font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                              {subDetails.paymentStatus === 'Paid' ? 'PAID & ACTIVE' : subDetails.paymentStatus.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 font-medium">Recurring Subscription Delivery & Automatic Billing</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                      <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block mb-1">Subscription Plan</span>
+                        <span className="font-black text-sm text-white">{subDetails.planName}</span>
+                      </div>
+
+                      <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block mb-1">Delivery Frequency</span>
+                        <span className="font-black text-sm text-white">{subDetails.frequency}</span>
+                        <span className="text-[10px] font-bold text-emerald-400 block mt-0.5">({subDetails.frequencyDiscount} Discount)</span>
+                      </div>
+
+                      <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block mb-1">Payment Status</span>
+                        <span className="font-black text-sm text-emerald-400 flex items-center gap-1">
+                          <CheckSquare className="w-3.5 h-3.5" /> Paid
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">£{selectedOrder.total.toFixed(2)} / cycle</span>
+                      </div>
+
+                      <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block mb-1">Next Payment Date</span>
+                        <span className="font-black text-sm text-amber-300">{subDetails.nextPaymentDate}</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">Auto-renewal scheduled</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* WITHDRAWAL ACTION BANNER FOR ADMINS */}
               {Array.isArray(selectedOrder.tags) && selectedOrder.tags.includes('Withdrawal Requested') && (

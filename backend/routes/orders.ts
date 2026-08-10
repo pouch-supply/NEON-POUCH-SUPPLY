@@ -24,11 +24,71 @@ export async function saveSingleOrder(orderData: any) {
     existingOrder = currentOrders.find((o: any) => String(o.id) === id);
   } catch (_e) {}
 
+  const items = orderData.items || existingOrder?.items || [];
+  const subItem = items.find((i: any) =>
+    i.isSubscription ||
+    i.vendor === 'Subscription Pack' ||
+    (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+  );
+
+  const isSubscription = Boolean(orderData.isSubscription ?? existingOrder?.isSubscription ?? subItem);
+
+  let subscriptionDetails = orderData.subscriptionDetails || existingOrder?.subscriptionDetails || null;
+
+  if (isSubscription && !subscriptionDetails) {
+    let planName = subItem?.subscriptionPlan || 'LITE Plan';
+    let frequency = subItem?.subscriptionFrequency || 'Bi-Weekly';
+    let frequencyDiscount = subItem?.frequencyDiscount || '10%';
+
+    const title = (subItem?.productTitle || '').toLowerCase();
+    if (title.includes('core')) planName = 'CORE Plan';
+    else if (title.includes('pro')) planName = 'PRO Plan';
+    else if (title.includes('ultimate')) planName = 'ULTIMATE Plan';
+    else if (title.includes('lite')) planName = 'LITE Plan';
+
+    if (title.includes('weekly') && !title.includes('bi')) {
+      frequency = 'Weekly';
+      frequencyDiscount = '5%';
+    } else if (title.includes('bi-weekly') || title.includes('by weekly') || title.includes('2 week')) {
+      frequency = 'Bi-Weekly';
+      frequencyDiscount = '10%';
+    } else if (title.includes('month') || title.includes('one month')) {
+      frequency = 'One Month';
+      frequencyDiscount = '12%';
+    }
+
+    const baseDate = new Date();
+    const nextDate = new Date(baseDate);
+    if (frequency === 'Weekly') {
+      nextDate.setDate(baseDate.getDate() + 7);
+    } else if (frequency === 'Bi-Weekly') {
+      nextDate.setDate(baseDate.getDate() + 14);
+    } else {
+      nextDate.setDate(baseDate.getDate() + 30);
+    }
+
+    subscriptionDetails = {
+      planName,
+      frequency,
+      frequencyDiscount,
+      paymentStatus: 'Paid',
+      lastPaymentDate: baseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      nextPaymentDate: nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+  }
+
+  let tags = Array.isArray(orderData.tags) ? orderData.tags : (existingOrder?.tags || ['Storefront', 'Online Order']);
+  if (isSubscription && !tags.some((t: string) => t.toLowerCase().includes('subscription'))) {
+    tags = [...tags, 'Subscription Order'];
+  }
+
   const formattedOrder = {
     id,
     customerName: orderData.customerName || existingOrder?.customerName || 'Valued Customer',
     customerEmail: orderData.customerEmail || existingOrder?.customerEmail || 'customer@pouch-supply.com',
-    tags: Array.isArray(orderData.tags) ? orderData.tags : (existingOrder?.tags || ['Storefront', 'Online Order']),
+    tags,
+    isSubscription,
+    subscriptionDetails,
     fulfillmentStatus: orderData.fulfillmentStatus || existingOrder?.fulfillmentStatus || 'Unfulfilled',
     paymentStatus: orderData.paymentStatus || existingOrder?.paymentStatus || (orderData.total === 0 ? 'Paid' : 'Pending'),
     worldpayTxId: orderData.worldpayTxId || orderData.gatewayTxId || existingOrder?.worldpayTxId || null,
@@ -41,7 +101,7 @@ export async function saveSingleOrder(orderData: any) {
     destination: orderData.destination || orderData.address || existingOrder?.destination || 'United Kingdom',
     date: orderData.date || existingOrder?.date || (new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
     deliveryMethod: orderData.deliveryMethod || existingOrder?.deliveryMethod || 'Royal Mail Tracked 24/48',
-    items: orderData.items || existingOrder?.items || [],
+    items,
     discountApplied: orderData.discountApplied || existingOrder?.discountApplied || null,
     trackingNumber: orderData.trackingNumber || existingOrder?.trackingNumber || null,
     carrier: orderData.carrier || existingOrder?.carrier || null,

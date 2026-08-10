@@ -1665,13 +1665,16 @@ export default function CustomerAccount({
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Delivery Frequency</label>
                           <select 
                             value={custState.subFrequency} 
-                            onChange={(e) => updateCustState({ ...custState, subFrequency: e.target.value })}
+                            onChange={(e) => {
+                              const newFreq = e.target.value;
+                              const discPct = newFreq === 'Weekly' ? 5 : (newFreq === 'One Month' ? 12 : 10);
+                              updateCustState({ ...custState, subFrequency: newFreq });
+                            }}
                             className="w-full text-xs font-semibold border border-slate-200 p-2.5 rounded-xl focus:ring-2 focus:ring-[#071d37] bg-white outline-none"
                           >
-                            <option value="Every 2 Weeks">Every 2 Weeks (Fast delivery)</option>
-                            <option value="Every 4 Weeks">Every 4 Weeks (Most popular)</option>
-                            <option value="Every 6 Weeks">Every 6 Weeks</option>
-                            <option value="Every 8 Weeks">Every 8 Weeks</option>
+                            <option value="Weekly">Weekly (5% Discount)</option>
+                            <option value="Bi-Weekly">Bi-Weekly (10% Discount - Most Popular)</option>
+                            <option value="One Month">One Month (12% Discount)</option>
                           </select>
                         </div>
 

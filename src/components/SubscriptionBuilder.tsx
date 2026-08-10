@@ -80,7 +80,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
 
   // key format is "productId::variantId" (or "productId::main" if no variant)
   const [allocatedItems, setAllocatedItems] = useState<{ [key: string]: number }>({});
-  const [frequency, setFrequency] = useState('Every 2 weeks');
+  const [frequency, setFrequency] = useState('Bi-Weekly');
   const [successAnimation, setSuccessAnimation] = useState(false);
 
   // Parse path to set active plan state (supports both routes /subscribe/lite and query params ?plan=lite)
@@ -274,11 +274,13 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
     });
 
     const extraCans = isUltimate && totalSelectedCount > 12 ? totalSelectedCount - 12 : 0;
-    const finalPrice = activePrice + (extraCans * 3.80);
+    const baseSubPrice = activePrice + (extraCans * 3.80);
+    const freqDiscountPercent = frequency === 'Weekly' ? 5 : (frequency === 'One Month' || frequency === 'Monthly' ? 12 : 10);
+    const finalPrice = Number((baseSubPrice * ((100 - freqDiscountPercent) / 100)).toFixed(2));
 
     const displayName = isUltimate && extraCans > 0 
-      ? `${activePlan?.name || 'Ultimate'} Pack (+${extraCans} Extra)` 
-      : `${activePlan?.name || 'Custom'} Subscription Pack`;
+      ? `${activePlan?.name || 'Ultimate'} Plan (+${extraCans} Extra)` 
+      : `${activePlan?.name || 'Custom'} Plan`;
 
     onAddSubToCart(displayName, compiledItems, frequency, finalPrice);
     
@@ -340,34 +342,34 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
           <div className="flex justify-center">
             <div className="bg-slate-950 p-1.5 rounded-full border border-slate-800 flex items-center gap-1">
               <button 
-                onClick={() => setFrequency('Every week')}
+                onClick={() => setFrequency('Weekly')}
                 className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                  frequency === 'Every week' 
+                  frequency === 'Weekly' 
                     ? 'bg-[#dfb55a] text-slate-950 font-black' 
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Weekly
+                Weekly <span className="text-[9px] opacity-90 font-extrabold ml-1">(5% OFF)</span>
               </button>
               <button 
-                onClick={() => setFrequency('Every 2 weeks')}
+                onClick={() => setFrequency('Bi-Weekly')}
                 className={`px-5 py-2 rounded-full text-xs transition-all ${
-                  frequency === 'Every 2 weeks' 
+                  frequency === 'Bi-Weekly' 
                     ? 'bg-[#dfb55a] text-slate-950 font-black' 
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Every 2 Weeks <span className="text-[9px] opacity-75 font-bold ml-1">(POPULAR)</span>
+                Bi-Weekly <span className="text-[9px] opacity-90 font-extrabold ml-1">(10% OFF)</span>
               </button>
               <button 
-                onClick={() => setFrequency('Every month')}
+                onClick={() => setFrequency('One Month')}
                 className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                  frequency === 'Every month' 
+                  frequency === 'One Month' 
                     ? 'bg-[#dfb55a] text-slate-950 font-black' 
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Monthly
+                One Month <span className="text-[9px] opacity-90 font-extrabold ml-1">(12% OFF)</span>
               </button>
             </div>
           </div>
@@ -832,66 +834,79 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
                 id="sub-frequency"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
-                className="w-full text-xs border border-slate-200 p-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full text-xs font-semibold border border-slate-200 p-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
               >
-                <option value="Every week">Every week (Save 15%)</option>
-                <option value="Every 2 weeks">Every 2 weeks (Most Popular)</option>
-                <option value="Every month">Every month</option>
-                <option value="Every 2 months">Every 2 months</option>
+                <option value="Weekly">Weekly (5% Discount)</option>
+                <option value="Bi-Weekly">Bi-Weekly (10% Discount - Most Popular)</option>
+                <option value="One Month">One Month (12% Discount)</option>
               </select>
             </div>
 
             {/* Total Subscription Box pricing */}
-            <div className="border-t border-slate-100 pt-4 space-y-3 bg-slate-50 p-4 rounded-xl">
-              <div className="flex justify-between items-center text-xs text-slate-600">
-                <span>{activeLimit} pouches flat rate</span>
-                <span className="line-through text-slate-400">£{(activePrice * 1.2).toFixed(2)}</span>
-              </div>
+            {(() => {
+              const extraCans = activePlanSlug === 'ultimate' && totalSelectedCount > 12 ? totalSelectedCount - 12 : 0;
+              const rawSubTotal = activePrice + (extraCans * 3.80);
+              const discountPct = frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10);
+              const calculatedRate = rawSubTotal * ((100 - discountPct) / 100);
 
-              {activePlanSlug === 'ultimate' && totalSelectedCount > 12 && (
-                <div className="flex justify-between items-center text-xs text-slate-600 animate-fade-in">
-                  <span>Additional cans ({totalSelectedCount - 12} × £3.80)</span>
-                  <span className="text-slate-800 font-extrabold">£{((totalSelectedCount - 12) * 3.80).toFixed(2)}</span>
-                </div>
-              )}
+              return (
+                <div className="border-t border-slate-100 pt-4 space-y-3 bg-slate-50 p-4 rounded-xl">
+                  <div className="flex justify-between items-center text-xs text-slate-600">
+                    <span>{activeLimit} pouches flat rate</span>
+                    <span className="line-through text-slate-400">£{(rawSubTotal * 1.15).toFixed(2)}</span>
+                  </div>
 
-              <div className="flex justify-between items-center font-extrabold text-slate-800">
-                <span className="text-xs">Subscription rate</span>
-                <span className="text-lg text-emerald-600">
-                  £{(activePrice + (activePlanSlug === 'ultimate' && totalSelectedCount > 12 ? (totalSelectedCount - 12) * 3.80 : 0)).toFixed(2)}{' '}
-                  <span className="text-[10px] text-slate-400 font-medium font-sans">/ cycle</span>
-                </span>
-              </div>
+                  <div className="flex justify-between items-center text-xs text-emerald-700 font-extrabold bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                    <span>Frequency Discount ({frequency})</span>
+                    <span>-{discountPct}% OFF</span>
+                  </div>
 
-              {activePlan.slug === 'ultimate' && (
-                <div className="text-[10px] text-rose-600 font-extrabold uppercase text-center py-1.5 bg-rose-50 border border-rose-100 rounded-lg">
-                  {totalSelectedCount >= 12 ? (
-                    <span>★ Add additional cans below for £3.80 each!</span>
-                  ) : (
-                    <span>£3.80 for any additional can</span>
+                  {activePlanSlug === 'ultimate' && totalSelectedCount > 12 && (
+                    <div className="flex justify-between items-center text-xs text-slate-600 animate-fade-in">
+                      <span>Additional cans ({totalSelectedCount - 12} × £3.80)</span>
+                      <span className="text-slate-800 font-extrabold">£{((totalSelectedCount - 12) * 3.80).toFixed(2)}</span>
+                    </div>
                   )}
+
+                  <div className="flex justify-between items-center font-extrabold text-slate-800 pt-1">
+                    <span className="text-xs">Subscription rate</span>
+                    <span className="text-lg text-emerald-600 font-black">
+                      £{calculatedRate.toFixed(2)}{' '}
+                      <span className="text-[10px] text-slate-400 font-medium font-sans">/ cycle</span>
+                    </span>
+                  </div>
+
+                  {activePlan.slug === 'ultimate' && (
+                    <div className="text-[10px] text-rose-600 font-extrabold uppercase text-center py-1.5 bg-rose-50 border border-rose-100 rounded-lg">
+                      {totalSelectedCount >= 12 ? (
+                        <span>★ Add additional cans below for £3.80 each!</span>
+                      ) : (
+                        <span>£3.80 for any additional can</span>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    id="add-sub-box-btn"
+                    disabled={activePlanSlug === 'ultimate' ? totalSelectedCount < 12 : totalSelectedCount !== activeLimit}
+                    onClick={handleAddToCartClick}
+                    className={`w-full py-3.5 px-4 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 border cursor-pointer ${
+                      (activePlanSlug === 'ultimate' ? totalSelectedCount >= 12 : totalSelectedCount === activeLimit)
+                        ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-md animate-pulse'
+                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <ShoppingCart className="h-4 w-4" /> 
+                    {successAnimation ? 'Box added successfully!' : `Add ${activePlan.name} Box To Cart`}
+                  </button>
+
+                  <div className="flex items-start gap-1.5 text-[10px] text-slate-400 leading-normal pt-1">
+                    <Info className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
+                    <span>You will be billed £{calculatedRate.toFixed(2)} recursively based on {frequency} frequency ({discountPct}% discount applied). Access swap, skips, or instant terminations anytime from your customer portal.</span>
+                  </div>
                 </div>
-              )}
-
-              <button
-                id="add-sub-box-btn"
-                disabled={activePlanSlug === 'ultimate' ? totalSelectedCount < 12 : totalSelectedCount !== activeLimit}
-                onClick={handleAddToCartClick}
-                className={`w-full py-3.5 px-4 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 border cursor-pointer ${
-                  (activePlanSlug === 'ultimate' ? totalSelectedCount >= 12 : totalSelectedCount === activeLimit)
-                    ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-md animate-pulse'
-                    : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                }`}
-              >
-                <ShoppingCart className="h-4 w-4" /> 
-                {successAnimation ? 'Box added successfully!' : `Add ${activePlan.name} Box To Cart`}
-              </button>
-
-              <div className="flex items-start gap-1.5 text-[10px] text-slate-400 leading-normal pt-1">
-                <Info className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
-                <span>You will be billed £{(activePrice + (activePlanSlug === 'ultimate' && totalSelectedCount > 12 ? (totalSelectedCount - 12) * 3.80 : 0)).toFixed(2)} recursively based on frequency. Access swap, skips, or instant terminations anytime from your customer portal.</span>
-              </div>
-            </div>
+              );
+            })()}
 
           </div>
         </div>

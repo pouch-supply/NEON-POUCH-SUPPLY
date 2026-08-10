@@ -67,6 +67,16 @@ export interface Order {
   customerName: string;
   customerEmail: string;
   tags: string[];
+  isSubscription?: boolean;
+  subscriptionDetails?: {
+    planName: string;
+    frequency: string;
+    frequencyDiscount: string;
+    paymentStatus: string;
+    lastPaymentDate?: string;
+    nextPaymentDate?: string;
+    [key: string]: any;
+  };
   fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered' | 'Cancelled';
   paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
   gatewayTxId?: string;
