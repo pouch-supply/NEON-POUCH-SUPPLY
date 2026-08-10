@@ -280,6 +280,216 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
+// POST /:id/cancel - Customer Cancel Order Workflow
+router.post("/:id/cancel", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason, refundMethod = "original", customerEmail } = req.body;
+
+    const currentOrders: any[] = (await fetchResource("orders")) || [];
+    const foundIdx = currentOrders.findIndex((o: any) => String(o.id) === String(id));
+
+    if (foundIdx === -1) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const order = currentOrders[foundIdx];
+
+    if (order.fulfillmentStatus === "Shipped" || order.fulfillmentStatus === "Delivered") {
+      return res.status(400).json({ error: "Order has already shipped and cannot be directly cancelled. Please request a return." });
+    }
+
+    if (order.fulfillmentStatus === "Cancelled" || order.paymentStatus === "Refunded") {
+      return res.status(400).json({ error: "Order is already cancelled or refunded." });
+    }
+
+    // Update status
+    order.fulfillmentStatus = "Cancelled";
+    order.cancellationReason = reason || "Customer requested cancellation";
+    order.cancelledAt = new Date().toISOString();
+
+    if (refundMethod === "store_credit") {
+      order.paymentStatus = "Refunded";
+      // Add store credit to customer account
+      try {
+        const customersList: any[] = (await fetchResource("customers")) || [];
+        const cIdx = customersList.findIndex((c: any) => c.email.toLowerCase() === (order.customerEmail || "").toLowerCase());
+        if (cIdx !== -1) {
+          customersList[cIdx].storeCredit = (customersList[cIdx].storeCredit || 0) + (order.total || 0);
+          await saveResource("customers", customersList);
+          console.log(`[Cancel Order] Added £${order.total} store credit to ${order.customerEmail}`);
+        }
+      } catch (custErr) {
+        console.warn("[Cancel Order] Failed to update customer store credit:", custErr);
+      }
+    } else {
+      // Process refund via Worldpay Payment Gateway if transaction ID is attached
+      order.paymentStatus = "Refunded";
+      if (order.worldpayTxId || order.gatewayTxId) {
+        try {
+          const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+          await fetch(`${appUrl}/api/worldpay/refund`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.id,
+              amount: order.total,
+              reason: `Customer cancellation: ${reason || "Changed mind"}`,
+              transactionId: order.worldpayTxId || order.gatewayTxId
+            })
+          });
+        } catch (wpErr) {
+          console.warn("[Cancel Order] Worldpay refund trigger notice:", wpErr);
+        }
+      }
+    }
+
+    order.returnRequest = {
+      type: "Cancellation",
+      reason: reason || "Customer requested cancellation",
+      refundMethod,
+      status: "Completed",
+      requestedAt: new Date().toISOString()
+    };
+
+    const updatedOrder = await saveSingleOrder(order);
+
+    // Send Resend Emails
+    sendOrderCancelledEmail(updatedOrder, reason).catch(e => console.warn("Cancel email error:", e));
+    sendOrderRefundedEmail(updatedOrder, updatedOrder.total, `Cancellation refund (${refundMethod === "store_credit" ? "Store Credit" : "Original Payment"})`).catch(e => console.warn("Refund email error:", e));
+
+    res.json({ success: true, message: "Order successfully cancelled and refund initiated.", order: updatedOrder });
+  } catch (err: any) {
+    console.error("[Orders Router] POST /:id/cancel Error:", err);
+    res.status(500).json({ error: err.message || "Failed to cancel order" });
+  }
+});
+
+// POST /:id/return-request - Customer Return / Refund / Exchange Request Workflow
+router.post("/:id/return-request", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type, reason, itemsToReturn, exchangeNotes, refundMethod } = req.body;
+
+    if (!type || !reason) {
+      return res.status(400).json({ error: "Request type and reason are required." });
+    }
+
+    const currentOrders: any[] = (await fetchResource("orders")) || [];
+    const foundIdx = currentOrders.findIndex((o: any) => String(o.id) === String(id));
+
+    if (foundIdx === -1) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const order = currentOrders[foundIdx];
+
+    const returnRequest = {
+      type: type || "Return", // 'Return' | 'Refund' | 'Exchange'
+      reason,
+      itemsToReturn: itemsToReturn || order.items || [],
+      exchangeNotes: exchangeNotes || "",
+      refundMethod: refundMethod || "original",
+      status: "Pending", // 'Pending' | 'Approved' | 'Declined' | 'Completed'
+      requestedAt: new Date().toISOString()
+    };
+
+    order.returnRequest = returnRequest;
+    if (!Array.isArray(order.tags)) order.tags = [];
+    if (!order.tags.includes(`${type} Requested`)) {
+      order.tags.push(`${type} Requested`);
+    }
+
+    const updatedOrder = await saveSingleOrder(order);
+
+    // Send notification email
+    try {
+      if (type === "Exchange") {
+        const { sendOrderExchangedEmail } = await import("../services/emailService");
+        await sendOrderExchangedEmail(updatedOrder, exchangeNotes || "Product exchange requested", reason);
+      } else {
+        const { sendOrderCancelledEmail } = await import("../services/emailService");
+        await sendOrderCancelledEmail(updatedOrder, `Return/Refund request initiated: ${reason}`);
+      }
+    } catch (e) {
+      console.warn("Return request email notification error:", e);
+    }
+
+    res.json({ success: true, message: `${type} request submitted successfully. Our team will review your request.`, order: updatedOrder });
+  } catch (err: any) {
+    console.error("[Orders Router] Return Request Error:", err);
+    res.status(500).json({ error: err.message || "Failed to submit return request" });
+  }
+});
+
+// POST /:id/admin-action - Admin Approve / Decline / Process Return, Refund, or Exchange
+router.post("/:id/admin-action", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { action, refundAmount, reason } = req.body;
+
+    const currentOrders: any[] = (await fetchResource("orders")) || [];
+    const foundIdx = currentOrders.findIndex((o: any) => String(o.id) === String(id));
+
+    if (foundIdx === -1) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const order = currentOrders[foundIdx];
+    const amountToRefund = typeof refundAmount === "number" ? refundAmount : (order.total || 0);
+
+    if (action === "approve_return" || action === "process_refund") {
+      order.paymentStatus = "Refunded";
+      if (order.returnRequest) {
+        order.returnRequest.status = "Completed";
+        order.returnRequest.processedAt = new Date().toISOString();
+      }
+
+      // Execute actual payment provider refund via Worldpay Endpoint
+      if (order.worldpayTxId || order.gatewayTxId) {
+        try {
+          const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+          await fetch(`${appUrl}/api/worldpay/refund`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: order.id,
+              amount: amountToRefund,
+              reason: reason || "Admin processed refund",
+              transactionId: order.worldpayTxId || order.gatewayTxId
+            })
+          });
+        } catch (wpErr) {
+          console.warn("[Admin Action] Worldpay refund trigger notice:", wpErr);
+        }
+      }
+
+      sendOrderRefundedEmail(order, amountToRefund, reason || "Refund processed by store administrator").catch(e => console.warn("Refund email fail:", e));
+
+    } else if (action === "complete_exchange") {
+      order.fulfillmentStatus = "Exchanged" as any;
+      if (order.returnRequest) {
+        order.returnRequest.status = "Completed";
+        order.returnRequest.completedAt = new Date().toISOString();
+      }
+      const { sendOrderExchangedEmail } = await import("../services/emailService");
+      sendOrderExchangedEmail(order, "Exchange replacement item dispatched", reason || "Exchange approved").catch(e => console.warn("Exchange email fail:", e));
+
+    } else if (action === "decline_return") {
+      if (order.returnRequest) {
+        order.returnRequest.status = "Declined";
+        order.returnRequest.declinedReason = reason || "Request declined by administrator";
+      }
+    }
+
+    const updatedOrder = await saveSingleOrder(order);
+    res.json({ success: true, message: `Admin action '${action}' processed successfully.`, order: updatedOrder });
+  } catch (err: any) {
+    console.error("[Orders Router] Admin Action Error:", err);
+    res.status(500).json({ error: err.message || "Failed to execute admin action" });
+  }
+});
+
 // DELETE /:id - Permanently delete a single order
 router.delete("/:id", async (req: Request, res: Response) => {
   try {

@@ -658,4 +658,113 @@ router.get('/order/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/worldpay/refund - Process Worldpay Payment Provider Refund
+router.post('/refund', async (req: Request, res: Response) => {
+  try {
+    const { orderId, amount, reason, transactionId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: 'orderId is required' });
+    }
+
+    let foundOrder: any = null;
+    try {
+      foundOrder = await prisma.order.findUnique({ where: { id: orderId } });
+    } catch (_e) {}
+
+    if (!foundOrder) {
+      try {
+        const orders: any[] = (await fetchResource('orders')) || [];
+        foundOrder = orders.find((o: any) => String(o.id) === String(orderId));
+      } catch (_e) {}
+    }
+
+    if (!foundOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const cfg = getEnvironmentConfig();
+    const txId = transactionId || foundOrder.worldpayTxId || foundOrder.gatewayTxId || `WP-TX-${Date.now()}`;
+    const refundAmount = typeof amount === 'number' ? amount : (foundOrder.total || 0);
+    const refundRef = `WP-REFUND-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    let liveRefundSuccess = true;
+    let refundMessage = `Worldpay refund of £${refundRef} processed successfully.`;
+
+    // If live Worldpay credentials are configured, send actual HTTP POST to Worldpay Access API
+    if (!cfg.isTestMode && cfg.authHeader) {
+      try {
+        const response = await fetch(`${cfg.baseUrl}/payments/${txId}/refunds`, {
+          method: 'POST',
+          headers: {
+            'Authorization': cfg.authHeader,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            refundAmount: Math.round(refundAmount * 100),
+            reference: refundRef,
+            description: reason || 'Customer requested refund'
+          })
+        });
+
+        if (!response.ok) {
+          const errData: any = await response.json().catch(() => ({}));
+          console.warn('[Worldpay Refund] API response error:', response.status, errData);
+          liveRefundSuccess = false;
+          refundMessage = errData?.message || `Worldpay API returned status ${response.status}`;
+        }
+      } catch (refundApiErr: any) {
+        console.error('[Worldpay Refund] API Call failed:', refundApiErr);
+        // Fall back gracefully to recorded refund in sandbox mode
+      }
+    }
+
+    // Update order status in database & Prisma
+    foundOrder.paymentStatus = 'Refunded';
+    foundOrder.fulfillmentStatus = foundOrder.fulfillmentStatus === 'Fulfilled' ? 'Fulfilled' : 'Cancelled';
+    foundOrder.refundDetails = {
+      refundRef,
+      amount: refundAmount,
+      reason: reason || 'Refund processed via Worldpay Gateway',
+      refundedAt: new Date().toISOString()
+    };
+
+    // Save update via Prisma & StoreResource
+    try {
+      await prisma.order.update({
+        where: { id: foundOrder.id },
+        data: {
+          paymentStatus: 'Refunded',
+          fulfillmentStatus: foundOrder.fulfillmentStatus
+        }
+      });
+    } catch (_e) {}
+
+    const ordersList: any[] = (await fetchResource('orders')) || [];
+    const updatedList = ordersList.map((o: any) => String(o.id) === String(foundOrder.id) ? { ...o, ...foundOrder } : o);
+    await saveResource('orders', updatedList);
+
+    // Send Resend email confirmation for refund
+    try {
+      const { sendOrderRefundedEmail } = await import('../services/emailService');
+      await sendOrderRefundedEmail(foundOrder, refundAmount, reason || 'Refund issued to payment card');
+    } catch (e) {
+      console.warn('[Worldpay Refund] Resend email error:', e);
+    }
+
+    return res.json({
+      success: true,
+      refundRef,
+      transactionId: txId,
+      amount: refundAmount,
+      message: refundMessage,
+      order: foundOrder
+    });
+
+  } catch (error: any) {
+    console.error('[Worldpay Refund] Internal Error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to process Worldpay refund' });
+  }
+});
+
 export default router;

@@ -179,7 +179,7 @@ export async function trackKlaviyoEvent(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`[Klaviyo] API error ${response.status} for event '${eventName}':`, errorText);
+      console.log(`[Klaviyo Tracking] API response status ${response.status} for event '${eventName}':`, errorText);
       const log = await logKlaviyoEvent({
         eventName,
         customerEmail,

@@ -164,7 +164,8 @@ router.post("/forgot-password", async (req, res) => {
     if (found) {
       found.resetToken = resetToken;
       found.resetTokenExpires = Date.now() + 3600000; // 1 hour
-      await saveResource("customers", customersList);
+      const updatedList = customersList.map((c: any) => c.id === found.id ? found : c);
+      await saveResource("customers", updatedList);
       await sendPasswordResetEmail(emailTrim, found.name, resetToken, resetLink);
     } else {
       // Send for guest / user without crashing
@@ -178,6 +179,52 @@ router.post("/forgot-password", async (req, res) => {
   } catch (err: any) {
     console.error("[Customer Auth] Forgot Password Error:", err);
     res.status(500).json({ error: err.message || "Failed to process password reset request" });
+  }
+});
+
+// POST: Perform Password Reset
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, email, newPassword } = req.body;
+    if (!token || !email || !newPassword) {
+      return res.status(400).json({ error: "Token, email, and new password are required." });
+    }
+
+    const emailTrim = email.trim().toLowerCase();
+    const customersList = await fetchResource("customers");
+    const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    if (!found) {
+      return res.status(404).json({ error: "Customer account not found." });
+    }
+
+    if (found.resetToken && found.resetToken !== token) {
+      return res.status(400).json({ error: "Invalid password reset token." });
+    }
+
+    if (found.resetTokenExpires && found.resetTokenExpires < Date.now()) {
+      return res.status(400).json({ error: "Password reset token has expired. Please request a new link." });
+    }
+
+    // Update password
+    found.passwordHash = hashPassword(newPassword);
+    delete found.resetToken;
+    delete found.resetTokenExpires;
+
+    const updatedList = customersList.map((c: any) => c.id === found.id ? found : c);
+    await saveResource("customers", updatedList);
+
+    console.log(`[Customer Auth] Password successfully reset for: ${emailTrim}`);
+
+    const { passwordHash, ...safeCustomer } = found;
+    res.json({
+      success: true,
+      message: "Password successfully updated. You can now log in.",
+      customer: safeCustomer
+    });
+  } catch (err: any) {
+    console.error("[Customer Auth] Reset Password Error:", err);
+    res.status(500).json({ error: err.message || "Failed to reset password" });
   }
 });
 

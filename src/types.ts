@@ -77,8 +77,20 @@ export interface Order {
     nextPaymentDate?: string;
     [key: string]: any;
   };
-  fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered' | 'Cancelled';
+  fulfillmentStatus: 'Unfulfilled' | 'Shipped' | 'Fulfilled' | 'Delivered' | 'Cancelled' | 'Exchanged';
   paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Refunded';
+  returnRequest?: {
+    type: string;
+    reason: string;
+    itemsToReturn?: any[];
+    exchangeNotes?: string;
+    refundMethod?: string;
+    status: string;
+    requestedAt?: string;
+    processedAt?: string;
+    completedAt?: string;
+    declinedReason?: string;
+  };
   gatewayTxId?: string;
   gatewayAuthCode?: string;
   cardBrand?: string;
