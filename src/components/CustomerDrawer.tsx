@@ -88,6 +88,41 @@ export default function CustomerDrawer({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [customGmailInput, setCustomGmailInput] = useState('');
+
+  const handleGoogleLoginSubmit = async (emailToLogin?: string) => {
+    const targetEmail = (emailToLogin || customGmailInput || 'scottkivlinpouch@gmail.com').toLowerCase().trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      setErrorMsg('Please enter a valid Gmail address.');
+      return;
+    }
+    setIsSubmitting(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const defaultName = targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const response = await fetch('/api/customers/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: targetEmail,
+          name: defaultName,
+          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Google login failed.');
+
+      onLogin(data.customer);
+      setIsGoogleModalOpen(false);
+      setSuccessMsg(`Logged in with Google (${targetEmail})!`);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Server connection error during Google sign in.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   // Addresses States
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -363,29 +398,56 @@ export default function CustomerDrawer({
 
                       {/* Mode Toggle Switcher */}
                       {(authMode === 'login' || authMode === 'signup') && (
-                        <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl w-full">
+                        <div className="space-y-3">
+                          {/* Google Sign In Button */}
                           <button
                             type="button"
-                            onClick={() => { setAuthMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
-                            className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
-                              authMode === 'login'
-                                ? 'bg-white text-slate-900 shadow-3xs'
-                                : 'text-slate-500 hover:text-slate-850'
-                            }`}
+                            onClick={() => {
+                              setErrorMsg('');
+                              setSuccessMsg('');
+                              handleGoogleLoginSubmit('scottkivlinpouch@gmail.com');
+                            }}
+                            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-250 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl shadow-2xs transition-all cursor-pointer hover:border-slate-350"
                           >
-                            Sign In
+                            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                            </svg>
+                            <span>Sign in with Gmail (Google SSO)</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => { setAuthMode('signup'); setErrorMsg(''); setSuccessMsg(''); }}
-                            className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
-                              authMode === 'signup'
-                                ? 'bg-white text-slate-900 shadow-3xs'
-                                : 'text-slate-500 hover:text-slate-850'
-                            }`}
-                          >
-                            Create Account
-                          </button>
+
+                          <div className="relative flex items-center justify-center my-2">
+                            <div className="border-t border-slate-200 w-full"></div>
+                            <span className="bg-white px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">OR EMAIL</span>
+                            <div className="border-t border-slate-200 w-full"></div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl w-full">
+                            <button
+                              type="button"
+                              onClick={() => { setAuthMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                              className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
+                                authMode === 'login'
+                                  ? 'bg-white text-slate-900 shadow-3xs'
+                                  : 'text-slate-500 hover:text-slate-850'
+                              }`}
+                            >
+                              Sign In
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setAuthMode('signup'); setErrorMsg(''); setSuccessMsg(''); }}
+                              className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
+                                authMode === 'signup'
+                                  ? 'bg-white text-slate-900 shadow-3xs'
+                                  : 'text-slate-500 hover:text-slate-850'
+                              }`}
+                            >
+                              Create Account
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -596,7 +658,7 @@ export default function CustomerDrawer({
                         </div>
                         <div className="bg-slate-800/40 p-2 rounded-lg">
                           <span className="text-[8px] uppercase tracking-wide text-slate-400 block font-bold">Total Spent</span>
-                          <span className="text-[10px] font-extrabold text-emerald-400 block mt-0.5">£{loggedInCustomer.amountSpent.toFixed(2)}</span>
+                          <span className="text-[10px] font-extrabold text-emerald-400 block mt-0.5">£{(Number(loggedInCustomer.totalSpent ?? loggedInCustomer.amountSpent ?? 0)).toFixed(2)}</span>
                         </div>
                       </div>
 
@@ -701,7 +763,7 @@ export default function CustomerDrawer({
                                     </div>
 
                                     <div className="text-right space-y-1">
-                                      <div className="text-xs font-black text-slate-900">£{order.total.toFixed(2)}</div>
+                                      <div className="text-xs font-black text-slate-900">£{(Number(order.total || 0)).toFixed(2)}</div>
                                       <button
                                         onClick={() => toggleOrderExpand(order.id)}
                                         className="text-[9.5px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-widest flex items-center gap-0.5 cursor-pointer ml-auto"
@@ -819,10 +881,10 @@ export default function CustomerDrawer({
                                                       )}
                                                       <div className="min-w-0">
                                                         <p className="font-bold text-slate-800">{item.productTitle}</p>
-                                                        <p className="text-slate-400 text-[9.5px] font-mono whitespace-nowrap">Qty: {item.quantity} × £{item.price.toFixed(2)}</p>
+                                                        <p className="text-slate-400 text-[9.5px] font-mono whitespace-nowrap">Qty: {item.quantity} × £{(Number(item.price || 0)).toFixed(2)}</p>
                                                       </div>
                                                     </div>
-                                                    <span className="font-bold text-slate-900 shrink-0 select-none">£{(item.price * item.quantity).toFixed(2)}</span>
+                                                    <span className="font-bold text-slate-900 shrink-0 select-none">£{(Number((item.price || 0) * (item.quantity || 1))).toFixed(2)}</span>
                                                   </div>
                                                 );
                                               })}
@@ -995,7 +1057,7 @@ export default function CustomerDrawer({
                       {/* 3. WISHLIST TAB */}
                       {activeTab === 'wishlist' && (
                         <div className="space-y-3">
-                          {(!loggedInCustomer.wishlist || loggedInCustomer.wishlist.length === 0) ? (
+                          {(!loggedInCustomer?.wishlist || !Array.isArray(loggedInCustomer.wishlist) || loggedInCustomer.wishlist.length === 0) ? (
                             <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                               <Heart className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
                               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Empty Wishlist</p>
@@ -1030,7 +1092,7 @@ export default function CustomerDrawer({
                                       <div className="min-w-0">
                                         <p className="text-[9.5px] text-slate-400 uppercase font-black tracking-wider leading-none">{prod.vendor}</p>
                                         <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5 leading-tight" title={displayTitle}>{displayTitle}</p>
-                                        <p className="text-xs text-indigo-700 font-extrabold mt-0.5">£{prod.price.toFixed(2)}</p>
+                                        <p className="text-xs text-indigo-700 font-extrabold mt-0.5">£{(Number(prod.price || 0)).toFixed(2)}</p>
                                       </div>
                                     </div>
 

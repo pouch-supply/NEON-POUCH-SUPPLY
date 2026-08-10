@@ -887,7 +887,7 @@ function ClearanceSaleSection({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {displayedProducts.map((prod, pIdx) => {
-            const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
+            const isWishlisted = Boolean(loggedInCustomer?.wishlist && Array.isArray(loggedInCustomer.wishlist) && loggedInCustomer.wishlist.includes(prod.id));
             const clearancePrice = prod.price * 0.8; // 20% clearance discount
 
             return (
@@ -1187,7 +1187,7 @@ function FeaturedCollectionSection({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {displayedProducts.map((prod, pIdx) => {
-            const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
+            const isWishlisted = Boolean(loggedInCustomer?.wishlist && Array.isArray(loggedInCustomer.wishlist) && loggedInCustomer.wishlist.includes(prod.id));
             const badge = getProductBadge(prod);
 
             return (
@@ -2474,10 +2474,10 @@ export default function PageRenderer({
                         const selectedColl = targetCollectionId ? allCollections.find(c => c.id === targetCollectionId) : null;
                         const filtered = allProducts
                           .filter(p => p.status === 'Active')
-                          .filter(p => !targetCollectionId || selectedColl?.productIds.includes(p.id));
+                          .filter(p => !targetCollectionId || (selectedColl?.productIds && selectedColl.productIds.includes(p.id)));
                         
                         return filtered.slice(0, sec.settings.itemsCount || 4).map((prod, pIdx) => {
-                          const isWishlisted = loggedInCustomer?.wishlist.includes(prod.id);
+                          const isWishlisted = Boolean(loggedInCustomer?.wishlist && Array.isArray(loggedInCustomer.wishlist) && loggedInCustomer.wishlist.includes(prod.id));
                           return (
                             <div 
                               key={`coll-grid-${prod.id}-${pIdx}`} 

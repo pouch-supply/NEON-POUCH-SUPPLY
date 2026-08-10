@@ -70,7 +70,7 @@ export default function CollectionDetailView({
 
   const isProductInWishlist = (pId: string) => {
     if (!loggedInCustomer) return false;
-    return loggedInCustomer.wishlist.includes(pId);
+    return Boolean(loggedInCustomer.wishlist && Array.isArray(loggedInCustomer.wishlist) && loggedInCustomer.wishlist.includes(pId));
   };
 
   // Helper to map products to generic strengths (same as ProductsGrid)

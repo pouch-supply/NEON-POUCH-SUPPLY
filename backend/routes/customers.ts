@@ -350,6 +350,92 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// POST: Google / Gmail Direct OAuth Login
+router.post("/google-login", async (req, res) => {
+  try {
+    const { email, name, googleId, picture } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required for Google login." });
+    }
+
+    const emailTrim = email.trim().toLowerCase();
+    const customerName = name || emailTrim.split("@")[0] || "Valued Customer";
+    const customersList = await fetchResource("customers");
+
+    let found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    if (found) {
+      // Update verified status & info
+      found.emailVerified = true;
+      found.emailVerifiedAt = found.emailVerifiedAt || new Date().toISOString();
+      if (picture && !found.avatarUrl) {
+        found.avatarUrl = picture;
+      }
+      if (googleId) {
+        found.googleId = googleId;
+      }
+
+      // Ensure referral code
+      if (!found.referralCode) {
+        const codeSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const cleanFirstName = customerName.trim().split(" ")[0].replace(/[^a-zA-Z]/g, "").toUpperCase() || "USER";
+        found.referralCode = `REF-PS-${cleanFirstName}-${codeSuffix}`;
+      }
+
+      await saveResource("customers", customersList);
+      sendLoginNotificationEmail(emailTrim, found.name).catch(e => console.warn('Login notification email error:', e));
+
+      const { passwordHash, ...safeCustomer } = found;
+      return res.json({
+        message: "Logged in via Google successfully!",
+        customer: safeCustomer
+      });
+    }
+
+    // New Google customer signup
+    const newId = `cust_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const codeSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const cleanFirstName = customerName.trim().split(" ")[0].replace(/[^a-zA-Z]/g, "").toUpperCase() || "USER";
+    const newReferralCode = `REF-PS-${cleanFirstName}-${codeSuffix}`;
+
+    const newCustomer = {
+      id: newId,
+      name: customerName,
+      email: emailTrim,
+      googleId: googleId || `google_${Date.now()}`,
+      avatarUrl: picture || null,
+      emailVerified: true,
+      emailVerifiedAt: new Date().toISOString(),
+      signupDate: new Date().toISOString().split("T")[0],
+      ordersCount: 0,
+      totalSpent: 0,
+      rewardPoints: 50, // 50 points welcome bonus!
+      storeCredit: 0,
+      referredByCode: null,
+      referralCode: newReferralCode,
+      passwordHash: hashPassword(crypto.randomBytes(16).toString("hex")),
+      addresses: []
+    };
+
+    customersList.unshift(newCustomer);
+    await saveResource("customers", customersList);
+
+    // Track Klaviyo + Resend welcome email
+    trackCustomerSignup(newCustomer).catch(e => console.warn('Klaviyo error:', e));
+    sendWelcomeEmail(emailTrim, customerName, newReferralCode).catch(e => console.warn('Welcome email error:', e));
+
+    const { passwordHash, ...safeCustomer } = newCustomer;
+    return res.json({
+      message: "Account created with Google!",
+      customer: safeCustomer
+    });
+  } catch (err: any) {
+    console.error("[Customer Auth] Google Login Error:", err);
+    res.status(500).json({ error: err.message || "Failed to authenticate with Google" });
+  }
+});
+
 // POST: Secure Admin Login
 router.post("/admin-login", async (req, res) => {
   try {

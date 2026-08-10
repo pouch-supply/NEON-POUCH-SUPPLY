@@ -34,8 +34,8 @@ export default function Header({
   onNavigateDetail,
   layoutSettings
 }: HeaderProps) {
-  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  const wishlistCount = loggedInCustomer?.wishlist.length || 0;
+  const cartCount = (cartItems || []).reduce((acc, item) => acc + item.quantity, 0);
+  const wishlistCount = Array.isArray(loggedInCustomer?.wishlist) ? loggedInCustomer.wishlist.length : 0;
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

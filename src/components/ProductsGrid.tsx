@@ -85,7 +85,7 @@ export default function ProductsGrid({
 
   const isProductInWishlist = (pId: string) => {
     if (!loggedInCustomer) return false;
-    return loggedInCustomer.wishlist.includes(pId);
+    return Boolean(loggedInCustomer.wishlist && Array.isArray(loggedInCustomer.wishlist) && loggedInCustomer.wishlist.includes(pId));
   };
 
   // Checkbox helpers
