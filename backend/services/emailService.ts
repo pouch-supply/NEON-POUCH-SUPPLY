@@ -471,6 +471,14 @@ export async function sendWelcomeEmail(email: string, name?: string, discountCod
   return sendEmail('welcome_email', email, data);
 }
 
+export async function sendLoginNotificationEmail(email: string, name?: string) {
+  const data: EmailTemplateData = {
+    customerName: name || 'Valued Customer',
+    customerEmail: email
+  };
+  return sendEmail('email_verification', email, data, 'Security Alert: New Account Login - Pouch Supply Co.');
+}
+
 export async function sendAdminNewOrderNotification(orderData: any) {
   const settings = await getEmailSettings();
   const adminEmail = settings.adminNotificationEmail || 'admin@pouch-supply.com';

@@ -2,7 +2,7 @@ import { Router } from "express";
 import crypto from "crypto";
 import { fetchResource, saveResource, getDb } from "../../serverDb";
 import { Customer } from "../../src/types";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail } from "../services/emailService";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail, sendLoginNotificationEmail } from "../services/emailService";
 import { trackCustomerSignup, trackEmailVerified } from "../services/klaviyoService";
 
 const router = Router();
@@ -334,6 +334,9 @@ router.post("/login", async (req, res) => {
     }
 
     console.log(`[Customer Auth] Login successful: ${emailTrim}`);
+
+    // Send login notification email to customer
+    sendLoginNotificationEmail(emailTrim, found.name).catch(e => console.warn('Login notification email error:', e));
 
     // Return authenticated customer details safely
     const { passwordHash, ...safeCustomer } = found;

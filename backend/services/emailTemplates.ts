@@ -382,24 +382,33 @@ export function renderOrderExchangedTemplate(data: EmailTemplateData): string {
 // 8. Password Reset Template
 export function renderPasswordResetTemplate(data: EmailTemplateData): string {
   const name = data.customerName || 'Customer';
-  const resetLink = data.resetLink || `${data.siteUrl || '#'}/reset-password`;
+  const resetLink = data.resetLink || `${data.siteUrl || '#'}`;
+  const token = data.resetToken || '';
 
   return renderBaseHeader(`Reset Your Password`, `Security request for ${name}`) + `
-    <div class="card">
+    <div class="card" style="text-align: center;">
       <p style="font-size: 13px; color: #334155; margin: 0 0 12px 0;">
         We received a request to reset the password for your account associated with <strong>${data.customerEmail || ''}</strong>.
       </p>
+
+      ${token ? `
+      <div style="background-color: #0f172a; color: ${BRAND_ACCENT}; font-size: 22px; font-weight: 900; letter-spacing: 4px; padding: 14px; border-radius: 8px; font-family: monospace; display: inline-block; margin: 12px 0;">
+        ${token}
+      </div>
+      <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">Your Reset Code / Token</p>
+      ` : ''}
+
       <p style="font-size: 12px; color: #64748b; margin: 0;">
-        Click the button below to choose a new password. If you did not request this, you can safely ignore this email.
+        You can also click the button below to reset your password directly on our storefront.
       </p>
     </div>
 
-    <div style="text-align: center; margin: 24px 0;">
+    <div style="text-align: center; margin: 20px 0;">
       <a href="${resetLink}" class="btn">Reset Password Now</a>
     </div>
 
     <p style="font-size: 11px; color: #94a3b8; text-align: center;">
-      This link will expire in 1 hour for your security.
+      This link/code will expire in 1 hour for your security.
     </p>
   ` + renderBaseFooter();
 }

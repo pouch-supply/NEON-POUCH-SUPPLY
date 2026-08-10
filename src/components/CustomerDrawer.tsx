@@ -78,12 +78,15 @@ export default function CustomerDrawer({
       window.removeEventListener('ps-emails-updated', loadEmails);
     };
   }, []);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'reset' | 'verify'>('login');
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [resetTokenInput, setResetTokenInput] = useState('');
+  const [verificationCodeInput, setVerificationCodeInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Addresses States
@@ -96,6 +99,99 @@ export default function CustomerDrawer({
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
+
+    if (authMode === 'forgot') {
+      if (!emailInput.trim()) {
+        setErrorMsg('Please enter your email address.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('/api/customers/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput.toLowerCase().trim() })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to send reset link.');
+        setSuccessMsg('Password reset link & code dispatched to your email address via Resend!');
+        setAuthMode('reset');
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Server connection error.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (authMode === 'reset') {
+      if (!emailInput.trim() || !resetTokenInput.trim() || !passwordInput) {
+        setErrorMsg('Please fill in your email, reset code/token, and new password.');
+        return;
+      }
+      if (passwordInput !== confirmPasswordInput) {
+        setErrorMsg('Passwords do not match.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('/api/customers/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: resetTokenInput.trim(),
+            email: emailInput.toLowerCase().trim(),
+            newPassword: passwordInput
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Password reset failed.');
+        setSuccessMsg('Password successfully reset! You can now log in.');
+        setAuthMode('login');
+        setPasswordInput('');
+        setConfirmPasswordInput('');
+        setResetTokenInput('');
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Server connection error.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (authMode === 'verify') {
+      if (!emailInput.trim() || !verificationCodeInput.trim()) {
+        setErrorMsg('Please enter your email and the 6-digit verification code.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('/api/customers/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.toLowerCase().trim(),
+            code: verificationCodeInput.trim()
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Email verification failed.');
+        
+        if (data.customer) {
+          onLogin(data.customer);
+          setSuccessMsg('Email address verified successfully!');
+        } else {
+          setSuccessMsg('Email verified successfully! Please log in.');
+          setAuthMode('login');
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Server connection error.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (authMode === 'signup' && !nameInput.trim()) {
       setErrorMsg('Please enter your full name.');
@@ -118,28 +214,39 @@ export default function CustomerDrawer({
 
     try {
       const email = emailInput.toLowerCase().trim();
-      const endpoint = authMode === 'signup' ? '/api/customers/signup' : '/api/customers/login';
-      const bodyPayload = authMode === 'signup' 
-        ? { name: nameInput.trim(), email, password: passwordInput }
-        : { email, password: passwordInput };
+      if (authMode === 'signup') {
+        const response = await fetch('/api/customers/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: nameInput.trim(), email, password: passwordInput })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Registration failed.');
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
-      });
+        // Request 6-digit email verification code via Resend
+        await fetch('/api/customers/request-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name: nameInput.trim() })
+        }).catch(e => console.warn('Verification code send error:', e));
 
-      const data = await response.json();
+        setSuccessMsg(`Account created! A 6-digit verification code has been sent to ${email}.`);
+        setAuthMode('verify');
+      } else {
+        const response = await fetch('/api/customers/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: passwordInput })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Authentication failed.');
 
-      if (response.ok) {
         onLogin(data.customer);
         setErrorMsg('');
         setEmailInput('');
         setPasswordInput('');
         setNameInput('');
         setConfirmPasswordInput('');
-      } else {
-        throw new Error(data.error || 'Authentication failed.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Server connection error.');
@@ -255,30 +362,47 @@ export default function CustomerDrawer({
                       </div>
 
                       {/* Mode Toggle Switcher */}
-                      <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl w-full">
-                        <button
-                          type="button"
-                          onClick={() => { setAuthMode('login'); setErrorMsg(''); }}
-                          className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
-                            authMode === 'login'
-                              ? 'bg-white text-slate-900 shadow-3xs'
-                              : 'text-slate-500 hover:text-slate-850'
-                          }`}
-                        >
-                          Sign In
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setAuthMode('signup'); setErrorMsg(''); }}
-                          className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
-                            authMode === 'signup'
-                              ? 'bg-white text-slate-900 shadow-3xs'
-                              : 'text-slate-500 hover:text-slate-850'
-                          }`}
-                        >
-                          Create Account
-                        </button>
-                      </div>
+                      {(authMode === 'login' || authMode === 'signup') && (
+                        <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl w-full">
+                          <button
+                            type="button"
+                            onClick={() => { setAuthMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                            className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
+                              authMode === 'login'
+                                ? 'bg-white text-slate-900 shadow-3xs'
+                                : 'text-slate-500 hover:text-slate-850'
+                            }`}
+                          >
+                            Sign In
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setAuthMode('signup'); setErrorMsg(''); setSuccessMsg(''); }}
+                            className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center ${
+                              authMode === 'signup'
+                                ? 'bg-white text-slate-900 shadow-3xs'
+                                : 'text-slate-500 hover:text-slate-850'
+                            }`}
+                          >
+                            Create Account
+                          </button>
+                        </div>
+                      )}
+
+                      {(authMode === 'forgot' || authMode === 'reset' || authMode === 'verify') && (
+                        <div className="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
+                          <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider">
+                            {authMode === 'forgot' ? 'Forgot Password' : authMode === 'reset' ? 'Reset Password' : 'Verify Email Address'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setAuthMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                            className="text-[9.5px] font-bold uppercase text-indigo-600 hover:text-indigo-800"
+                          >
+                            ← Back to Sign In
+                          </button>
+                        </div>
+                      )}
 
                       <form onSubmit={handleLoginSubmit} className="space-y-4">
                         {authMode === 'signup' && (
@@ -297,38 +421,86 @@ export default function CustomerDrawer({
                           </div>
                         )}
 
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            placeholder="kayla.canty@yahoo.com"
-                            value={emailInput}
-                            onChange={(e) => setEmailInput(e.target.value)}
-                            className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                            Password
-                          </label>
-                          <input
-                            type="password"
-                            placeholder="••••••••"
-                            value={passwordInput}
-                            onChange={(e) => setPasswordInput(e.target.value)}
-                            className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
-                            required
-                          />
-                        </div>
-
-                        {authMode === 'signup' && (
+                        {(authMode === 'login' || authMode === 'signup' || authMode === 'forgot' || authMode === 'reset' || authMode === 'verify') && (
                           <div>
                             <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                              Confirm Password
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="kayla.canty@yahoo.com"
+                              value={emailInput}
+                              onChange={(e) => setEmailInput(e.target.value)}
+                              className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
+                              required
+                            />
+                          </div>
+                        )}
+
+                        {authMode === 'verify' && (
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                              6-Digit Verification Code
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 849201"
+                              value={verificationCodeInput}
+                              onChange={(e) => setVerificationCodeInput(e.target.value)}
+                              className="w-full text-sm font-mono font-bold tracking-widest border border-indigo-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/50 text-center text-slate-900"
+                              required
+                            />
+                            <p className="text-[9.5px] text-slate-400 mt-1">Check your Gmail / email inbox for the 6-digit confirmation code.</p>
+                          </div>
+                        )}
+
+                        {authMode === 'reset' && (
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                              Reset Token / Code
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. A3F8B2C1"
+                              value={resetTokenInput}
+                              onChange={(e) => setResetTokenInput(e.target.value)}
+                              className="w-full text-xs font-mono font-bold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
+                              required
+                            />
+                          </div>
+                        )}
+
+                        {(authMode === 'login' || authMode === 'signup' || authMode === 'reset') && (
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                {authMode === 'reset' ? 'New Password' : 'Password'}
+                              </label>
+                              {authMode === 'login' && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setAuthMode('forgot'); setErrorMsg(''); setSuccessMsg(''); }}
+                                  className="text-[9.5px] font-extrabold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                                >
+                                  Forgot Password?
+                                </button>
+                              )}
+                            </div>
+                            <input
+                              type="password"
+                              placeholder="••••••••"
+                              value={passwordInput}
+                              onChange={(e) => setPasswordInput(e.target.value)}
+                              className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
+                              required
+                            />
+                          </div>
+                        )}
+
+                        {(authMode === 'signup' || authMode === 'reset') && (
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                              Confirm {authMode === 'reset' ? 'New Password' : 'Password'}
                             </label>
                             <input
                               type="password"
@@ -338,6 +510,12 @@ export default function CustomerDrawer({
                               className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
                               required
                             />
+                          </div>
+                        )}
+
+                        {successMsg && (
+                          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-[11px] font-semibold">
+                            {successMsg}
                           </div>
                         )}
 
@@ -353,15 +531,38 @@ export default function CustomerDrawer({
                           {isSubmitting ? (
                             <>
                               <LogIn className="h-4 w-4 animate-spin" /> 
-                              <span>Authenticating...</span>
+                              <span>Processing...</span>
                             </>
                           ) : (
                             <>
                               <LogIn className="h-4 w-4" /> 
-                              <span>{authMode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                              <span>
+                                {authMode === 'login' 
+                                  ? 'Sign In' 
+                                  : authMode === 'signup' 
+                                  ? 'Create Account' 
+                                  : authMode === 'forgot' 
+                                  ? 'Send Password Reset Email' 
+                                  : authMode === 'reset' 
+                                  ? 'Update Password' 
+                                  : 'Verify Email'}
+                              </span>
                             </>
                           )}
                         </button>
+
+                        {authMode === 'forgot' && (
+                          <p className="text-center text-[10px] text-slate-400">
+                            Already have a reset code?{' '}
+                            <button
+                              type="button"
+                              onClick={() => { setAuthMode('reset'); setErrorMsg(''); }}
+                              className="text-indigo-600 font-bold hover:underline"
+                            >
+                              Enter reset code
+                            </button>
+                          </p>
+                        )}
                       </form>
                     </div>
                   </div>
