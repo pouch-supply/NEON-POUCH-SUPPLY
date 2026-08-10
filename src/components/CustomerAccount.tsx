@@ -89,6 +89,22 @@ export default function CustomerAccount({
     : [];
   const ordersCount = myOrders.length;
 
+  const mySubOrders = myOrders.filter(o => 
+    o.isSubscription ||
+    (Array.isArray(o.tags) && o.tags.some(t => t.toLowerCase().includes('subscription'))) ||
+    (Array.isArray(o.items) && o.items.some((i: any) => 
+      i.isSubscription || 
+      i.vendor === 'Subscription Pack' || 
+      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+    ))
+  );
+
+  const latestSubOrder = mySubOrders[0] || null;
+  const hasRealSubscription = mySubOrders.length > 0 || Boolean(
+    loggedInCustomer && 
+    ((loggedInCustomer as any).hasPurchasedSubscription || (loggedInCustomer as any).subscriptionStatus === 'Subscribed' || (loggedInCustomer as any).hasActiveSubscription)
+  );
+
   const getUnlockedRewardsCount = (count: number): number => {
     const staticMilestones = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29];
     let unlocked = staticMilestones.filter(m => count >= m).length;
@@ -1061,49 +1077,74 @@ export default function CustomerAccount({
                             <RefreshCw className="h-4.5 w-4.5 text-[#dfa047]" />
                             Your active subscription
                           </h3>
-                          <span className="text-[10px] font-bold text-[#071d37] bg-emerald-50 text-emerald-700 py-1 px-3 rounded-full border border-emerald-100">Active</span>
+                          <span className={`text-[10px] font-bold py-1 px-3 rounded-full border ${hasRealSubscription ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                            {hasRealSubscription ? 'Active' : 'Not Subscribed'}
+                          </span>
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-6 items-center">
-                          {/* Left: overlapping canisters preview */}
-                          <div className="flex -space-x-4 shrink-0">
-                            {(() => {
-                              const images = (custState.subItems || [])
-                                .map((item: any) => item.image)
-                                .filter(Boolean);
-                              const defaults = [
-                                'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80',
-                                'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80',
-                                'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=120&q=80'
-                              ];
-                              const subscriptionImages = images.length > 0 ? [...images, ...defaults].slice(0, 3) : defaults;
-                              return subscriptionImages.map((imgSrc, i) => (
-                                <img 
-                                  key={i} 
-                                  src={imgSrc} 
-                                  className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md bg-slate-100" 
-                                  alt="canister preview" 
-                                  referrerPolicy="no-referrer"
-                                />
-                              ));
-                            })()}
-                          </div>
+                        {hasRealSubscription ? (
+                          <div className="flex flex-col md:flex-row gap-6 items-center">
+                            {/* Left: overlapping canisters preview */}
+                            <div className="flex -space-x-4 shrink-0">
+                              {(() => {
+                                const images = (custState.subItems || [])
+                                  .map((item: any) => item.image)
+                                  .filter(Boolean);
+                                const defaults = [
+                                  'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80',
+                                  'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80',
+                                  'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=120&q=80'
+                                ];
+                                const subscriptionImages = images.length > 0 ? [...images, ...defaults].slice(0, 3) : defaults;
+                                return subscriptionImages.map((imgSrc, i) => (
+                                  <img 
+                                    key={i} 
+                                    src={imgSrc} 
+                                    className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md bg-slate-100" 
+                                    alt="canister preview" 
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ));
+                              })()}
+                            </div>
 
-                          <div className="flex-1 space-y-1 text-center md:text-left">
-                            <h4 className="text-sm font-black text-[#071d37] uppercase tracking-wide">{custState.subPlan.toUpperCase()} BOX PLAN</h4>
-                            <p className="text-xs text-slate-500">{custState.subCansCount} items • Deliver {custState.subFrequency}</p>
-                            <p className="text-xs font-bold text-[#dfa047]">£{custState.subPrice.toFixed(2)} per delivery • Next charge: {custState.nextPayment}</p>
-                          </div>
+                            <div className="flex-1 space-y-1 text-center md:text-left">
+                              <h4 className="text-sm font-black text-[#071d37] uppercase tracking-wide">{(custState.subPlan || 'LITE').toUpperCase()} BOX PLAN</h4>
+                              <p className="text-xs text-slate-500">{custState.subCansCount || 6} items • Deliver {custState.subFrequency || 'Bi-Weekly'}</p>
+                              <p className="text-xs font-bold text-[#dfa047]">£{(custState.subPrice || 27.99).toFixed(2)} per delivery • Next charge: {custState.nextPayment || 'In 14 days'}</p>
+                            </div>
 
-                          <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0">
+                            <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0">
+                              <button 
+                                onClick={() => setActiveTab('subscriptions')}
+                                className="flex-1 md:w-44 bg-white hover:bg-slate-50 border border-slate-200 text-[#071d37] font-bold text-xs py-2 rounded-xl cursor-pointer text-center"
+                              >
+                                Manage Plan
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 px-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                            <div className="w-12 h-12 bg-amber-50 border border-amber-200/60 rounded-full flex items-center justify-center mx-auto text-[#dfa047]">
+                              <RefreshCw className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-[#071d37] uppercase tracking-wide">No Active Subscription Yet</h4>
+                              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                                You haven't subscribed to a pouch box yet. Subscribe now to get automated deliveries & up to 12% off on every order!
+                              </p>
+                            </div>
                             <button 
-                              onClick={() => setActiveTab('subscriptions')}
-                              className="flex-1 md:w-44 bg-white hover:bg-slate-50 border border-slate-200 text-[#071d37] font-bold text-xs py-2 rounded-xl cursor-pointer text-center"
+                              onClick={() => {
+                                window.location.href = '/subscribe';
+                              }}
+                              className="mt-1 inline-flex items-center gap-2 bg-[#071d37] hover:bg-[#0c2e56] text-white font-extrabold text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all shadow-2xs cursor-pointer"
                             >
-                              Manage Plan
+                              <RefreshCw className="w-3.5 h-3.5 text-[#dfa047]" />
+                              Explore Subscription Plans
                             </button>
                           </div>
-                        </div>
+                        )}
                       </div>
 
                     </div>
@@ -1593,9 +1634,37 @@ export default function CustomerAccount({
               {/* TAB 3: SUBSCRIPTIONS (Interactive controls for active sub, swaps, pause/resume) */}
               {activeTab === 'subscriptions' && (
                 <div className="space-y-6">
-                  
-                  {/* Subscription management console */}
-                  <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6">
+                  {!hasRealSubscription ? (
+                    <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 shadow-xs text-center space-y-6 max-w-2xl mx-auto my-4">
+                      <div className="w-16 h-16 bg-amber-50 border border-amber-200/80 rounded-full flex items-center justify-center mx-auto text-[#dfa047] shadow-2xs">
+                        <RefreshCw className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#dfa047] bg-amber-50 px-3.5 py-1 rounded-full border border-amber-200/60">
+                          No Active Subscription
+                        </span>
+                        <h3 className="text-xl font-black text-[#071d37] tracking-tight">You are not subscribed yet</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
+                          You haven't purchased a subscription product yet. Choose a plan to unlock automated deliveries, custom canister selection, and up to 12% off on every box!
+                        </p>
+                      </div>
+
+                      <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                          onClick={() => {
+                            window.location.href = '/subscribe';
+                          }}
+                          className="bg-[#071d37] hover:bg-[#0c2e56] text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-8 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4 text-[#dfa047]" />
+                          Build Your Subscription Box
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Subscription management console */}
+                      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6">
                     <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                       <div>
                         <h3 className="font-extrabold text-sm text-[#071d37] uppercase tracking-wider">Configure Subscription Plan</h3>
@@ -1917,7 +1986,8 @@ export default function CustomerAccount({
                       </div>
                     </div>
                   </div>
-
+                    </>
+                  )}
                 </div>
               )}
 

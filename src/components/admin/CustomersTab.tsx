@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Download, Upload, Plus, Eye, User, Mail, MapPin, Package, ShoppingBag, X, Check, ArrowRight } from 'lucide-react';
+import { Search, Download, Upload, Plus, Eye, User, Mail, MapPin, Package, ShoppingBag, X, Check, ArrowRight, RefreshCw } from 'lucide-react';
 import { Order } from '../../types';
 
 interface CustomerItem {
@@ -41,10 +41,87 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerItem | null>(null);
 
+  // Helper to check if an order is a subscription order
+  const isSubOrder = (order: Order) => {
+    if (order.isSubscription) return true;
+    if (Array.isArray(order.tags) && order.tags.some(t => t.toLowerCase().includes('subscription'))) return true;
+    if (Array.isArray(order.items) && order.items.some((i: any) => 
+      i.isSubscription || 
+      i.vendor === 'Subscription Pack' || 
+      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+    )) return true;
+    return false;
+  };
+
+  // Helper to extract subscription metadata
+  const getSubscriptionDetails = (order: Order) => {
+    if (order.subscriptionDetails) return order.subscriptionDetails;
+
+    const subItem = order.items?.find((i: any) => 
+      i.isSubscription || 
+      i.vendor === 'Subscription Pack' || 
+      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+    ) as any;
+
+    let planName = subItem?.subscriptionPlan || 'LITE Plan';
+    let frequency = subItem?.subscriptionFrequency || 'Bi-Weekly';
+    let frequencyDiscount = subItem?.frequencyDiscount || '10%';
+
+    const title = (subItem?.productTitle || '').toLowerCase();
+    if (title.includes('core')) planName = 'CORE Plan';
+    else if (title.includes('pro')) planName = 'PRO Plan';
+    else if (title.includes('ultimate')) planName = 'ULTIMATE Plan';
+    else if (title.includes('lite')) planName = 'LITE Plan';
+
+    if (title.includes('weekly') && !title.includes('bi')) {
+      frequency = 'Weekly';
+      frequencyDiscount = '5%';
+    } else if (title.includes('bi-weekly') || title.includes('by weekly') || title.includes('2 week')) {
+      frequency = 'Bi-Weekly';
+      frequencyDiscount = '10%';
+    } else if (title.includes('month') || title.includes('one month')) {
+      frequency = 'One Month';
+      frequencyDiscount = '12%';
+    }
+
+    const baseDate = order.createdAt ? new Date(order.createdAt) : new Date();
+    const nextDate = new Date(baseDate);
+    if (frequency === 'Weekly') {
+      nextDate.setDate(baseDate.getDate() + 7);
+    } else if (frequency === 'Bi-Weekly') {
+      nextDate.setDate(baseDate.getDate() + 14);
+    } else {
+      nextDate.setDate(baseDate.getDate() + 30);
+    }
+
+    return {
+      planName,
+      frequency,
+      frequencyDiscount,
+      paymentStatus: order.paymentStatus || 'Paid',
+      lastPaymentDate: baseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      nextPaymentDate: nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+  };
+
+  // Check if customer is subscribed from customer record or placed subscription orders
+  const isCustomerSubscribed = (cust: CustomerItem) => {
+    if (cust.subscriptionStatus === 'Subscribed') return true;
+    const cOrders = orders.filter(o => 
+      (o.customerEmail && o.customerEmail.toLowerCase() === cust.email.toLowerCase()) || 
+      (o.customerName && o.customerName.toLowerCase() === cust.name.toLowerCase())
+    );
+    return cOrders.some(isSubOrder);
+  };
+
   // Get matching orders for selected customer
   const customerOrders = selectedCustomer 
     ? orders.filter(o => o.customerEmail.toLowerCase() === selectedCustomer.email.toLowerCase() || o.customerName.toLowerCase() === selectedCustomer.name.toLowerCase())
     : [];
+
+  const isSelectedSubscribed = selectedCustomer ? isCustomerSubscribed(selectedCustomer) : false;
+  const selectedCustomerSubOrders = customerOrders.filter(isSubOrder);
+  const latestSubOrder = selectedCustomerSubOrders[0] || null;
 
   return (
     <div className="space-y-6">
@@ -129,11 +206,15 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                     <td className="p-4 text-slate-500 font-medium">{cust.email}</td>
                     <td className="p-4 text-slate-700">{cust.location}</td>
                     <td className="p-4 text-center">
-                      <span className={`inline-block py-0.5 px-2 rounded-full font-bold text-[9px] uppercase tracking-wider ${
-                        cust.subscriptionStatus === 'Subscribed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-slate-100 text-slate-400'
-                      }`}>
-                        {cust.subscriptionStatus}
-                      </span>
+                      {isCustomerSubscribed(cust) ? (
+                        <span className="inline-flex items-center gap-1 py-1 px-2.5 rounded-full font-black text-[9.5px] uppercase tracking-wider bg-indigo-600 text-white shadow-2xs">
+                          <RefreshCw className="w-2.5 h-2.5" /> Subscribed
+                        </span>
+                      ) : (
+                        <span className="inline-block py-0.5 px-2 rounded-full font-bold text-[9px] uppercase tracking-wider bg-slate-100 text-slate-400">
+                          Not Subscribed
+                        </span>
+                      )}
                     </td>
                     <td className="p-4 text-center font-bold text-slate-800">{cust.ordersCount} orders</td>
                     <td className="p-4 text-right font-extrabold text-slate-950">£{cust.amountSpent.toFixed(2)}</td>
@@ -196,17 +277,68 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                 </div>
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Subscription</span>
-                  <span className={`inline-block text-[9px] font-black uppercase py-0.5 px-2 rounded-full ${
-                    selectedCustomer.subscriptionStatus === 'Subscribed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {selectedCustomer.subscriptionStatus}
-                  </span>
+                  {isSelectedSubscribed ? (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase py-0.5 px-2 rounded-full bg-emerald-100 text-emerald-800">
+                      <RefreshCw className="w-2.5 h-2.5" /> Subscribed
+                    </span>
+                  ) : (
+                    <span className="inline-block text-[9px] font-black uppercase py-0.5 px-2 rounded-full bg-slate-200 text-slate-600">
+                      Not Subscribed
+                    </span>
+                  )}
                 </div>
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Location</span>
                   <strong className="text-slate-800 text-xs font-bold block truncate">{selectedCustomer.location || 'UK'}</strong>
                 </div>
               </div>
+
+              {/* ACTIVE SUBSCRIPTION DETAILS PANEL FOR SUBSCRIBED CUSTOMER */}
+              {isSelectedSubscribed && (
+                <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-lg border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-400/30 text-indigo-400">
+                        <RefreshCw className="w-4 h-4 animate-spin-slow" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-xs uppercase tracking-wider text-white">Active Subscription Box Profile</h4>
+                          <span className="text-[9px] bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded-md uppercase">Subscribed</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">Customer has an active recurring subscription delivery</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {latestSubOrder ? (() => {
+                    const subDetails = getSubscriptionDetails(latestSubOrder);
+                    return (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
+                        <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-300 block mb-0.5">Plan Name</span>
+                          <strong className="text-white text-xs font-black">{subDetails.planName}</strong>
+                        </div>
+                        <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-300 block mb-0.5">Frequency</span>
+                          <strong className="text-white text-xs font-black">{subDetails.frequency}</strong>
+                          <span className="text-[9px] text-emerald-400 font-bold block">({subDetails.frequencyDiscount} OFF)</span>
+                        </div>
+                        <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-300 block mb-0.5">Payment Status</span>
+                          <strong className="text-emerald-400 text-xs font-black">{subDetails.paymentStatus}</strong>
+                        </div>
+                        <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-300 block mb-0.5">Next Billing</span>
+                          <strong className="text-amber-300 text-xs font-black">{subDetails.nextPaymentDate}</strong>
+                        </div>
+                      </div>
+                    );
+                  })() : (
+                    <p className="text-xs text-slate-300 font-medium">Customer profile marked as Subscribed.</p>
+                  )}
+                </div>
+              )}
 
               {/* Order History Section */}
               <div className="space-y-3">
@@ -221,27 +353,43 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {customerOrders.map(ord => (
-                      <div key={ord.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-slate-900 text-xs">#{ord.id}</span>
-                            <span className="text-[10px] text-slate-400">{ord.date}</span>
+                    {customerOrders.map(ord => {
+                      const isSub = isSubOrder(ord);
+                      return (
+                        <div 
+                          key={ord.id} 
+                          className={`rounded-xl p-3 border transition-colors ${
+                            isSub ? 'bg-indigo-50/70 border-indigo-200 shadow-2xs' : 'bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-black text-slate-900 text-xs">#{ord.id}</span>
+                                {isSub && (
+                                  <span className="inline-flex items-center gap-1 text-[8.5px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    <RefreshCw className="w-2.5 h-2.5" />
+                                    Subscription Order ({getSubscriptionDetails(ord).planName})
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-slate-400">{ord.date}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-0.5">
+                                {ord.items ? `${ord.items.length} item(s)` : 'Order Items'} • Status: <strong className="text-slate-800">{ord.fulfillmentStatus}</strong>
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between sm:justify-end gap-3">
+                              <span className="font-black text-slate-900 text-xs">£{ord.total.toFixed(2)}</span>
+                              <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                ord.fulfillmentStatus === 'Fulfilled' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {ord.fulfillmentStatus}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-[11px] text-slate-600 mt-0.5">
-                            {ord.items ? `${ord.items.length} item(s)` : 'Order Items'} • Status: <strong className="text-slate-800">{ord.fulfillmentStatus}</strong>
-                          </p>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-3">
-                          <span className="font-black text-slate-900 text-xs">£{ord.total.toFixed(2)}</span>
-                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                            ord.fulfillmentStatus === 'Fulfilled' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {ord.fulfillmentStatus}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
