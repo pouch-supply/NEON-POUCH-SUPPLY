@@ -562,6 +562,7 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
       });
     } else if (norm === 'custompages' || norm === 'pages') {
       const pageSlug = item.slug || id;
+      const pageSections = Array.isArray(item.sections) ? item.sections : [];
       try {
         await prisma.customPage.upsert({
           where: { id },
@@ -570,8 +571,8 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
             slug: pageSlug,
             visibility: item.visibility || 'Visible',
             isHomepage: Boolean(item.isHomepage),
-            sections: item.sections || [],
-            data: item
+            sections: pageSections,
+            data: { ...item, sections: pageSections }
           },
           create: {
             id,
@@ -579,16 +580,16 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
             slug: pageSlug,
             visibility: item.visibility || 'Visible',
             isHomepage: Boolean(item.isHomepage),
-            sections: item.sections || [],
-            data: item
+            sections: pageSections,
+            data: { ...item, sections: pageSections }
           }
         });
       } catch (pErr: any) {
         if (pErr?.code === 'P2002') {
           await prisma.customPage.upsert({
             where: { id },
-            update: { slug: `${pageSlug}-${id}`, data: item },
-            create: { id, title: item.title || 'Untitled Page', slug: `${pageSlug}-${id}`, sections: [], data: item }
+            update: { slug: `${pageSlug}-${id}`, sections: pageSections, data: { ...item, sections: pageSections } },
+            create: { id, title: item.title || 'Untitled Page', slug: `${pageSlug}-${id}`, sections: pageSections, data: { ...item, sections: pageSections } }
           }).catch(() => {});
         }
       }
@@ -665,7 +666,26 @@ async function fetchFromPrismaModel(resource: string): Promise<any[]> {
       return items.map(c => (c.data && typeof c.data === 'object') ? { ...(c.data as object), id: c.id } : c);
     } else if (norm === 'custompages' || norm === 'pages') {
       const items = await prisma.customPage.findMany();
-      return items.map(cp => (cp.data && typeof cp.data === 'object') ? { ...(cp.data as object), id: cp.id } : cp);
+      return items.map(cp => {
+        let pageObj: any = (cp.data && typeof cp.data === 'object') ? { ...(cp.data as object) } : {};
+        pageObj.id = cp.id || pageObj.id;
+        pageObj.title = cp.title || pageObj.title;
+        pageObj.slug = cp.slug ?? pageObj.slug;
+        pageObj.visibility = cp.visibility || pageObj.visibility;
+        pageObj.isHomepage = cp.isHomepage !== undefined ? cp.isHomepage : pageObj.isHomepage;
+
+        const colSections = Array.isArray(cp.sections) ? (cp.sections as any[]) : [];
+        const dataSections = Array.isArray(pageObj.sections) ? (pageObj.sections as any[]) : [];
+
+        if (colSections.length > 0) {
+          pageObj.sections = colSections;
+        } else if (dataSections.length > 0) {
+          pageObj.sections = dataSections;
+        } else {
+          pageObj.sections = [];
+        }
+        return pageObj;
+      });
     } else if (norm === 'analytics' || norm === 'analyticsrecords' || norm === 'analyticsrecord') {
       const items = await prisma.analyticsRecord.findMany();
       return items.map(a => (a.metadata && typeof a.metadata === 'object') ? { ...(a.metadata as object), id: a.id } : a);
@@ -712,7 +732,27 @@ export async function fetchResource(resource: string): Promise<any[]> {
           } else {
             // Prefer item with more populated details or keep storeResource
             const existing = mergedMap.get(key);
-            mergedMap.set(key, { ...existing, ...item });
+            let mergedItem = { ...existing, ...item };
+
+            // For customPages, preserve populated sections array from either source
+            if (normResource === 'customPages' || normResource === 'custompages' || normResource === 'pages') {
+              const itemSecs = Array.isArray(item?.sections) ? item.sections : [];
+              const existingSecs = Array.isArray(existing?.sections) ? existing.sections : [];
+              if (itemSecs.length > 0) {
+                mergedItem.sections = itemSecs;
+              } else if (existingSecs.length > 0) {
+                mergedItem.sections = existingSecs;
+              } else {
+                mergedItem.sections = [];
+              }
+            }
+
+            // For blogs, preserve populated cover image
+            if (normResource === 'blogs' && !mergedItem.image && existing?.image) {
+              mergedItem.image = existing.image;
+            }
+
+            mergedMap.set(key, mergedItem);
           }
         }
       }

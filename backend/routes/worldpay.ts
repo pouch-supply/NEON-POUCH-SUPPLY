@@ -121,6 +121,39 @@ function extractWorldpayRedirectUrl(responseBody: any): string | null {
   return null;
 }
 
+// Helper to save and load pending checkouts persistently
+async function savePendingCheckout(orderId: string, payload: PendingCheckout) {
+  pendingCheckoutsMap.set(orderId, payload);
+  try {
+    const existing: any[] = (await fetchResource('pending_checkouts')) || [];
+    const idx = existing.findIndex((p: any) => String(p.orderId) === String(orderId));
+    if (idx !== -1) {
+      existing[idx] = payload;
+    } else {
+      existing.unshift(payload);
+    }
+    await saveResource('pending_checkouts', existing.slice(0, 200));
+  } catch (err) {
+    console.warn('[Worldpay] Failed to persist pending checkout:', err);
+  }
+}
+
+async function getPendingCheckout(orderId: string): Promise<PendingCheckout | undefined> {
+  let pending = pendingCheckoutsMap.get(orderId);
+  if (pending) return pending;
+  try {
+    const existing: any[] = (await fetchResource('pending_checkouts')) || [];
+    const found = existing.find((p: any) => String(p.orderId) === String(orderId));
+    if (found) {
+      pendingCheckoutsMap.set(orderId, found);
+      return found;
+    }
+  } catch (err) {
+    console.warn('[Worldpay] Failed to load pending checkout from resource:', err);
+  }
+  return undefined;
+}
+
 // Helper to save a verified successful order directly into Prisma and StoreResource
 async function saveVerifiedOrder(
   orderId: string,
@@ -132,21 +165,37 @@ async function saveVerifiedOrder(
     paymentMethod?: string;
     webhookEventId?: string;
     pendingData?: PendingCheckout;
+    customerName?: string;
+    customerEmail?: string;
+    destination?: string;
+    items?: any[];
+    total?: number;
+    discountApplied?: any;
+    storeCreditApplied?: number;
   }
 ) {
-  const pending = details.pendingData || pendingCheckoutsMap.get(orderId);
+  const pending = details.pendingData || await getPendingCheckout(orderId);
   const { saveSingleOrder } = await import('./orders');
+
+  const customerName = pending?.customerName || details.customerName || 'Valued Customer';
+  const rawEmail = pending?.customerEmail || details.customerEmail || 'customer@pouch-supply.com';
+  const customerEmail = String(rawEmail).toLowerCase().trim();
+  const destination = pending?.destination || details.destination || 'United Kingdom';
+  const items = (pending?.items && pending.items.length > 0) ? pending.items : (details.items || []);
+  const total = typeof pending?.total === 'number' ? pending.total : (typeof details.total === 'number' ? details.total : (parseFloat(pending?.total as any) || parseFloat(details.total as any) || 0));
+  const storeCreditApplied = pending?.storeCreditApplied || details.storeCreditApplied || 0;
+  const discountApplied = pending?.discountApplied || details.discountApplied || null;
 
   const formattedOrder = {
     id: orderId,
     orderId: orderId,
-    customerName: pending?.customerName || 'Valued Customer',
-    customerEmail: pending?.customerEmail || 'customer@pouch-supply.com',
-    destination: pending?.destination || 'United Kingdom',
-    items: pending?.items || [],
-    total: typeof pending?.total === 'number' ? pending.total : parseFloat(pending?.total as any) || 0,
-    storeCreditApplied: pending?.storeCreditApplied || 0,
-    discountApplied: pending?.discountApplied || null,
+    customerName,
+    customerEmail,
+    destination,
+    items,
+    total,
+    storeCreditApplied,
+    discountApplied,
     paymentStatus: 'Paid',
     fulfillmentStatus: 'Unfulfilled',
     worldpayTxId: details.transactionId,
@@ -155,8 +204,19 @@ async function saveVerifiedOrder(
     gatewayAuthCode: details.authCode || 'AUTH-OK',
     cardBrand: details.cardBrand || 'Worldpay Card',
     deliveryMethod: 'Royal Mail Tracked 24/48',
+    trackingId: 'RM' + Math.floor(100000000 + Math.random() * 900000000) + 'GB',
+    carrier: 'Royal Mail',
+    trackingHistory: [
+      {
+        status: 'Sender dispatching item',
+        date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        location: 'Pouch Supply Hub, London MC',
+        description: 'We have received sender advice. Royal Mail is awaiting receipt of the physical package.'
+      }
+    ],
     tags: ['Storefront', pending?.isTestMode ? 'Worldpay Test Order' : 'Worldpay Live Order'],
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    createdAt: new Date().toISOString(),
     data: {
       cardLast4: details.cardLast4,
       paymentMethod: details.paymentMethod || 'Worldpay Access',
@@ -226,13 +286,22 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       priceNum = Math.round(parseFloat(amount) * 100);
     }
 
-    // Store pending order details in memory ONLY — DO NOT CREATE ORDER IN DATABASE BEFORE PAYMENT
+    // Store pending order details in memory and persistent storage — DO NOT CREATE ORDER IN DATABASE BEFORE PAYMENT
     const pendingPayload: PendingCheckout = {
       orderId: transactionReference,
       customerName: customerName || 'Valued Customer',
-      customerEmail: customerEmail || 'customer@pouch-supply.com',
+      customerEmail: (customerEmail || 'customer@pouch-supply.com').toLowerCase().trim(),
       destination: destination || address || 'United Kingdom',
-      items: Array.isArray(items) ? items : [],
+      items: Array.isArray(items) ? items.map((it: any) => ({
+        productId: it.productId || it.id || 'prod',
+        productTitle: it.productTitle || it.title || 'Product',
+        price: typeof it.price === 'number' ? it.price : parseFloat(it.price) || 0,
+        quantity: typeof it.quantity === 'number' ? it.quantity : parseInt(it.quantity) || 1,
+        image: it.image || '',
+        variant: it.variant || it.concreteVariantName || it.strength || it.flavour || 'Standard',
+        sku: it.sku || it.concreteVariantId || it.productId || 'SKU-GENERIC',
+        vendor: it.vendor || ''
+      })) : [],
       total: typeof amount === 'number' ? amount : parseFloat(amount) || 0,
       discountApplied: discountApplied || null,
       storeCreditApplied: storeCreditApplied || 0,
@@ -240,7 +309,7 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       createdAt: Date.now()
     };
 
-    pendingCheckoutsMap.set(transactionReference, pendingPayload);
+    await savePendingCheckout(transactionReference, pendingPayload);
 
     // TEST MODE REQUESTED OR ENFORCED
     if (cfg.isTestMode) {
@@ -392,14 +461,14 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
     }
 
     // Retrieve pending order data or construct from request body if missing
-    let pending = pendingCheckoutsMap.get(orderId);
-    if (!pending && items && Array.isArray(items)) {
+    let pending = await getPendingCheckout(orderId);
+    if (!pending) {
       pending = {
         orderId,
         customerName: customerName || 'Valued Customer',
-        customerEmail: customerEmail || 'customer@pouch-supply.com',
+        customerEmail: (customerEmail || 'customer@pouch-supply.com').toLowerCase().trim(),
         destination: destination || 'United Kingdom',
-        items,
+        items: Array.isArray(items) ? items : [],
         total: typeof total === 'number' ? total : parseFloat(total) || 0,
         discountApplied: req.body.discountApplied || null,
         storeCreditApplied: req.body.storeCreditApplied || 0,
@@ -416,6 +485,13 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
       transactionId: effectiveTxId,
       authCode: effectiveAuthCode,
       cardBrand: cardBrand || 'Worldpay Card',
+      customerName,
+      customerEmail,
+      destination,
+      items,
+      total,
+      discountApplied: req.body.discountApplied,
+      storeCreditApplied: req.body.storeCreditApplied,
       pendingData: pending
     });
 

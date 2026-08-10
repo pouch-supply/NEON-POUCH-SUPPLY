@@ -311,6 +311,29 @@ export default function CheckoutView({
         mode: paymentMode
       });
 
+      const pendingOrderObj = {
+        orderId: generatedOrderId,
+        amount: finalTotalToPay.toFixed(2),
+        total: finalTotalToPay,
+        customerName: fullName,
+        customerEmail: email,
+        destination: `${addressLine}, ${city}, ${postcode}, ${country}`,
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          productTitle: item.productTitle,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image || '',
+          variant: (item as any).variant || (item as any).concreteVariantName || (item as any).strength || (item as any).flavour || 'Standard',
+          sku: (item as any).sku || (item as any).concreteVariantId || item.productId || 'SKU-001',
+          vendor: item.vendor || '',
+          total: Number((item.price * item.quantity).toFixed(2))
+        })),
+        discountApplied: currentDiscount,
+        storeCreditApplied: storeCreditApplied
+      };
+      localStorage.setItem(`ps_pending_order_${generatedOrderId}`, JSON.stringify(pendingOrderObj));
+
       // Initialize Worldpay HPP session with explicit payment mode
       const sessionRes = await fetch('/api/worldpay/session', {
         method: 'POST',
@@ -321,14 +344,11 @@ export default function CheckoutView({
           customerName: fullName,
           customerEmail: email,
           destination: `${addressLine}, ${city}, ${postcode}, ${country}`,
-          items: cartItems.map(item => ({
-            productId: item.productId,
-            productTitle: item.productTitle,
-            price: item.price,
-            quantity: item.quantity
-          })),
+          items: pendingOrderObj.items,
           mode: paymentMode,
-          paymentMode: paymentMode
+          paymentMode: paymentMode,
+          discountApplied: currentDiscount,
+          storeCreditApplied: storeCreditApplied
         })
       });
 

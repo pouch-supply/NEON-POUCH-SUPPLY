@@ -5,12 +5,26 @@ export function cleanMediaUrl(url?: string): string {
   let trimmed = url.trim();
   if (!trimmed) return PLACEHOLDER_IMAGE;
   if (trimmed.startsWith('data:')) return trimmed;
-  if (trimmed.includes('/uploads/') || trimmed.includes('/api/images/') || trimmed.includes('/api/uploads/')) {
-    trimmed = trimmed.replace(/^https?:\/\/[^/]+(\/(?:uploads|api\/images|api\/uploads)\/.+)$/, '$1');
+  if (trimmed.startsWith('blob:')) return trimmed;
+
+  // Preserve Cloudinary and CDN URLs unconditionally
+  if (trimmed.includes('cloudinary.com') || trimmed.includes('res.cloudinary.com')) {
+    return trimmed;
   }
-  if (trimmed.startsWith('uploads/') || trimmed.startsWith('api/images/') || trimmed.startsWith('api/uploads/')) {
-    trimmed = '/' + trimmed;
+
+  // Preserve external http/https URLs unless explicitly pointing to local upload routes
+  if (/^https?:\/\//i.test(trimmed)) {
+    if (trimmed.includes('/api/uploads/') || trimmed.includes('/uploads/') || trimmed.includes('/api/images/')) {
+      const match = trimmed.match(/(\/(?:api\/)?uploads\/[^\s?#]+)/);
+      if (match) return match[1];
+    }
+    return trimmed;
   }
+
+  if (trimmed.startsWith('uploads/')) return '/' + trimmed;
+  if (trimmed.startsWith('api/uploads/')) return '/' + trimmed;
+  if (trimmed.startsWith('api/images/')) return '/' + trimmed;
+
   return trimmed || PLACEHOLDER_IMAGE;
 }
 

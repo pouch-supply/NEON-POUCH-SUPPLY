@@ -456,10 +456,11 @@ export default function ImageUploadInput({
       <button
         type="button"
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           openPickerModal();
         }}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-extrabold transition border border-indigo-200/80 shadow-2xs cursor-pointer active:scale-[0.99]"
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-extrabold transition border border-indigo-200/80 shadow-2xs cursor-pointer active:scale-[0.99] relative z-20"
       >
         <FolderOpen className="h-3.5 w-3.5 text-indigo-600" />
         <span>
@@ -500,9 +501,9 @@ export default function ImageUploadInput({
 
       {/* FILE MANAGER PICKER MODAL */}
       {isPickerOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 font-sans animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[99999999] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 font-sans animate-in fade-in duration-150" onClick={(e) => e.stopPropagation()}>
           <div 
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 relative z-[99999999]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

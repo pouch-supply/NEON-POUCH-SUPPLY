@@ -46,6 +46,12 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
     const testTxId = `WP-TEST-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
     const testAuthCode = `AUTH-TEST-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const pendingDataRaw = localStorage.getItem(`ps_pending_order_${orderId}`);
+    let pendingObj: any = null;
+    if (pendingDataRaw) {
+      try { pendingObj = JSON.parse(pendingDataRaw); } catch (_e) {}
+    }
+
     try {
       const response = await fetch('/api/worldpay/verify-payment', {
         method: 'POST',
@@ -56,8 +62,13 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
           transactionId: testTxId,
           authCode: testAuthCode,
           cardBrand: 'Worldpay Test Visa',
-          total: parseFloat(amount) || 0,
-          customerName: cardHolder
+          total: parseFloat(amount) || pendingObj?.total || 0,
+          customerName: pendingObj?.customerName || cardHolder,
+          customerEmail: pendingObj?.customerEmail,
+          destination: pendingObj?.destination,
+          items: pendingObj?.items,
+          discountApplied: pendingObj?.discountApplied,
+          storeCreditApplied: pendingObj?.storeCreditApplied
         })
       });
 
@@ -65,7 +76,11 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
       setIsProcessing(false);
 
       if (response.ok && data.success) {
-        // Dispatch order completion notification to reload admin list
+        // Clear cart and pending order backup
+        localStorage.removeItem('ps_cart');
+        localStorage.removeItem(`ps_pending_order_${orderId}`);
+
+        // Dispatch order completion notification to reload admin list & customer order history
         window.dispatchEvent(new Event('order-completed'));
         
         // Redirect to Payment Success page

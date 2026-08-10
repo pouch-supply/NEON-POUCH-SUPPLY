@@ -661,9 +661,9 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                   {/* Order Items List */}
                   <div className="divide-y divide-slate-100 border-t border-b border-slate-100">
                     {selectedOrder.items.map((item, idx) => {
-                      const isKupanac = item.productTitle.toLowerCase().includes('kupanac');
-                      const variantLabel = isKupanac ? 'M / Green' : 'Default Title';
-                      const skuLabel = isKupanac ? '010401015' : `SKU-00${idx + 1}928`;
+                      const isKupanac = item.productTitle?.toLowerCase().includes('kupanac');
+                      const variantLabel = (item as any).variant || (item as any).flavour || (item as any).strength || (isKupanac ? 'M / Green' : 'Standard');
+                      const skuLabel = (item as any).sku || (isKupanac ? '010401015' : `SKU-${item.productId || idx + 1}`);
                       return (
                         <div key={idx} className="py-4 flex justify-between items-center gap-4">
                           <div className="flex items-center gap-3">
