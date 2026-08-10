@@ -1,6 +1,13 @@
 import { fetchResource, saveResource } from '../../serverDb';
 import { sendOrderShippedEmail } from './emailService';
 import { trackOrderShipped } from './klaviyoService';
+import {
+  createOrder,
+  cancelOrder as cancelRoyalMailOrder,
+  getOrders as fetchRoyalMailOrders,
+  getOrderByReference,
+  RoyalMailOrderPayload
+} from '../../src/lib/royalMail';
 
 export interface RoyalMailSettings {
   apiKey: string;
@@ -22,7 +29,7 @@ export interface RoyalMailSettings {
 }
 
 export const DEFAULT_ROYAL_MAIL_SETTINGS: RoyalMailSettings = {
-  apiKey: process.env.ROYAL_MAIL_API_KEY || '',
+  apiKey: process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '',
   integrationName: 'Pouch-Supply',
   enabled: true,
   defaultServiceCode: 'TPS24',
@@ -73,12 +80,14 @@ export interface ShippingRateOption {
 
 // 1. Fetch & Save Royal Mail Settings
 export async function getRoyalMailSettings(): Promise<RoyalMailSettings> {
+  const envKey = process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
   try {
     const stored: any = await fetchResource('royalmail_settings');
     if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
       return {
         ...DEFAULT_ROYAL_MAIL_SETTINGS,
         ...stored,
+        apiKey: stored.apiKey && stored.apiKey.trim().length > 0 ? stored.apiKey : (envKey || DEFAULT_ROYAL_MAIL_SETTINGS.apiKey),
         senderAddress: {
           ...DEFAULT_ROYAL_MAIL_SETTINGS.senderAddress,
           ...(stored.senderAddress || {})
@@ -88,7 +97,10 @@ export async function getRoyalMailSettings(): Promise<RoyalMailSettings> {
   } catch (err) {
     console.warn('[RoyalMailService] Error reading settings, using defaults:', err);
   }
-  return DEFAULT_ROYAL_MAIL_SETTINGS;
+  return {
+    ...DEFAULT_ROYAL_MAIL_SETTINGS,
+    apiKey: envKey || DEFAULT_ROYAL_MAIL_SETTINGS.apiKey
+  };
 }
 
 export async function saveRoyalMailSettings(settings: Partial<RoyalMailSettings>): Promise<RoyalMailSettings> {
@@ -511,79 +523,59 @@ export async function createRoyalMailShipment(orderId: string, options: {
   let apiMessage = '';
 
   // Call Royal Mail API if API key is set
-  if (settings.apiKey && settings.apiKey.trim().length > 5) {
+  const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
+  if (apiKey && apiKey.trim().length > 5) {
     try {
       console.log(`[RoyalMailService] Attempting live Royal Mail Click & Drop API call for Order #${orderId}`);
-      const payload = {
-        items: [
+      const payload: RoyalMailOrderPayload = {
+        orderReference: String(order.id),
+        isRecipientABusiness: Boolean(recipient.companyName),
+        recipient: {
+          address: {
+            fullName: recipient.fullName,
+            companyName: recipient.companyName || '',
+            addressLine1: recipient.addressLine1,
+            addressLine2: recipient.addressLine2 || '',
+            city: recipient.city,
+            county: recipient.county || '',
+            postcode: recipient.postcode,
+            countryCode: recipient.countryCode || 'GB'
+          },
+          emailAddress: recipient.email || order.customerEmail,
+          phoneNumber: recipient.phone || ''
+        },
+        orderDate: order.createdAt || new Date().toISOString(),
+        packages: [
           {
-            orderReference: order.id,
-            recipient: {
-              address: {
-                fullName: recipient.fullName,
-                companyName: recipient.companyName || '',
-                addressLine1: recipient.addressLine1,
-                addressLine2: recipient.addressLine2 || '',
-                city: recipient.city,
-                postcode: recipient.postcode,
-                countryCode: recipient.countryCode || 'GB'
-              },
-              emailAddress: recipient.email || order.customerEmail,
-              phoneNumber: recipient.phone || ''
-            },
-            billing: {
-              fullName: recipient.fullName,
-              addressLine1: recipient.addressLine1,
-              city: recipient.city,
-              postcode: recipient.postcode,
-              countryCode: recipient.countryCode || 'GB'
-            },
-            packages: [
-              {
-                weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
-                packageType: options.packageType || settings.defaultPackageType || 'Parcel',
-                contents: Array.isArray(order.items) ? order.items.map((it: any) => ({
-                  name: it.productTitle || 'Pouch Supply Item',
-                  quantity: it.quantity || 1,
-                  unitValue: it.price || 5.0,
-                  unitWeightInGrams: 100
-                })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
-              }
-            ],
-            orderDate: new Date().toISOString(),
-            postageDetails: {
-              sendNotifications: true,
-              serviceCode: serviceCode,
-              receiveEmailNotification: true
-            }
+            weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
+            packageFormatIdentifier: options.packageType || settings.defaultPackageType || 'Parcel',
+            contents: Array.isArray(order.items) ? order.items.map((it: any) => ({
+              name: it.productTitle || 'Pouch Supply Item',
+              quantity: it.quantity || 1,
+              unitValue: it.price || 5.0,
+              unitWeightInGrams: 100
+            })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
           }
-        ]
+        ],
+        postageDetails: {
+          serviceCode: serviceCode,
+          sendNotificationsTo: recipient.email || order.customerEmail,
+          receiveEmailNotification: true,
+          sendNotifications: true
+        }
       };
 
-      const rmRes = await fetch('https://api.clickanddrop.royalmail.com/api/v1/orders', {
-        method: 'POST',
-        headers: {
-          'Authorization': settings.apiKey.startsWith('Bearer ') ? settings.apiKey : `Bearer ${settings.apiKey}`,
-          'X-Integration-Name': settings.integrationName || 'Pouch-Supply',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (rmRes.ok) {
-        const rmData = await rmRes.json();
+      const result = await createOrder(payload, apiKey);
+      if (result) {
         isSimulated = false;
-        if (rmData?.createdOrders?.[0]?.orderIdentifier) {
-          royalMailOrderId = String(rmData.createdOrders[0].orderIdentifier);
+        const createdOrder = result.createdOrders?.[0];
+        if (createdOrder?.orderIdentifier) {
+          royalMailOrderId = String(createdOrder.orderIdentifier);
         }
-        if (rmData?.createdOrders?.[0]?.trackingNumber) {
-          trackingNumber = rmData.createdOrders[0].trackingNumber;
+        if (createdOrder?.trackingNumber) {
+          trackingNumber = createdOrder.trackingNumber;
         }
         apiMessage = 'Live Royal Mail Click & Drop shipment successfully registered!';
-      } else {
-        const errText = await rmRes.text();
-        console.warn(`[RoyalMailService] API response status ${rmRes.status}:`, errText);
-        apiMessage = `Royal Mail API response (${rmRes.status}): fallback to standard Click & Drop format (${trackingNumber}).`;
       }
     } catch (apiErr: any) {
       console.warn('[RoyalMailService] API call failed, using graceful simulation:', apiErr?.message);
@@ -687,22 +679,14 @@ export async function createRoyalMailShipment(orderId: string, options: {
 // 5. Cancel Shipment
 export async function cancelRoyalMailShipment(orderId: string, royalMailOrderId?: string): Promise<{ success: boolean; message: string }> {
   const settings = await getRoyalMailSettings();
-  let isSimulated = true;
+  const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
   let message = 'Shipment marked as cancelled in store records.';
 
-  if (settings.apiKey && royalMailOrderId) {
+  if (apiKey && (royalMailOrderId || orderId)) {
     try {
-      const rmRes = await fetch(`https://api.clickanddrop.royalmail.com/api/v1/orders/${royalMailOrderId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': settings.apiKey.startsWith('Bearer ') ? settings.apiKey : `Bearer ${settings.apiKey}`,
-          'X-Integration-Name': settings.integrationName || 'Pouch-Supply'
-        }
-      });
-      if (rmRes.ok) {
-        isSimulated = false;
-        message = 'Shipment cancelled in Royal Mail Click & Drop system.';
-      }
+      const ref = royalMailOrderId || orderId;
+      await cancelRoyalMailOrder(ref, apiKey);
+      message = 'Shipment cancelled in Royal Mail Click & Drop system.';
     } catch (err: any) {
       console.warn('[RoyalMailService] API cancel failed:', err?.message);
     }

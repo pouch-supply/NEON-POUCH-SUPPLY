@@ -11,9 +11,145 @@ import {
   generateShippingLabelHtml,
   generateRoyalMailTrackingNumber
 } from "../services/royalMailService";
+import {
+  createOrder,
+  getOrders,
+  getOrderByReference,
+  cancelOrder,
+  getApiVersion,
+  RoyalMailOrderPayload
+} from "../../src/lib/royalMail";
 import { fetchResource } from "../../serverDb";
 
 const router = Router();
+
+// POST /api/royalmail/create-order - Create order direct payload
+router.post("/create-order", async (req: Request, res: Response) => {
+  try {
+    const orderData = req.body as RoyalMailOrderPayload;
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: "RM_API_KEY is not configured.",
+      });
+    }
+
+    if (!orderData.orderReference) {
+      return res.status(400).json({
+        success: false,
+        error: "orderReference is required.",
+      });
+    }
+
+    if (!orderData.recipient) {
+      return res.status(400).json({
+        success: false,
+        error: "recipient information is required.",
+      });
+    }
+
+    if (!orderData.packages?.length) {
+      return res.status(400).json({
+        success: false,
+        error: "At least one package is required.",
+      });
+    }
+
+    if (!orderData.postageDetails?.serviceCode) {
+      return res.status(400).json({
+        success: false,
+        error: "Royal Mail serviceCode is required.",
+      });
+    }
+
+    console.log("[Royal Mail] Creating order:", orderData.orderReference);
+
+    const result = await createOrder(orderData, apiKey);
+
+    console.log("[Royal Mail] Order created successfully:", result);
+
+    const createdOrder = result.createdOrders?.[0];
+
+    return res.json({
+      success: true,
+      orderReference: createdOrder?.orderReference || orderData.orderReference,
+      orderIdentifier: createdOrder?.orderIdentifier || null,
+      trackingNumber: createdOrder?.trackingNumber || null,
+      royalMailResponse: result,
+    });
+  } catch (error: unknown) {
+    console.error("[Royal Mail] Create order error:", error);
+    const message = error instanceof Error ? error.message : "Failed to create Royal Mail order.";
+    return res.status(500).json({
+      success: false,
+      error: message,
+    });
+  }
+});
+
+// GET /api/royalmail/orders - Fetch orders from Royal Mail
+router.get("/orders", async (req: Request, res: Response) => {
+  try {
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "RM_API_KEY is not configured." });
+    }
+    const params = req.query as Record<string, string>;
+    const data = await getOrders(apiKey, params);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || "Failed to fetch orders" });
+  }
+});
+
+// GET /api/royalmail/orders/:reference - Get specific order
+router.get("/orders/:reference", async (req: Request, res: Response) => {
+  try {
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "RM_API_KEY is not configured." });
+    }
+    const data = await getOrderByReference(req.params.reference, apiKey);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || "Failed to fetch order" });
+  }
+});
+
+// DELETE /api/royalmail/orders/:reference - Delete specific order
+router.delete("/orders/:reference", async (req: Request, res: Response) => {
+  try {
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "RM_API_KEY is not configured." });
+    }
+    const data = await cancelOrder(req.params.reference, apiKey);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || "Failed to cancel order" });
+  }
+});
+
+// GET /api/royalmail/version - Get API version
+router.get("/version", async (_req: Request, res: Response) => {
+  try {
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "RM_API_KEY is not configured." });
+    }
+    const data = await getApiVersion(apiKey);
+    res.json({ success: true, version: data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || "Failed to fetch API version" });
+  }
+});
 
 // GET /api/royalmail/settings - Get settings
 router.get("/settings", async (_req: Request, res: Response) => {

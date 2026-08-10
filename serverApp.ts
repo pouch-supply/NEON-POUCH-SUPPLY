@@ -543,6 +543,10 @@ export async function createExpressApp() {
   app.use("/api/email", emailRouter);
   app.use("/api/klaviyo", klaviyoRouter);
   app.use("/api/royalmail", royalMailRouter);
+  app.post("/api/create-order", (req, res, next) => {
+    req.url = "/create-order";
+    return royalMailRouter(req, res, next);
+  });
   app.use("/api/contact-messages", contactMessagesRouter);
 
   // Vite middleware for development or static serving for production
