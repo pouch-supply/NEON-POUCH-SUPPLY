@@ -61,9 +61,24 @@ async function royalMailRequest<T>(
   }
 
   if (!response.ok) {
-    let errMsg = `Royal Mail API error: ${response.status}`;
-    if (typeof data === "object" && data !== null && (data as any).message) {
-      errMsg = (data as any).message;
+    let errMsg = `Royal Mail API error (${response.status})`;
+    if (typeof data === "object" && data !== null) {
+      const obj = data as any;
+      if (Array.isArray(obj.errors) && obj.errors.length > 0) {
+        errMsg = obj.errors.map((e: any) => e.message || e.code || JSON.stringify(e)).join(' | ');
+      } else if (Array.isArray(obj.failedOrders) && obj.failedOrders.length > 0) {
+        const failedErrs: string[] = [];
+        obj.failedOrders.forEach((f: any) => {
+          if (Array.isArray(f.errors)) {
+            f.errors.forEach((e: any) => failedErrs.push(e.message || e.code || JSON.stringify(e)));
+          }
+        });
+        if (failedErrs.length > 0) errMsg = failedErrs.join(' | ');
+      } else if (obj.message) {
+        errMsg = obj.message;
+      } else {
+        errMsg = JSON.stringify(obj);
+      }
     } else if (typeof data === "string" && data.length > 0) {
       errMsg = data;
     }
