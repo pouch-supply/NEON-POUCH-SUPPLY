@@ -1,50 +1,229 @@
-const BASE_URL =
+const ROYAL_MAIL_API_URL =
+  process.env.ROYAL_MAIL_API_URL ||
   process.env.RM_API_BASE_URL ||
   process.env.ROYAL_MAIL_BASE_URL ||
-  'https://api.parcel.royalmail.com/api/v1';
+  "https://api.parcel.royalmail.com/api/v1";
+
+export class RoyalMailError extends Error {
+  status: number;
+  details: unknown;
+
+  constructor(
+    message: string,
+    status: number,
+    details?: unknown
+  ) {
+    super(message);
+    this.name = "RoyalMailError";
+    this.status = status;
+    this.details = details;
+  }
+}
+
+function getAuthHeader(apiKey?: string): string {
+  const key = apiKey || process.env.ROYAL_MAIL_API_KEY || process.env.RM_API_KEY || "";
+  if (!key) return "";
+  return key.startsWith("Bearer ") ? key : `Bearer ${key}`;
+}
+
+async function royalMailRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  apiKey?: string
+): Promise<T> {
+  const key = apiKey || process.env.ROYAL_MAIL_API_KEY || process.env.RM_API_KEY;
+
+  if (!key) {
+    throw new RoyalMailError("ROYAL_MAIL_API_KEY is not configured", 500);
+  }
+
+  const authHeader = getAuthHeader(key);
+
+  const response = await fetch(`${ROYAL_MAIL_API_URL}${path}`, {
+    ...options,
+    headers: {
+      Authorization: authHeader,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+
+  let data: unknown;
+
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
+
+  if (!response.ok) {
+    let errMsg = `Royal Mail API error: ${response.status}`;
+    if (typeof data === "object" && data !== null && (data as any).message) {
+      errMsg = (data as any).message;
+    } else if (typeof data === "string" && data.length > 0) {
+      errMsg = data;
+    }
+    throw new RoyalMailError(errMsg, response.status, data);
+  }
+
+  return data as T;
+}
+
+/**
+ * Check that the live Click & Drop API credentials work.
+ * This does NOT create a shipment.
+ */
+export async function checkRoyalMailConnection(apiKey?: string) {
+  return royalMailRequest<unknown>(
+    "/orders?pageSize=1",
+    {
+      method: "GET",
+    },
+    apiKey
+  );
+}
 
 export interface RoyalMailAddress {
   fullName: string;
   companyName?: string;
   addressLine1: string;
   addressLine2?: string;
+  addressLine3?: string;
   city: string;
   county?: string;
   postcode: string;
   countryCode: string;
 }
 
-export interface RoyalMailOrderPayload {
+export interface RoyalMailRecipient {
+  address: RoyalMailAddress;
+  phoneNumber?: string;
+  emailAddress?: string;
+  addressBookReference?: string;
+}
+
+export interface RoyalMailSender {
+  tradingName: string;
+  phoneNumber?: string;
+  emailAddress?: string;
+}
+
+export interface RoyalMailPackageContent {
+  name: string;
+  SKU?: string;
+  ReferenceId?: string;
+  ContentsPieceURL?: string;
+  quantity: number;
+  unitValue: number;
+  unitWeightInGrams: number;
+  customsDescription?: string;
+  extendedCustomsDescription?: string;
+  customsCode?: string;
+  originCountryCode?: string;
+  customsDeclarationCategory?: string;
+  requiresExportLicence?: boolean;
+  stockLocation?: string;
+  useOriginPreference?: boolean;
+  supplementaryUnits?: string;
+  licenseNumber?: string;
+  certificateNumber?: string;
+}
+
+export interface RoyalMailPackage {
+  weightInGrams: number;
+  packageFormatIdentifier: string;
+
+  customPackageFormatIdentifier?: string;
+
+  dimensions?: {
+    heightInMms: number;
+    widthInMms: number;
+    depthInMms: number;
+  };
+
+  contents?: RoyalMailPackageContent[];
+}
+
+export interface RoyalMailPostageDetails {
+  sendNotificationsTo?: "sender" | "recipient" | "none";
+
+  serviceCode: string;
+  serviceRegisterCode?: string;
+
+  consequentialLoss?: number;
+
+  receiveEmailNotification?: boolean;
+  receiveSmsNotification?: boolean;
+
+  guaranteedSaturdayDelivery?: boolean;
+  requestSignatureUponDelivery?: boolean;
+
+  isLocalCollect?: boolean;
+
+  safePlace?: string;
+
+  department?: string;
+
+  AIRNumber?: string;
+
+  IOSSNumber?: string;
+
+  requiresExportLicense?: boolean;
+
+  commercialInvoiceNumber?: string;
+
+  commercialInvoiceDate?: string;
+
+  recipientEoriNumber?: string;
+}
+
+export interface CreateRoyalMailOrderRequest {
   orderReference: string;
+
   isRecipientABusiness?: boolean;
 
-  recipient: {
+  recipient: RoyalMailRecipient;
+
+  sender: RoyalMailSender;
+
+  billing?: {
     address: RoyalMailAddress;
     phoneNumber?: string;
     emailAddress?: string;
   };
 
+  packages: RoyalMailPackage[];
+
   orderDate?: string;
 
-  packages: Array<{
-    weightInGrams: number;
-    packageFormatIdentifier?: string;
-    packageType?: string;
-    contents?: Array<{
-      name: string;
-      quantity: number;
-      unitValue: number;
-      unitWeightInGrams?: number;
-      sku?: string;
-    }>;
-  }>;
+  plannedDespatchDate?: string;
 
-  postageDetails: {
-    serviceCode: string;
-    sendNotificationsTo?: string;
-    receiveEmailNotification?: boolean;
-    sendNotifications?: boolean;
-  };
+  specialInstructions?: string;
+
+  subtotal?: number;
+
+  shippingCostCharged?: number;
+
+  otherCosts?: number;
+
+  customsDutyCosts?: number;
+
+  total?: number;
+
+  currencyCode?: string;
+
+  deliveryTerm?: string;
+
+  postageDetails: RoyalMailPostageDetails;
+
+  tags?: {
+    key: string;
+    value: string;
+  }[];
 
   label?: {
     includeLabelInResponse?: boolean;
@@ -52,241 +231,213 @@ export interface RoyalMailOrderPayload {
     includeReturnsLabel?: boolean;
   };
 
-  billing?: {
-    fullName?: string;
-    addressLine1?: string;
-    city?: string;
-    postcode?: string;
-    countryCode?: string;
-  };
+  orderTax?: number;
+
+  containsDangerousGoods?: boolean;
+
+  dangerousGoodsUnCode?: string;
+
+  dangerousGoodsDescription?: number;
+
+  dangerousGoodsQuantity?: number;
+
+  importer?: Record<string, unknown>;
 }
 
-export interface RoyalMailCreateResponse {
-  createdOrders?: Array<{
-    orderIdentifier?: number | string;
-    orderReference?: string;
+export interface CreateRoyalMailResponse {
+  successCount: number;
+  errorsCount: number;
+
+  createdOrders: Array<{
+    orderIdentifier: number;
+    orderReference: string;
+    createdOn: string;
+    printedOn?: string;
+    manifestedOn?: string;
+    shippedOn?: string;
     trackingNumber?: string;
+
+    packages?: Array<{
+      packageNumber: number;
+      trackingNumber?: string;
+    }>;
+
+    label?: string;
+
+    labelErrors?: Array<{
+      message: string;
+      code: string;
+    }>;
+
+    generatedDocuments?: string[];
   }>;
 
-  errors?: Array<{
-    code?: string;
-    message?: string;
+  failedOrders?: Array<{
+    order: unknown;
+    errors?: Array<{
+      code: string;
+      message: string;
+    }>;
   }>;
-
-  [key: string]: unknown;
 }
 
 /**
- * Royal Mail API headers
- *
- * IMPORTANT:
- * The API key must stay on the server.
- * Never expose RM_API_KEY in client-side code.
+ * Create one or more Click & Drop orders.
  */
-function getHeaders(apiKey: string): HeadersInit {
-  return {
-    Authorization: apiKey,
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  };
+export async function createRoyalMailOrders(
+  orders: CreateRoyalMailOrderRequest[],
+  apiKey?: string
+) {
+  return royalMailRequest<CreateRoyalMailResponse>(
+    "/orders",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        items: orders,
+      }),
+    },
+    apiKey
+  );
 }
 
 /**
- * Create an order in Royal Mail Click & Drop
+ * Retrieve one order.
  */
-export async function createOrder(
-  orderData: RoyalMailOrderPayload,
-  apiKey: string
-): Promise<RoyalMailCreateResponse> {
-  if (!apiKey) {
-    throw new Error('Royal Mail API key is missing.');
+export async function getRoyalMailOrder(
+  identifier: string | number,
+  apiKey?: string
+) {
+  const encoded =
+    typeof identifier === "number"
+      ? String(identifier)
+      : `"${encodeURIComponent(identifier)}"`;
+
+  return royalMailRequest(
+    `/orders/${encoded}`,
+    {
+      method: "GET",
+    },
+    apiKey
+  );
+}
+
+/**
+ * Retrieve a label PDF.
+ */
+export async function getRoyalMailLabel(
+  identifier: string | number,
+  options?: {
+    includeReturnsLabel?: boolean;
+    includeCN?: boolean;
+  },
+  apiKey?: string
+) {
+  const key = apiKey || process.env.ROYAL_MAIL_API_KEY || process.env.RM_API_KEY;
+
+  if (!key) {
+    throw new RoyalMailError("ROYAL_MAIL_API_KEY is not configured", 500);
   }
 
-  const response = await fetch(`${BASE_URL}/Orders`, {
-    method: 'POST',
-    headers: getHeaders(apiKey),
+  const encoded =
+    typeof identifier === "number"
+      ? String(identifier)
+      : `"${encodeURIComponent(identifier)}"`;
 
-    /*
-     * Royal Mail expects an "items" array.
-     */
-    body: JSON.stringify({
-      items: [orderData],
-    }),
-  });
+  const params = new URLSearchParams();
 
-  const responseText = await response.text();
+  params.set("documentType", "postageLabel");
 
-  let data: RoyalMailCreateResponse = {};
+  params.set(
+    "includeReturnsLabel",
+    String(options?.includeReturnsLabel ?? false)
+  );
 
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    data = {
-      rawResponse: responseText,
-    };
+  if (options?.includeCN !== undefined) {
+    params.set("includeCN", String(options.includeCN));
   }
+
+  const authHeader = getAuthHeader(key);
+
+  const response = await fetch(
+    `${ROYAL_MAIL_API_URL}/orders/${encoded}/label?${params}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: authHeader,
+        Accept: "application/pdf",
+      },
+      cache: "no-store",
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(
-      `Royal Mail API Error (${response.status}): ${JSON.stringify(data)}`
+    const text = await response.text();
+
+    throw new RoyalMailError(
+      `Unable to retrieve Royal Mail label: ${response.status}`,
+      response.status,
+      text
     );
   }
 
-  return data;
+  return response.arrayBuffer();
 }
 
 /**
- * Get orders from Royal Mail
+ * Mark an order as dispatched.
  */
-export async function getOrders(
-  apiKey: string,
-  params: Record<string, string | number> = {}
-): Promise<unknown> {
-  if (!apiKey) {
-    throw new Error('Royal Mail API key is missing.');
-  }
+export async function markRoyalMailOrderDispatched(
+  identifier: string | number,
+  apiKey?: string
+) {
+  const item =
+    typeof identifier === "number"
+      ? {
+          orderIdentifier: identifier,
+          status: "despatched",
+        }
+      : {
+          orderReference: identifier,
+          status: "despatched",
+        };
 
+  return royalMailRequest(
+    "/orders/status",
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        items: [item],
+      }),
+    },
+    apiKey
+  );
+}
+
+// Backward compatibility exports
+export type RoyalMailOrderPayload = CreateRoyalMailOrderRequest;
+export type RoyalMailCreateResponse = CreateRoyalMailResponse;
+
+export async function createOrder(payload: any, apiKey: string) {
+  const item = Array.isArray(payload) ? payload : [payload];
+  return createRoyalMailOrders(item, apiKey);
+}
+
+export async function getOrders(apiKey: string, params: Record<string, string | number> = {}) {
   const query = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    query.append(key, String(value));
-  });
-
-  const url = `${BASE_URL}/Orders${
-    query.toString() ? `?${query.toString()}` : ''
-  }`;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getHeaders(apiKey),
-  });
-
-  const responseText = await response.text();
-
-  let data: unknown;
-
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    data = responseText;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Royal Mail API Error (${response.status}): ${JSON.stringify(data)}`
-    );
-  }
-
-  return data;
+  Object.entries(params).forEach(([k, v]) => query.append(k, String(v)));
+  const url = `/orders${query.toString() ? `?${query.toString()}` : ''}`;
+  return royalMailRequest(url, { method: "GET" }, apiKey);
 }
 
-/**
- * Get a specific Royal Mail order
- *
- * Royal Mail supports order identifiers/references
- * through /Orders/{orderIdentifiers}
- */
-export async function getOrderByReference(
-  reference: string,
-  apiKey: string
-): Promise<unknown> {
-  if (!apiKey) {
-    throw new Error('Royal Mail API key is missing.');
-  }
-
-  const encodedReference = encodeURIComponent(`"${reference}"`);
-
-  const response = await fetch(`${BASE_URL}/Orders/${encodedReference}`, {
-    method: 'GET',
-    headers: getHeaders(apiKey),
-  });
-
-  const responseText = await response.text();
-
-  let data: unknown;
-
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    data = responseText;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Royal Mail API Error (${response.status}): ${JSON.stringify(data)}`
-    );
-  }
-
-  return data;
+export async function getOrderByReference(reference: string, apiKey: string) {
+  return getRoyalMailOrder(reference, apiKey);
 }
 
-/**
- * Cancel / delete a Royal Mail order
- */
-export async function cancelOrder(
-  reference: string,
-  apiKey: string
-): Promise<unknown> {
-  if (!apiKey) {
-    throw new Error('Royal Mail API key is missing.');
-  }
-
-  const encodedReference = encodeURIComponent(`"${reference}"`);
-
-  const response = await fetch(`${BASE_URL}/Orders/${encodedReference}`, {
-    method: 'DELETE',
-    headers: getHeaders(apiKey),
-  });
-
-  const responseText = await response.text();
-
-  let data: unknown;
-
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    data = responseText;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Royal Mail API Error (${response.status}): ${JSON.stringify(data)}`
-    );
-  }
-
-  return data;
+export async function cancelOrder(reference: string, apiKey: string) {
+  const encoded = `"${encodeURIComponent(reference)}"`;
+  return royalMailRequest(`/orders/${encoded}`, { method: "DELETE" }, apiKey);
 }
 
-/**
- * Get Royal Mail API version
- */
-export async function getApiVersion(
-  apiKey: string
-): Promise<unknown> {
-  if (!apiKey) {
-    throw new Error('Royal Mail API key is missing.');
-  }
-
-  const response = await fetch(`${BASE_URL}/version`, {
-    method: 'GET',
-    headers: getHeaders(apiKey),
-  });
-
-  const responseText = await response.text();
-
-  let data: unknown;
-
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    data = responseText;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      `Royal Mail API Error (${response.status}): ${JSON.stringify(data)}`
-    );
-  }
-
-  return data;
+export async function getApiVersion(apiKey: string) {
+  return royalMailRequest("/version", { method: "GET" }, apiKey);
 }

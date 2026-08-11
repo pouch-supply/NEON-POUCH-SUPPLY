@@ -3,10 +3,12 @@ import { sendOrderShippedEmail } from './emailService';
 import { trackOrderShipped } from './klaviyoService';
 import {
   createOrder,
+  createRoyalMailOrders,
   cancelOrder as cancelRoyalMailOrder,
   getOrders as fetchRoyalMailOrders,
   getOrderByReference,
-  RoyalMailOrderPayload
+  RoyalMailOrderPayload,
+  CreateRoyalMailOrderRequest
 } from '../../src/lib/royalMail';
 
 export interface RoyalMailSettings {
@@ -519,70 +521,79 @@ export async function createRoyalMailShipment(orderId: string, options: {
 
   let trackingNumber = generateRoyalMailTrackingNumber();
   let royalMailOrderId = `RM-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-  let isSimulated = true;
+  let isSimulated = false;
   let apiMessage = '';
 
   // Call Royal Mail API if API key is set
   const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
-  if (apiKey && apiKey.trim().length > 5) {
-    try {
-      console.log(`[RoyalMailService] Attempting live Royal Mail Click & Drop API call for Order #${orderId}`);
-      const payload: RoyalMailOrderPayload = {
-        orderReference: String(order.id),
-        isRecipientABusiness: Boolean(recipient.companyName),
-        recipient: {
-          address: {
-            fullName: recipient.fullName,
-            companyName: recipient.companyName || '',
-            addressLine1: recipient.addressLine1,
-            addressLine2: recipient.addressLine2 || '',
-            city: recipient.city,
-            county: recipient.county || '',
-            postcode: recipient.postcode,
-            countryCode: recipient.countryCode || 'GB'
-          },
-          emailAddress: recipient.email || order.customerEmail,
-          phoneNumber: recipient.phone || ''
-        },
-        orderDate: order.createdAt || new Date().toISOString(),
-        packages: [
-          {
-            weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
-            packageFormatIdentifier: options.packageType || settings.defaultPackageType || 'Parcel',
-            contents: Array.isArray(order.items) ? order.items.map((it: any) => ({
-              name: it.productTitle || 'Pouch Supply Item',
-              quantity: it.quantity || 1,
-              unitValue: it.price || 5.0,
-              unitWeightInGrams: 100
-            })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
-          }
-        ],
-        postageDetails: {
-          serviceCode: serviceCode,
-          sendNotificationsTo: recipient.email || order.customerEmail,
-          receiveEmailNotification: true,
-          sendNotifications: true
-        }
-      };
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error('Royal Mail API Authorization Key (ROYAL_MAIL_API_KEY) is not configured in settings or environment.');
+  }
 
-      const result = await createOrder(payload, apiKey);
-      if (result) {
-        isSimulated = false;
-        const createdOrder = result.createdOrders?.[0];
-        if (createdOrder?.orderIdentifier) {
-          royalMailOrderId = String(createdOrder.orderIdentifier);
+  try {
+    console.log(`[RoyalMailService] Attempting live Royal Mail Click & Drop API call for Order #${orderId}`);
+    const payload: CreateRoyalMailOrderRequest = {
+      orderReference: String(order.id),
+      isRecipientABusiness: Boolean(recipient.companyName),
+      recipient: {
+        address: {
+          fullName: recipient.fullName,
+          companyName: recipient.companyName || '',
+          addressLine1: recipient.addressLine1,
+          addressLine2: recipient.addressLine2 || '',
+          city: recipient.city,
+          county: recipient.county || '',
+          postcode: recipient.postcode,
+          countryCode: recipient.countryCode || 'GB'
+        },
+        emailAddress: recipient.email || order.customerEmail,
+        phoneNumber: recipient.phone || ''
+      },
+      sender: {
+        tradingName: settings.senderAddress.companyName || 'Pouch Supply Ltd',
+        phoneNumber: settings.senderAddress.contactPhone || '',
+        emailAddress: settings.senderAddress.contactEmail || ''
+      },
+      orderDate: order.createdAt || new Date().toISOString(),
+      packages: [
+        {
+          weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
+          packageFormatIdentifier: options.packageType || settings.defaultPackageType || 'Parcel',
+          contents: Array.isArray(order.items) ? order.items.map((it: any) => ({
+            name: it.productTitle || it.title || 'Pouch Supply Item',
+            quantity: it.quantity || 1,
+            unitValue: it.price || 5.0,
+            unitWeightInGrams: 100
+          })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
         }
-        if (createdOrder?.trackingNumber) {
-          trackingNumber = createdOrder.trackingNumber;
-        }
-        apiMessage = 'Live Royal Mail Click & Drop shipment successfully registered!';
+      ],
+      postageDetails: {
+        serviceCode: serviceCode,
+        sendNotificationsTo: (recipient.email || order.customerEmail) ? 'recipient' : 'none',
+        receiveEmailNotification: true,
+        receiveSmsNotification: Boolean(recipient.phone)
       }
-    } catch (apiErr: any) {
-      console.warn('[RoyalMailService] API call failed, using graceful simulation:', apiErr?.message);
-      apiMessage = `Simulated Royal Mail shipment created. (${apiErr?.message})`;
+    };
+
+    const result = await createRoyalMailOrders([payload], apiKey);
+    if (result) {
+      isSimulated = false;
+      const createdOrder = result.createdOrders?.[0];
+      if (createdOrder?.orderIdentifier) {
+        royalMailOrderId = String(createdOrder.orderIdentifier);
+      }
+      if (createdOrder?.trackingNumber) {
+        trackingNumber = createdOrder.trackingNumber;
+      }
+      if (result.errorsCount && result.errorsCount > 0 && result.failedOrders?.length) {
+        const firstErr = result.failedOrders[0].errors?.[0]?.message || 'Royal Mail returned order creation error.';
+        throw new Error(firstErr);
+      }
+      apiMessage = 'Live Royal Mail Click & Drop shipment successfully registered!';
     }
-  } else {
-    apiMessage = `Royal Mail Shipment created in Simulation Mode. (No API key provided).`;
+  } catch (apiErr: any) {
+    console.error('[RoyalMailService] Live API call failed:', apiErr?.message);
+    throw new Error(`Royal Mail API Error: ${apiErr?.message || 'Shipment creation failed.'}`);
   }
 
   const carrierName = selectedRate.serviceName;

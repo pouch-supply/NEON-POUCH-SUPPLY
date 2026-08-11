@@ -45,11 +45,44 @@ export const RoyalMailSettingsCard: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // Live Connection Status
+  const [connStatus, setConnStatus] = useState<{
+    checking: boolean;
+    connected?: boolean;
+    message?: string;
+    status?: number;
+    environment?: string;
+    checkedAt?: string;
+  }>({ checking: false });
+
   // Address validation & rates calculator state
   const [testPostcode, setTestPostcode] = useState('EC1A 1BB');
   const [testWeight, setTestWeight] = useState(350);
   const [calcLoading, setCalcLoading] = useState(false);
   const [calcResults, setCalcResults] = useState<any>(null);
+
+  const checkLiveConnection = async () => {
+    setConnStatus({ checking: true });
+    try {
+      const res = await fetch('/api/royalmail/connection');
+      const data = await res.json();
+      setConnStatus({
+        checking: false,
+        connected: Boolean(data.success && data.connected),
+        message: data.message || (data.connected ? 'Royal Mail Click & Drop API is connected.' : 'Connection failed'),
+        status: data.status,
+        environment: data.environment || 'LIVE',
+        checkedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      });
+    } catch (err: any) {
+      setConnStatus({
+        checking: false,
+        connected: false,
+        message: err?.message || 'Failed to connect to backend service',
+        checkedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      });
+    }
+  };
 
   useEffect(() => {
     fetch('/api/royalmail/settings')
@@ -68,6 +101,8 @@ export const RoyalMailSettingsCard: React.FC = () => {
       })
       .catch(err => console.error('Failed to load Royal Mail settings:', err))
       .finally(() => setLoading(false));
+
+    checkLiveConnection();
   }, []);
 
   const handleSave = async () => {
@@ -165,6 +200,74 @@ export const RoyalMailSettingsCard: React.FC = () => {
             <span>Royal Mail Click & Drop settings saved successfully!</span>
           </div>
         )}
+      </div>
+
+      {/* Live API Connection Status Banner */}
+      <div className={`border rounded-xl p-5 shadow-xs transition-all ${
+        connStatus.checking
+          ? 'bg-amber-50/50 border-amber-200'
+          : connStatus.connected
+          ? 'bg-emerald-50/70 border-emerald-200'
+          : 'bg-rose-50/70 border-rose-200'
+      }`}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+              connStatus.checking
+                ? 'bg-amber-100 text-amber-700'
+                : connStatus.connected
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-rose-100 text-rose-700'
+            }`}>
+              {connStatus.checking ? (
+                <RefreshCw className="h-5 w-5 animate-spin" />
+              ) : connStatus.connected ? (
+                <CheckCircle2 className="h-5 w-5" />
+              ) : (
+                <AlertCircle className="h-5 w-5" />
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm text-slate-900 tracking-tight">
+                  Royal Mail Click & Drop Integration Status
+                </span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  connStatus.checking
+                    ? 'bg-amber-100 text-amber-800'
+                    : connStatus.connected
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}>
+                  {connStatus.checking ? 'Testing...' : connStatus.connected ? 'LIVE & WORKING' : 'DISCONNECTED / API ERROR'}
+                </span>
+              </div>
+
+              <p className="text-xs font-semibold text-slate-700 mt-1">
+                {connStatus.checking
+                  ? 'Verifying API key connection directly with Royal Mail Click & Drop API...'
+                  : connStatus.message}
+              </p>
+
+              {connStatus.checkedAt && (
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Last checked at {connStatus.checkedAt} • Real API Mode (Zero Simulations)
+                </p>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={checkLiveConnection}
+            disabled={connStatus.checking}
+            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${connStatus.checking ? 'animate-spin' : ''}`} />
+            <span>Test Connection</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Settings Form */}

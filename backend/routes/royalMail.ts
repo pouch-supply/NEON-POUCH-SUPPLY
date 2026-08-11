@@ -17,11 +17,56 @@ import {
   getOrderByReference,
   cancelOrder,
   getApiVersion,
+  checkRoyalMailConnection,
+  getRoyalMailLabel,
+  markRoyalMailOrderDispatched,
+  RoyalMailError,
   RoyalMailOrderPayload
 } from "../../src/lib/royalMail";
 import { fetchResource } from "../../serverDb";
 
 const router = Router();
+
+// GET /api/royalmail/connection - Check live Click & Drop API Connection
+router.get("/connection", async (_req: Request, res: Response) => {
+  try {
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+    if (!apiKey || apiKey.trim().length === 0) {
+      return res.status(200).json({
+        success: false,
+        connected: false,
+        message: "ROYAL_MAIL_API_KEY is not configured.",
+        environment: "LIVE"
+      });
+    }
+
+    await checkRoyalMailConnection(apiKey);
+
+    return res.json({
+      success: true,
+      connected: true,
+      message: "Royal Mail Click & Drop API is connected.",
+      environment: "LIVE",
+    });
+  } catch (error: any) {
+    console.error("[Royal Mail] Connection check error:", error);
+    if (error instanceof RoyalMailError) {
+      return res.status(error.status >= 400 && error.status < 600 ? error.status : 200).json({
+        success: false,
+        connected: false,
+        message: error.message || "Royal Mail API error",
+        status: error.status,
+        details: error.details,
+      });
+    }
+    return res.status(200).json({
+      success: false,
+      connected: false,
+      message: error?.message || "Unable to connect to Royal Mail.",
+    });
+  }
+});
 
 // POST /api/royalmail/create-order - Create order direct payload
 router.post("/create-order", async (req: Request, res: Response) => {
@@ -290,6 +335,83 @@ router.post("/create-return-label", async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to generate return label" });
+  }
+});
+
+// GET /api/royalmail/label/:identifier/pdf - Retrieve official Royal Mail PDF postage label
+router.get("/label/:identifier/pdf", async (req: Request, res: Response) => {
+  try {
+    const { identifier } = req.params;
+    const includeReturnsLabel = req.query.includeReturnsLabel === "true";
+    const includeCN = req.query.includeCN === "true";
+
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: "ROYAL_MAIL_API_KEY is not configured." });
+    }
+
+    const pdfBuffer = await getRoyalMailLabel(
+      /^\d+$/.test(identifier) ? Number(identifier) : identifier,
+      { includeReturnsLabel, includeCN },
+      apiKey
+    );
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="royal-mail-${identifier}.pdf"`);
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(Buffer.from(pdfBuffer));
+  } catch (error: any) {
+    console.error("[Royal Mail] Label PDF error:", error);
+    if (error instanceof RoyalMailError) {
+      return res.status(error.status || 500).json({
+        success: false,
+        message: error.message,
+        status: error.status,
+        details: error.details
+      });
+    }
+    return res.status(500).json({ success: false, message: error.message || "Unable to retrieve Royal Mail label." });
+  }
+});
+
+// PUT /api/royalmail/dispatch - Mark order as dispatched in Royal Mail
+router.put("/dispatch", async (req: Request, res: Response) => {
+  try {
+    const { orderIdentifier, orderReference } = req.body;
+    if (orderIdentifier === undefined && !orderReference) {
+      return res.status(400).json({
+        success: false,
+        message: "orderIdentifier or orderReference is required."
+      });
+    }
+
+    const settings = await getRoyalMailSettings();
+    const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: "ROYAL_MAIL_API_KEY is not configured." });
+    }
+
+    const identifier = orderIdentifier !== undefined ? Number(orderIdentifier) : String(orderReference);
+    const result = await markRoyalMailOrderDispatched(identifier, apiKey);
+
+    return res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error("[Royal Mail] Dispatch error:", error);
+    if (error instanceof RoyalMailError) {
+      return res.status(error.status || 500).json({
+        success: false,
+        message: error.message,
+        status: error.status,
+        details: error.details
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Unable to mark Royal Mail order as dispatched."
+    });
   }
 });
 
