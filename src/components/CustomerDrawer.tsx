@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SubscriptionIcon from './SubscriptionIcon';
+import GoogleAccountChooserModal from './GoogleAccountChooserModal';
 
 interface CustomerDrawerProps {
   isOpen: boolean;
@@ -91,8 +92,8 @@ export default function CustomerDrawer({
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [customGmailInput, setCustomGmailInput] = useState('');
 
-  const handleGoogleLoginSubmit = async (emailToLogin?: string) => {
-    const targetEmail = (emailToLogin || customGmailInput || 'scottkivlinpouch@gmail.com').toLowerCase().trim();
+  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string }) => {
+    const targetEmail = account.email.toLowerCase().trim();
     if (!targetEmail || !targetEmail.includes('@')) {
       setErrorMsg('Please enter a valid Gmail address.');
       return;
@@ -101,14 +102,14 @@ export default function CustomerDrawer({
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const defaultName = targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const defaultName = account.name || targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       const response = await fetch('/api/customers/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: targetEmail,
           name: defaultName,
-          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
+          picture: account.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
         })
       });
       const data = await response.json();
@@ -405,7 +406,7 @@ export default function CustomerDrawer({
                             onClick={() => {
                               setErrorMsg('');
                               setSuccessMsg('');
-                              handleGoogleLoginSubmit('scottkivlinpouch@gmail.com');
+                              setIsGoogleModalOpen(true);
                             }}
                             className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-250 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl shadow-2xs transition-all cursor-pointer hover:border-slate-350"
                           >
@@ -658,7 +659,7 @@ export default function CustomerDrawer({
                         </div>
                         <div className="bg-slate-800/40 p-2 rounded-lg">
                           <span className="text-[8px] uppercase tracking-wide text-slate-400 block font-bold">Total Spent</span>
-                          <span className="text-[10px] font-extrabold text-emerald-400 block mt-0.5">£{(Number(loggedInCustomer.totalSpent ?? loggedInCustomer.amountSpent ?? 0)).toFixed(2)}</span>
+                          <span className="text-[10px] font-extrabold text-emerald-400 block mt-0.5">£{(Number((loggedInCustomer as any).totalSpent ?? loggedInCustomer.amountSpent ?? 0)).toFixed(2)}</span>
                         </div>
                       </div>
 
@@ -1235,6 +1236,13 @@ export default function CustomerDrawer({
         </div>
       )}
     </AnimatePresence>
+
+    <GoogleAccountChooserModal
+      isOpen={isGoogleModalOpen}
+      onClose={() => setIsGoogleModalOpen(false)}
+      onSelectAccount={(account) => handleGoogleLoginSubmit(account)}
+      isLoading={isSubmitting}
+    />
     </>
   );
 }

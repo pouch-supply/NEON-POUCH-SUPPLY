@@ -3,6 +3,7 @@ import { Customer, Product, Order, Discount } from '../types';
 import { getWishlistProductTitle } from '../utils/mediaUtils';
 import { parseOrderTime } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
+import GoogleAccountChooserModal from './GoogleAccountChooserModal';
 import { 
   User, LogIn, Heart, PlusCircle, Trash2, MapPin, Package, ShoppingBag, 
   Eye, X, Search, Truck, Check, Clock, Calendar, RefreshCw, Award, 
@@ -55,27 +56,29 @@ export default function CustomerAccount({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
-  const handleGoogleLoginSubmit = async (emailToLogin?: string) => {
-    const targetEmail = (emailToLogin || 'scottkivlinpouch@gmail.com').toLowerCase().trim();
+  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string }) => {
+    const targetEmail = account.email.toLowerCase().trim();
     setIsSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const defaultName = targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const defaultName = account.name || targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       const response = await fetch('/api/customers/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: targetEmail,
           name: defaultName,
-          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
+          picture: account.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Google authentication failed.');
 
       onLogin(data.customer);
+      setIsGoogleModalOpen(false);
       setSuccessMsg(`Logged in with Google (${targetEmail})!`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Server connection error during Google sign in.');
@@ -668,7 +671,11 @@ export default function CustomerAccount({
                 <div className="space-y-3 pb-2">
                   <button
                     type="button"
-                    onClick={() => handleGoogleLoginSubmit('scottkivlinpouch@gmail.com')}
+                    onClick={() => {
+                      setErrorMsg('');
+                      setSuccessMsg('');
+                      setIsGoogleModalOpen(true);
+                    }}
                     className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-250 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl shadow-2xs transition-all cursor-pointer hover:border-slate-350"
                   >
                     <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
@@ -2261,7 +2268,7 @@ export default function CustomerAccount({
                                 <span className="text-[9px] text-[#dfa047] font-bold uppercase tracking-wider">{prod.vendor}</span>
                                 <h4 className="text-xs font-black text-[#071d37] truncate">{prod.title}</h4>
                               </div>
-                              <span className="text-xs font-extrabold text-slate-800 mt-1">£{prod.price.toFixed(2)}</span>
+                              <span className="text-xs font-extrabold text-slate-800 mt-1">£{(Number(prod.price || 0)).toFixed(2)}</span>
                             </div>
                             
                             <button
@@ -2638,7 +2645,7 @@ export default function CustomerAccount({
 
                     <div className="bg-white/10 border border-white/20 p-5 rounded-3xl text-center min-w-[160px] shrink-0">
                       <p className="text-[10px] text-slate-300 uppercase font-black tracking-widest">Available Credit</p>
-                      <p className="text-3xl font-black text-emerald-400 mt-1">£{custState.referralCredit.toFixed(2)}</p>
+                      <p className="text-3xl font-black text-emerald-400 mt-1">£{(Number(custState.referralCredit || 0)).toFixed(2)}</p>
                       <span className="text-[9px] text-slate-400 block pt-1">{custState.referredCount} Friends Invited</span>
                     </div>
                   </div>
@@ -2700,11 +2707,11 @@ export default function CustomerAccount({
                               </div>
                               <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
                                 <span className="text-slate-500 font-medium">Credits Earned</span>
-                                <span className="font-black text-emerald-700">£{earnedCredit.toFixed(2)}</span>
+                                <span className="font-black text-emerald-700">£{(Number(earnedCredit || 0)).toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between items-center text-xs">
                                 <span className="text-slate-500 font-medium">Pending Credits</span>
-                                <span className="font-black text-amber-600">£{pendingCredit.toFixed(2)}</span>
+                                <span className="font-black text-amber-600">£{(Number(pendingCredit || 0)).toFixed(2)}</span>
                               </div>
                             </div>
                           </div>
@@ -3028,7 +3035,7 @@ export default function CustomerAccount({
                             <p className="text-slate-400 text-[10px]">Qty: {item.quantity}</p>
                           </div>
                         </div>
-                        <p className="font-extrabold text-slate-850">£{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-extrabold text-slate-850">£{(Number((item.price || 0) * (item.quantity || 1))).toFixed(2)}</p>
                       </div>
                     );
                   })}
@@ -3471,6 +3478,13 @@ export default function CustomerAccount({
           </div>
         </div>
       )}
+
+      <GoogleAccountChooserModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSelectAccount={(account) => handleGoogleLoginSubmit(account)}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }
