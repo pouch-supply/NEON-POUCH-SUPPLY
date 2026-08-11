@@ -141,6 +141,7 @@ export interface Customer {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   subscriptionStatus: 'Subscribed' | 'Not subscribed' | 'Unsubscribed';
   location: string;
   ordersCount: number;

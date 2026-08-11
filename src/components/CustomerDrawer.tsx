@@ -82,6 +82,7 @@ export default function CustomerDrawer({
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'reset' | 'verify'>('login');
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [resetTokenInput, setResetTokenInput] = useState('');
@@ -247,9 +248,15 @@ export default function CustomerDrawer({
       return;
     }
 
-    if (authMode === 'signup' && !nameInput.trim()) {
-      setErrorMsg('Please enter your full name.');
-      return;
+    if (authMode === 'signup') {
+      if (!nameInput.trim()) {
+        setErrorMsg('Please enter your full name.');
+        return;
+      }
+      if (!phoneInput.trim()) {
+        setErrorMsg('Mobile phone number is required.');
+        return;
+      }
     }
     if (!emailInput.trim()) {
       setErrorMsg('Please enter your email.');
@@ -272,7 +279,7 @@ export default function CustomerDrawer({
         const response = await fetch('/api/customers/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: nameInput.trim(), email, password: passwordInput })
+          body: JSON.stringify({ name: nameInput.trim(), email, phone: phoneInput.trim(), password: passwordInput })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Registration failed.');
@@ -487,19 +494,34 @@ export default function CustomerDrawer({
 
                       <form onSubmit={handleLoginSubmit} className="space-y-4">
                         {authMode === 'signup' && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                              Full Name
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Kayla Canty"
-                              value={nameInput}
-                              onChange={(e) => setNameInput(e.target.value)}
-                              className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
-                              required
-                            />
-                          </div>
+                          <>
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                                Full Name
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Kayla Canty"
+                                value={nameInput}
+                                onChange={(e) => setNameInput(e.target.value)}
+                                className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                                Mobile / Phone Number <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="tel"
+                                placeholder="+44 7700 900077"
+                                value={phoneInput}
+                                onChange={(e) => setPhoneInput(e.target.value)}
+                                className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"
+                                required
+                              />
+                            </div>
+                          </>
                         )}
 
                         {(authMode === 'login' || authMode === 'signup' || authMode === 'forgot' || authMode === 'reset' || authMode === 'verify') && (
@@ -525,7 +547,7 @@ export default function CustomerDrawer({
                             </label>
                             <input
                               type="text"
-                              placeholder="e.g. 849201"
+                              placeholder="Enter 6-digit code"
                               value={verificationCodeInput}
                               onChange={(e) => setVerificationCodeInput(e.target.value)}
                               className="w-full text-sm font-mono font-bold tracking-widest border border-indigo-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/50 text-center text-slate-900"

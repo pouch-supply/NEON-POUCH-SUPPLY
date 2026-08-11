@@ -48,6 +48,7 @@ export default function CustomerAccount({
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'reset' | 'verify'>('login');
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [resetTokenInput, setResetTokenInput] = useState('');
@@ -540,9 +541,15 @@ export default function CustomerAccount({
       return;
     }
 
-    if (authMode === 'signup' && !nameInput.trim()) {
-      setErrorMsg('Please enter your full name.');
-      return;
+    if (authMode === 'signup') {
+      if (!nameInput.trim()) {
+        setErrorMsg('Please enter your full name.');
+        return;
+      }
+      if (!phoneInput.trim()) {
+        setErrorMsg('Mobile phone number is required.');
+        return;
+      }
     }
     if (!emailInput.trim() || !passwordInput) {
       setErrorMsg('Please fill in all credentials.');
@@ -560,7 +567,7 @@ export default function CustomerAccount({
         const response = await fetch('/api/customers/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: nameInput.trim(), email, password: passwordInput, referredByCode: referredByCodeInput.trim() })
+          body: JSON.stringify({ name: nameInput.trim(), email, phone: phoneInput.trim(), password: passwordInput, referredByCode: referredByCodeInput.trim() })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Registration failed.');
@@ -714,17 +721,30 @@ export default function CustomerAccount({
               )}
 
               {authMode === 'signup' && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Valentina Gomez"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-[#071d37] focus:outline-none bg-slate-50/50"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Valentina Gomez"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-[#071d37] focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile / Phone Number <span className="text-rose-500">*</span></label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+44 7700 900077"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      className="w-full text-xs font-semibold border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-[#071d37] focus:outline-none bg-slate-50/50"
+                    />
+                  </div>
+                </>
               )}
 
               {(authMode === 'login' || authMode === 'signup' || authMode === 'forgot' || authMode === 'reset' || authMode === 'verify') && (
@@ -747,7 +767,7 @@ export default function CustomerAccount({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 849201"
+                    placeholder="Enter 6-digit code"
                     value={verificationCodeInput}
                     onChange={(e) => setVerificationCodeInput(e.target.value)}
                     className="w-full text-sm font-mono font-bold tracking-widest border border-indigo-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-indigo-50/50 text-center text-slate-900"

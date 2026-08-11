@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { fetchResource, saveResource } from '../../serverDb';
+import { sendWelcomeEmail } from '../services/emailService';
 
 const router = Router();
 
@@ -143,6 +144,9 @@ export async function handleGoogleOAuthCallback(req: Request, res: Response) {
         storeCredit: 0
       };
       customersList.unshift(found);
+      
+      // Dispatch welcome email ONCE for new customer registration
+      sendWelcomeEmail(emailTrim, customerName, found.referralCode).catch(e => console.warn('Welcome email error:', e));
     }
 
     await saveResource('customers', customersList);

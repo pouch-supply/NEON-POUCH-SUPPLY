@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Globe } from 'lucide-react';
 
 interface GoogleAccountChooserModalProps {
@@ -19,6 +19,12 @@ export default function GoogleAccountChooserModal({
   const [step, setStep] = useState<'email' | 'password'>('email');
   const [error, setError] = useState('');
   const [isOpeningOAuth, setIsOpeningOAuth] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      handleLaunchGoogleOAuth();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

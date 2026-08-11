@@ -54,10 +54,10 @@ router.post("/", async (req, res) => {
 // POST: Customer Signup
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, location = "United Kingdom", referredByCode = null } = req.body;
+    const { name, email, password, phone, location = "United Kingdom", referredByCode = null } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Name, email, and password are required for registration." });
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ error: "Name, email, mobile phone number, and password are required for registration." });
     }
 
     const emailTrim = email.trim().toLowerCase();
@@ -87,6 +87,7 @@ router.post("/signup", async (req, res) => {
       id: `cust-${Date.now()}`,
       name: name.trim(),
       email: emailTrim,
+      phone: phone.trim(),
       subscriptionStatus: "Not subscribed",
       location: location.trim(),
       ordersCount: 0,
@@ -157,24 +158,26 @@ router.post("/forgot-password", async (req, res) => {
     const customersList = await fetchResource("customers");
     const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
 
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     const resetToken = crypto.randomBytes(24).toString("hex");
     const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
     const resetLink = `${appUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(emailTrim)}`;
 
     if (found) {
+      found.resetCode = resetCode;
       found.resetToken = resetToken;
       found.resetTokenExpires = Date.now() + 3600000; // 1 hour
       const updatedList = customersList.map((c: any) => c.id === found.id ? found : c);
       await saveResource("customers", updatedList);
-      await sendPasswordResetEmail(emailTrim, found.name, resetToken, resetLink);
+      await sendPasswordResetEmail(emailTrim, found.name, resetCode, resetLink);
     } else {
       // Send for guest / user without crashing
-      await sendPasswordResetEmail(emailTrim, 'Valued Customer', resetToken, resetLink);
+      await sendPasswordResetEmail(emailTrim, 'Valued Customer', resetCode, resetLink);
     }
 
     res.json({
       success: true,
-      message: "Password reset link dispatched to your email address."
+      message: "Password reset code dispatched to your email address."
     });
   } catch (err: any) {
     console.error("[Customer Auth] Forgot Password Error:", err);
@@ -185,9 +188,11 @@ router.post("/forgot-password", async (req, res) => {
 // POST: Perform Password Reset
 router.post("/reset-password", async (req, res) => {
   try {
-    const { token, email, newPassword } = req.body;
-    if (!token || !email || !newPassword) {
-      return res.status(400).json({ error: "Token, email, and new password are required." });
+    const { token, code, email, newPassword } = req.body;
+    const suppliedCodeOrToken = (code || token || '').toString().trim();
+
+    if (!email || !newPassword || !suppliedCodeOrToken) {
+      return res.status(400).json({ error: "Email, new password, and reset code or token are required." });
     }
 
     const emailTrim = email.trim().toLowerCase();
@@ -198,16 +203,20 @@ router.post("/reset-password", async (req, res) => {
       return res.status(404).json({ error: "Customer account not found." });
     }
 
-    if (found.resetToken && found.resetToken !== token) {
-      return res.status(400).json({ error: "Invalid password reset token." });
+    const matchesToken = found.resetToken && found.resetToken === suppliedCodeOrToken;
+    const matchesCode = found.resetCode && found.resetCode === suppliedCodeOrToken;
+
+    if (!matchesToken && !matchesCode) {
+      return res.status(400).json({ error: "Invalid password reset code or token. Please check your email." });
     }
 
     if (found.resetTokenExpires && found.resetTokenExpires < Date.now()) {
-      return res.status(400).json({ error: "Password reset token has expired. Please request a new link." });
+      return res.status(400).json({ error: "Password reset code has expired. Please request a new code." });
     }
 
     // Update password
     found.passwordHash = hashPassword(newPassword);
+    delete found.resetCode;
     delete found.resetToken;
     delete found.resetTokenExpires;
 
@@ -236,13 +245,22 @@ router.post("/request-verification", async (req, res) => {
       return res.status(400).json({ error: "Email address is required." });
     }
 
+    const emailTrim = email.trim().toLowerCase();
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const result = await sendEmailVerificationEmail(email.trim(), name, code);
+    const customersList = await fetchResource("customers");
+    const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    if (found) {
+      found.verificationCode = code;
+      found.verificationExpires = Date.now() + 15 * 60000; // 15 mins
+      await saveResource("customers", customersList);
+    }
+
+    await sendEmailVerificationEmail(emailTrim, name || found?.name || 'Valued Customer', code);
 
     res.json({
       success: true,
-      message: "Verification code sent to email.",
-      code // Included for frontend testing
+      message: "Verification code sent to your email address."
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to send verification code" });
@@ -252,26 +270,42 @@ router.post("/request-verification", async (req, res) => {
 // POST: Confirm Email Verification
 router.post("/verify-email", async (req, res) => {
   try {
-    const { email, name } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: "Email address is required." });
+    const { email, code, name } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email address and 6-digit verification code are required." });
     }
 
     const emailTrim = email.trim().toLowerCase();
+    const codeTrim = code.toString().trim();
     const customersList = await fetchResource("customers");
     const found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
 
-    if (found) {
-      found.emailVerified = true;
-      found.emailVerifiedAt = new Date().toISOString();
-      await saveResource("customers", customersList);
+    if (!found) {
+      return res.status(404).json({ error: "No customer account found for this email address." });
     }
+
+    if (found.verificationCode && found.verificationCode !== codeTrim) {
+      return res.status(400).json({ error: "Invalid verification code. Please check your email and try again." });
+    }
+
+    if (found.verificationExpires && found.verificationExpires < Date.now()) {
+      return res.status(400).json({ error: "Verification code has expired. Please request a new code." });
+    }
+
+    found.emailVerified = true;
+    found.emailVerifiedAt = new Date().toISOString();
+    delete found.verificationCode;
+    delete found.verificationExpires;
+    await saveResource("customers", customersList);
 
     await trackEmailVerified(emailTrim, name || found?.name);
 
+    const { passwordHash, ...safeCustomer } = found;
+
     res.json({
       success: true,
-      message: "Email address verified successfully!"
+      message: "Email address verified successfully!",
+      customer: safeCustomer
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to verify email address" });
