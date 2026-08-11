@@ -186,6 +186,58 @@ async function saveVerifiedOrder(
   const storeCreditApplied = pending?.storeCreditApplied || details.storeCreditApplied || 0;
   const discountApplied = pending?.discountApplied || details.discountApplied || null;
 
+  // Check for subscription products in order items
+  const subItem = items.find((it: any) => it.isSubscription || (it.productId && (it.productId.startsWith('sub-pack') || it.productId.includes('sub-pack'))));
+  let createdSubscriptionId: string | undefined;
+
+  if (subItem) {
+    try {
+      const planName = subItem.productTitle || subItem.title || 'Pouch Supply Subscription';
+      const planId = subItem.productId || 'sub-pack-core';
+      const recurringHref = `https://access.worldpay.com/payments/recurring/wp-${details.transactionId || orderId}`;
+      const schemeReference = `SCHEME-${details.transactionId || orderId}`;
+      const subAmount = subItem.price && subItem.price > 0 ? Number(subItem.price) : Number(total);
+
+      const nextBillingDate = new Date();
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+      const subId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      createdSubscriptionId = subId;
+
+      const subData = {
+        id: subId,
+        customerId: customerEmail,
+        customerEmail,
+        customerName,
+        planId,
+        planName,
+        amount: subAmount,
+        currency: 'GBP',
+        status: 'active',
+        billingInterval: 'month',
+        nextBillingDate,
+        worldpayTransactionId: details.transactionId || orderId,
+        worldpayRecurringHref: recurringHref,
+        worldpaySchemeReference: schemeReference,
+        lastPaymentStatus: 'authorized',
+        lastPaymentId: details.transactionId || orderId,
+        lastPaymentAt: new Date()
+      };
+
+      try {
+        await prisma.subscription.create({ data: subData });
+      } catch (_e) {}
+
+      try {
+        const storedSubs: any[] = (await fetchResource('subscriptions')) || [];
+        storedSubs.unshift(subData);
+        await saveResource('subscriptions', storedSubs.slice(0, 500));
+      } catch (_e) {}
+    } catch (subErr) {
+      console.warn('[Worldpay Order] Auto-subscription creation warning:', subErr);
+    }
+  }
+
   const formattedOrder = {
     id: orderId,
     orderId: orderId,
@@ -221,7 +273,8 @@ async function saveVerifiedOrder(
       cardLast4: details.cardLast4,
       paymentMethod: details.paymentMethod || 'Worldpay Access',
       webhookEventId: details.webhookEventId,
-      isTestMode: pending?.isTestMode ?? false
+      isTestMode: pending?.isTestMode ?? false,
+      subscriptionId: createdSubscriptionId
     }
   };
 

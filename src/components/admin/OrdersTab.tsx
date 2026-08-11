@@ -426,7 +426,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                           {order.fulfillmentStatus}
                         </span>
                       </td>
-                      <td className="p-4 text-right font-extrabold text-slate-900">£{order.total.toFixed(2)}</td>
+                      <td className="p-4 text-right font-extrabold text-slate-900">£{(Number(order.total) || 0).toFixed(2)}</td>
                       <td className="p-4 text-center flex items-center justify-center gap-2">
                         <button
                           onClick={() => setSelectedOrder(order)}
@@ -637,7 +637,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                         <span className="font-black text-sm text-emerald-400 flex items-center gap-1">
                           <CheckSquare className="w-3.5 h-3.5" /> Paid
                         </span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">£{selectedOrder.total.toFixed(2)} / cycle</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">£{(Number(selectedOrder.total) || 0).toFixed(2)} / cycle</span>
                       </div>
 
                       <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
@@ -864,8 +864,8 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                           </div>
 
                           <div className="text-right">
-                            <p className="text-xs font-black text-slate-900">£{(item.price * item.quantity).toFixed(2)}</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">£{item.price.toFixed(2)} × {item.quantity}</p>
+                            <p className="text-xs font-black text-slate-900">£{(Number((item.price || 0) * (item.quantity || 1))).toFixed(2)}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">£{(Number(item.price) || 0).toFixed(2)} × {item.quantity || 1}</p>
                           </div>
                         </div>
                       );
@@ -927,13 +927,13 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       {selectedOrder.paymentStatus || 'Paid'}
                     </span>
                   </div>
-                  <span className="text-xs font-extrabold text-slate-900">£{selectedOrder.total.toFixed(2)}</span>
+                  <span className="text-xs font-extrabold text-slate-900">£{(Number(selectedOrder.total) || 0).toFixed(2)}</span>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-slate-600">
-                    <span>Subtotal ({selectedOrder.items.length} items)</span>
-                    <span className="font-extrabold text-slate-800">£{selectedOrder.total.toFixed(2)}</span>
+                    <span>Subtotal ({selectedOrder.items ? selectedOrder.items.length : 0} items)</span>
+                    <span className="font-extrabold text-slate-800">£{(Number(selectedOrder.total) || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Shipping (Royal Mail)</span>
@@ -941,7 +941,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                   </div>
                   <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-100">
                     <span>Total Paid</span>
-                    <span>£{selectedOrder.total.toFixed(2)}</span>
+                    <span>£{(Number(selectedOrder.total) || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

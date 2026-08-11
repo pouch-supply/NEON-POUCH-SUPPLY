@@ -52,6 +52,19 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
       try { pendingObj = JSON.parse(pendingDataRaw); } catch (_e) {}
     }
 
+    const safeParseJson = async (res: Response) => {
+      const text = await res.text().catch(() => '');
+      try {
+        return JSON.parse(text);
+      } catch (_e) {
+        return {
+          success: false,
+          error: text.startsWith('<') ? 'Server returned HTML response' : text || `HTTP ${res.status}`,
+          message: text.startsWith('<') ? `Server returned an invalid response (${res.status})` : text
+        };
+      }
+    };
+
     try {
       const response = await fetch('/api/worldpay/verify-payment', {
         method: 'POST',
@@ -72,7 +85,7 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
         })
       });
 
-      const data = await response.json();
+      const data = await safeParseJson(response);
       setIsProcessing(false);
 
       if (response.ok && data.success) {
@@ -293,13 +306,19 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
       try {
         const res = await fetch(`/api/orders`);
         if (res.ok) {
-          const list: Order[] = await res.json();
-          const found = list.find(o => o.id === parsedOrderId);
-          if (found) {
-            setOrder(found);
-            const foundAny = found as any;
-            if (!parsedTxId && (foundAny.worldpayTxId || foundAny.gatewayTxId)) {
-              setTxId(foundAny.worldpayTxId || foundAny.gatewayTxId || '');
+          const text = await res.text().catch(() => '');
+          let list: Order[] = [];
+          try {
+            list = JSON.parse(text);
+          } catch (_e) {}
+          if (Array.isArray(list)) {
+            const found = list.find(o => o.id === parsedOrderId);
+            if (found) {
+              setOrder(found);
+              const foundAny = found as any;
+              if (!parsedTxId && (foundAny.worldpayTxId || foundAny.gatewayTxId)) {
+                setTxId(foundAny.worldpayTxId || foundAny.gatewayTxId || '');
+              }
             }
           }
         }

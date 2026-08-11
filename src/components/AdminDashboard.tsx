@@ -3101,17 +3101,21 @@ export default function AdminDashboard({
   }, [files, fileQuery]);
 
   const filteredCustomers = useMemo(() => {
-    return customers.filter(c => 
-      c.name.toLowerCase().includes(customerQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(customerQuery.toLowerCase()) ||
-      c.location.toLowerCase().includes(customerQuery.toLowerCase())
+    return (customers || []).filter(c => 
+      c && (
+        (c.name || '').toLowerCase().includes((customerQuery || '').toLowerCase()) ||
+        (c.email || '').toLowerCase().includes((customerQuery || '').toLowerCase()) ||
+        (c.location || '').toLowerCase().includes((customerQuery || '').toLowerCase())
+      )
     );
   }, [customers, customerQuery]);
 
   const filteredDiscounts = useMemo(() => {
-    return discounts.filter(d => 
-      d.title.toLowerCase().includes(discountQuery.toLowerCase()) ||
-      d.details.toLowerCase().includes(discountQuery.toLowerCase())
+    return (discounts || []).filter(d => 
+      d && (
+        (d.title || '').toLowerCase().includes((discountQuery || '').toLowerCase()) ||
+        (d.details || '').toLowerCase().includes((discountQuery || '').toLowerCase())
+      )
     );
   }, [discounts, discountQuery]);
 

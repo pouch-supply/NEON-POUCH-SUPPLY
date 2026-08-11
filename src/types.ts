@@ -360,6 +360,9 @@ export interface CartItem {
   image: string;
   quantity: number;
   vendor: string;
+  isSubscription?: boolean;
+  variant?: string;
+  sku?: string;
 }
 
 export interface BlogPost {

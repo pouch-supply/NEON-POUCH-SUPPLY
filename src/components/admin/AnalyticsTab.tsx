@@ -26,9 +26,9 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ stats }) => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs relative">
           <TrendingUp className="absolute top-5 right-5 text-indigo-600 h-5 w-5" />
           <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Total Revenue (All-Time)</span>
-          <h3 className="text-2xl font-black text-slate-900 mt-2">£{(stats.totalSales).toFixed(2)}</h3>
+          <h3 className="text-2xl font-black text-slate-900 mt-2">£{(Number(stats?.totalSales) || 0).toFixed(2)}</h3>
           <div className="text-[11px] text-emerald-600 font-bold mt-2 flex items-center gap-0.5">
-            <span>£{(stats.todaySales).toFixed(2)}</span> <span className="text-slate-400 font-medium">gross sales received today</span>
+            <span>£{(Number(stats?.todaySales) || 0).toFixed(2)}</span> <span className="text-slate-400 font-medium">gross sales received today</span>
           </div>
         </div>
 
@@ -36,12 +36,12 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ stats }) => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs relative">
           <Users className="absolute top-5 right-5 text-indigo-600 h-5 w-5" />
           <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Conversion rate</span>
-          <h3 className="text-2xl font-black text-slate-900 mt-2">{stats.conversionRate.toFixed(1)}%</h3>
+          <h3 className="text-2xl font-black text-slate-900 mt-2">{(Number(stats?.conversionRate) || 0).toFixed(1)}%</h3>
           <p className="text-[10px] text-slate-400 mt-1">
-            {stats.completedOrders} orders from {stats.totalStoreSessions} store sessions
+            {stats?.completedOrders || 0} orders from {stats?.totalStoreSessions || 0} store sessions
           </p>
           <div className="w-full bg-slate-100 h-1.5 mt-3 rounded-full overflow-hidden">
-            <div className="bg-indigo-600 h-full transition-all duration-500" style={{ width: `${Math.min(100, stats.conversionRate || 3.2)}%` }} />
+            <div className="bg-indigo-600 h-full transition-all duration-500" style={{ width: `${Math.min(100, stats?.conversionRate || 3.2)}%` }} />
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ stats }) => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs relative">
           <HardDrive className="absolute top-5 right-5 text-indigo-600 h-5 w-5" />
           <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Average Order Value</span>
-          <h3 className="text-2xl font-black text-slate-900 mt-2">£{stats.avgOrderValue.toFixed(2)}</h3>
+          <h3 className="text-2xl font-black text-slate-900 mt-2">£{(Number(stats?.avgOrderValue) || 0).toFixed(2)}</h3>
           <p className="text-[10px] text-slate-400 mt-1">Average cart check size across all sales</p>
         </div>
 

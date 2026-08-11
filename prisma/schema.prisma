@@ -237,3 +237,34 @@ model LayoutSetting {
   data                 Json?
   updatedAt            DateTime @updatedAt
 }
+
+model Subscription {
+  id                         String   @id @default(cuid())
+  customerId                 String?
+  customerEmail              String
+  customerName               String?
+  planId                     String
+  planName                   String
+  amount                     Decimal  @db.Decimal(10, 2)
+  currency                   String   @default("GBP")
+
+  status                     String   @default("active")
+  billingInterval            String   @default("month")
+  nextBillingDate            DateTime?
+
+  worldpayTransactionId      String?
+  worldpayRecurringHref      String?
+  worldpaySchemeReference    String?
+
+  lastPaymentStatus          String?
+  lastPaymentId              String?
+  lastPaymentAt              DateTime?
+  failedPaymentCount         Int      @default(0)
+
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@index([customerEmail])
+  @@index([customerId])
+  @@index([status])
+}

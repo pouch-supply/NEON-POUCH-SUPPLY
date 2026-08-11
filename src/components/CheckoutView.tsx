@@ -5,7 +5,7 @@ import {
   ShieldCheck, ArrowLeft, CreditCard, Lock, Terminal, 
   CheckCircle, AlertTriangle, AlertCircle, RefreshCw, 
   Truck, ShoppingCart, UserCheck, Check, X, Loader2,
-  Clock, ExternalLink
+  Clock, ExternalLink, Repeat
 } from 'lucide-react';
 import SubscriptionIcon from './SubscriptionIcon';
 import { calculateDiscountAmount, calculateVolumePrice } from '../utils';
@@ -162,6 +162,19 @@ export default function CheckoutView({
     }
   };
 
+  const safeParseJson = async (res: Response) => {
+    const text = await res.text().catch(() => '');
+    try {
+      return JSON.parse(text);
+    } catch (_e) {
+      return {
+        success: false,
+        error: text.startsWith('<') ? 'Server returned HTML response' : text || `HTTP ${res.status}`,
+        message: text.startsWith('<') ? `Server returned an invalid response (${res.status} ${res.statusText})` : text
+      };
+    }
+  };
+
   // Poll for payment status after redirect
   const pollPaymentStatus = (orderId: string) => {
     let attempts = 0;
@@ -176,7 +189,7 @@ export default function CheckoutView({
       
       try {
         const response = await fetch(`/api/worldpay/status?orderId=${orderId}`);
-        const data = await response.json();
+        const data = await safeParseJson(response);
 
         if (data.paid === true) {
           // Payment confirmed!
@@ -185,7 +198,7 @@ export default function CheckoutView({
           
           // Fetch full order details
           const orderResponse = await fetch(`/api/worldpay/order/${orderId}`);
-          const orderData = await orderResponse.json();
+          const orderData = await safeParseJson(orderResponse);
           
           setPaymentSuccessData({
             orderId: orderId,
@@ -359,7 +372,7 @@ export default function CheckoutView({
         })
       });
 
-      const sessionData = await sessionRes.json();
+      const sessionData = await safeParseJson(sessionRes);
       addLog('RESPONSE', sessionData);
 
       setIsProcessing(false);
@@ -744,13 +757,39 @@ export default function CheckoutView({
                   </button>
                 ) : (
                   <div className="space-y-3.5">
+                    {hasSubscription && (
+                      <div className="bg-indigo-950 text-white border-2 border-indigo-500 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-lg animate-pulse-subtle">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 bg-indigo-600 text-white rounded-xl shrink-0 shadow-md">
+                            <Repeat className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                              <span>Worldpay Subscription Payment</span>
+                            </p>
+                            <p className="text-[11px] text-indigo-200 mt-0.5">
+                              Automatic recurring monthly billing via Worldpay Access
+                            </p>
+                          </div>
+                        </div>
+                        <span className="bg-amber-400 text-slate-950 font-black text-[9.5px] px-3 py-1 rounded-full uppercase tracking-widest shrink-0 shadow-md border border-amber-300">
+                          RECURRING
+                        </span>
+                      </div>
+                    )}
+
                     {/* Option 1: Pay with Worldpay – Live */}
                     <div className="p-4 border-2 border-slate-900 bg-slate-50/50 rounded-2xl space-y-3">
                       <div className="flex justify-between items-center text-xs font-black text-slate-900 uppercase">
                         <span className="flex items-center gap-1.5">
                           <Lock className="h-4 w-4 text-emerald-600" /> Option 1: Live Payment
                         </span>
-                        <span className="bg-emerald-100 text-emerald-800 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">LIVE</span>
+                        <div className="flex items-center gap-1.5">
+                          {hasSubscription && (
+                            <span className="bg-indigo-100 text-indigo-900 text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">SUBSCRIPTION PAYMENT</span>
+                          )}
+                          <span className="bg-emerald-100 text-emerald-800 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">LIVE</span>
+                        </div>
                       </div>
                       <p className="text-[11px] text-slate-500 leading-relaxed">
                         Redirects to official Worldpay Access Hosted Payment Page to securely authorize your credit card.
@@ -769,7 +808,14 @@ export default function CheckoutView({
                         ) : (
                           <>
                             <CreditCard className="h-4 w-4 text-emerald-400" />
-                            <span>Pay with Worldpay – Live (£{finalTotalToPay.toFixed(2)})</span>
+                            {hasSubscription ? (
+                              <span className="flex items-center gap-2 font-black text-amber-300">
+                                <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
+                                Pay & Start Recurring Subscription – Live (£{finalTotalToPay.toFixed(2)})
+                              </span>
+                            ) : (
+                              <span>Pay with Worldpay – Live (£{finalTotalToPay.toFixed(2)})</span>
+                            )}
                           </>
                         )}
                       </button>
@@ -781,7 +827,12 @@ export default function CheckoutView({
                         <span className="flex items-center gap-1.5">
                           <ShieldCheck className="h-4 w-4 text-amber-600" /> Option 2: Test Sandbox
                         </span>
-                        <span className="bg-amber-200 text-amber-900 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">TEST / SANDBOX</span>
+                        <div className="flex items-center gap-1.5">
+                          {hasSubscription && (
+                            <span className="bg-amber-200 text-amber-950 text-[9px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">SUBSCRIPTION PAYMENT</span>
+                          )}
+                          <span className="bg-amber-200 text-amber-900 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">TEST / SANDBOX</span>
+                        </div>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
                         Simulates the complete payment authorization, receipt page, email dispatch, and order creation flow without charging real money.
@@ -800,7 +851,14 @@ export default function CheckoutView({
                         ) : (
                           <>
                             <ShieldCheck className="h-4 w-4 text-amber-200" />
-                            <span>Pay with Worldpay – Test (£{finalTotalToPay.toFixed(2)})</span>
+                            {hasSubscription ? (
+                              <span className="flex items-center gap-2 font-black text-white">
+                                <Repeat className="h-4 w-4 text-amber-200 shrink-0" />
+                                Pay & Start Recurring Subscription – Test (£{finalTotalToPay.toFixed(2)})
+                              </span>
+                            ) : (
+                              <span>Pay with Worldpay – Test (£{finalTotalToPay.toFixed(2)})</span>
+                            )}
                           </>
                         )}
                       </button>

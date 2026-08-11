@@ -17,6 +17,7 @@ import discountsRouter from "./backend/routes/discounts";
 import customPagesRouter from "./backend/routes/customPages";
 import blogsRouter from "./backend/routes/blogs";
 import worldpayRouter from "./backend/routes/worldpay";
+import subscriptionsRouter from "./backend/routes/subscriptions";
 import structureRouter from "./backend/routes/structure";
 import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
@@ -539,6 +540,7 @@ export async function createExpressApp() {
   app.use("/api/custompages", customPagesRouter);
   app.use("/api/blogs", blogsRouter);
   app.use("/api/worldpay", worldpayRouter);
+  app.use("/api/worldpay/subscriptions", subscriptionsRouter);
   app.use("/api/folder-structure", structureRouter);
   app.use("/api/email", emailRouter);
   app.use("/api/klaviyo", klaviyoRouter);
@@ -548,6 +550,28 @@ export async function createExpressApp() {
     return royalMailRouter(req, res, next);
   });
   app.use("/api/contact-messages", contactMessagesRouter);
+
+  // Fallback 404 handler for unhandled /api endpoints (ensures JSON response instead of HTML)
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({
+      success: false,
+      error: "API endpoint not found",
+      message: `No route found for ${req.method} ${req.originalUrl}`
+    });
+  });
+
+  // Global error handling middleware for API routes
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error("[Express Error Handler]", err);
+    if (req.originalUrl.startsWith("/api") || req.url.startsWith("/api")) {
+      return res.status(err.status || 500).json({
+        success: false,
+        error: err.message || "Internal Server Error",
+        message: err.message || "An unexpected server error occurred"
+      });
+    }
+    next(err);
+  });
 
   // Vite middleware for development or static serving for production
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {

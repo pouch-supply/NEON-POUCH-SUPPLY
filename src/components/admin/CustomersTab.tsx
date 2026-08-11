@@ -106,17 +106,23 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 
   // Check if customer is subscribed from customer record or placed subscription orders
   const isCustomerSubscribed = (cust: CustomerItem) => {
+    if (!cust) return false;
     if (cust.subscriptionStatus === 'Subscribed') return true;
+    const emailLower = (cust.email || '').toLowerCase();
+    const nameLower = (cust.name || '').toLowerCase();
     const cOrders = orders.filter(o => 
-      (o.customerEmail && o.customerEmail.toLowerCase() === cust.email.toLowerCase()) || 
-      (o.customerName && o.customerName.toLowerCase() === cust.name.toLowerCase())
+      (o.customerEmail && o.customerEmail.toLowerCase() === emailLower) || 
+      (o.customerName && o.customerName.toLowerCase() === nameLower)
     );
     return cOrders.some(isSubOrder);
   };
 
   // Get matching orders for selected customer
   const customerOrders = selectedCustomer 
-    ? orders.filter(o => o.customerEmail.toLowerCase() === selectedCustomer.email.toLowerCase() || o.customerName.toLowerCase() === selectedCustomer.name.toLowerCase())
+    ? orders.filter(o => 
+        (o.customerEmail && o.customerEmail.toLowerCase() === (selectedCustomer.email || '').toLowerCase()) || 
+        (o.customerName && o.customerName.toLowerCase() === (selectedCustomer.name || '').toLowerCase())
+      )
     : [];
 
   const isSelectedSubscribed = selectedCustomer ? isCustomerSubscribed(selectedCustomer) : false;
@@ -199,12 +205,12 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                   >
                     <td className="p-4 font-black text-slate-900 flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[11px] shrink-0">
-                        {cust.name.slice(0, 1).toUpperCase()}
+                        {(cust.name || 'C').slice(0, 1).toUpperCase()}
                       </div>
-                      <span>{cust.name}</span>
+                      <span>{cust.name || 'Unnamed Customer'}</span>
                     </td>
-                    <td className="p-4 text-slate-500 font-medium">{cust.email}</td>
-                    <td className="p-4 text-slate-700">{cust.location}</td>
+                    <td className="p-4 text-slate-500 font-medium">{cust.email || '—'}</td>
+                    <td className="p-4 text-slate-700">{cust.location || 'United Kingdom'}</td>
                     <td className="p-4 text-center">
                       {isCustomerSubscribed(cust) ? (
                         <span className="inline-flex items-center gap-1 py-1 px-2.5 rounded-full font-black text-[9.5px] uppercase tracking-wider bg-indigo-600 text-white shadow-2xs">
@@ -216,8 +222,8 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-center font-bold text-slate-800">{cust.ordersCount} orders</td>
-                    <td className="p-4 text-right font-extrabold text-slate-950">£{cust.amountSpent.toFixed(2)}</td>
+                    <td className="p-4 text-center font-bold text-slate-800">{cust.ordersCount || 0} orders</td>
+                    <td className="p-4 text-right font-extrabold text-slate-950">£{(Number(cust.amountSpent) || 0).toFixed(2)}</td>
                     <td className="p-4 text-center">
                       <button
                         onClick={(e) => {
@@ -246,12 +252,12 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
             <div className="bg-slate-900 text-white p-5 sm:p-6 flex justify-between items-start">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-black text-amber-400 shrink-0">
-                  {selectedCustomer.name.slice(0, 1).toUpperCase()}
+                  {(selectedCustomer.name || 'C').slice(0, 1).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-lg font-black tracking-tight">{selectedCustomer.name}</h3>
+                  <h3 className="text-lg font-black tracking-tight">{selectedCustomer.name || 'Unnamed Customer'}</h3>
                   <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                    <Mail className="h-3 w-3" /> {selectedCustomer.email}
+                    <Mail className="h-3 w-3" /> {selectedCustomer.email || '—'}
                   </p>
                 </div>
               </div>
@@ -269,11 +275,11 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Orders</span>
-                  <strong className="text-slate-900 text-sm font-black">{selectedCustomer.ordersCount}</strong>
+                  <strong className="text-slate-900 text-sm font-black">{selectedCustomer.ordersCount || 0}</strong>
                 </div>
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Spent</span>
-                  <strong className="text-emerald-700 text-sm font-black">£{selectedCustomer.amountSpent.toFixed(2)}</strong>
+                  <strong className="text-emerald-700 text-sm font-black">£{(Number(selectedCustomer.amountSpent) || 0).toFixed(2)}</strong>
                 </div>
                 <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Subscription</span>
@@ -379,7 +385,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                               </p>
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-3">
-                              <span className="font-black text-slate-900 text-xs">£{ord.total.toFixed(2)}</span>
+                              <span className="font-black text-slate-900 text-xs">£{(Number(ord.total) || 0).toFixed(2)}</span>
                               <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
                                 ord.fulfillmentStatus === 'Fulfilled' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                               }`}>
