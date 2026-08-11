@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Collection, Product, Customer } from '../types';
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
+import { calculateVolumePrice } from '../utils';
 import { 
   ArrowLeft, 
   SlidersHorizontal, 
@@ -783,20 +784,46 @@ export default function CollectionDetailView({
                             </span>
                           </div>
 
-                          {/* Pricing block */}
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-sm sm:text-base font-black text-slate-900">
-                              £{(prod.price * localQty).toFixed(2)}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {localQty > 1 ? `(£${prod.price.toFixed(2)} each)` : 'each'}
-                            </span>
-                          </div>
+                          {/* Pricing block with Volume Tier Calculations */}
+                          {(() => {
+                            const volumeTotal = calculateVolumePrice(prod.price, localQty);
+                            const standardTotal = Number((prod.price * localQty).toFixed(2));
+                            const hasVolumeDiscount = volumeTotal < standardTotal;
+                            const effectiveUnitPrice = (volumeTotal / localQty).toFixed(2);
 
-                          {/* Subscription saving badge with dynamic calculation */}
-                          <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-100/70 text-emerald-800 font-bold text-[9px] py-1 px-2.5 rounded-lg">
-                            <span>Save from £{(prod.price * 0.8).toFixed(2)} with Subscription</span>
-                            <span>🏷️</span>
+                            return (
+                              <div className="space-y-1">
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                  <span className="text-sm sm:text-base font-black text-slate-900">
+                                    £{volumeTotal.toFixed(2)}
+                                  </span>
+                                  {hasVolumeDiscount && (
+                                    <span className="text-[10.5px] font-bold text-slate-400 line-through">
+                                      £{standardTotal.toFixed(2)}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-slate-500 font-medium">
+                                    {localQty > 1 ? `(£${effectiveUnitPrice} each)` : 'each'}
+                                  </span>
+                                </div>
+
+                                {hasVolumeDiscount && (
+                                  <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 font-extrabold text-[9px] py-0.5 px-2 rounded-md">
+                                    <span>Volume Savings Applied! (Saved £{(standardTotal - volumeTotal).toFixed(2)})</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Volume Tiers Quick Indicator */}
+                          <div className="flex items-center gap-1 text-[8.5px] font-bold text-slate-500 bg-slate-50 p-1.5 rounded-lg border border-slate-150">
+                            <span className="text-slate-700 font-extrabold shrink-0">Bundles:</span>
+                            <span className={`px-1 rounded ${localQty === 5 ? 'bg-indigo-600 text-white font-extrabold' : 'text-slate-600'}`}>5=£23.50</span>
+                            <span>•</span>
+                            <span className={`px-1 rounded ${localQty === 10 ? 'bg-indigo-600 text-white font-extrabold' : 'text-slate-600'}`}>10=£42.00</span>
+                            <span>•</span>
+                            <span className={`px-1 rounded ${localQty === 20 ? 'bg-indigo-600 text-white font-extrabold' : 'text-slate-600'}`}>20=£77.00</span>
                           </div>
 
                         </div>

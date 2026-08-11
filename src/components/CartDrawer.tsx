@@ -3,7 +3,7 @@ import { CartItem, Discount, Customer } from '../types';
 import { X, Trash2, Plus, Minus, Ticket, Check, ShieldCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SubscriptionIcon from './SubscriptionIcon';
-import { calculateDiscountAmount } from '../utils';
+import { calculateDiscountAmount, calculateVolumePrice } from '../utils';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -37,7 +37,14 @@ export default function CartDrawer({
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
 
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const getItemTotal = (item: CartItem) => {
+    if (item.productId && (item.productId.startsWith('sub-pack-') || item.productId.includes('sub-pack') || item.isSubscription)) {
+      return item.price * item.quantity;
+    }
+    return calculateVolumePrice(item.price, item.quantity);
+  };
+
+  const subtotal = cartItems.reduce((acc, item) => acc + getItemTotal(item), 0);
 
   const discountValue = calculateDiscountAmount(
     appliedDiscount,
@@ -215,7 +222,7 @@ export default function CartDrawer({
                         </div>
 
                         <div className="flex flex-col items-end gap-3 shrink-0">
-                          <span className="font-extrabold text-slate-900 text-xs">£{(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="font-extrabold text-slate-900 text-xs">£{getItemTotal(item).toFixed(2)}</span>
                           <button
                             onClick={() => onRemoveItem(item.productId)}
                             className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 hover:bg-red-100/60 rounded-md cursor-pointer transition-colors"

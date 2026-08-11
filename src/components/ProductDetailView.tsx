@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Product, Customer } from '../types';
 import { ArrowLeft, ShoppingCart, Heart, Shield, RotateCcw, Truck, Check, Sparkles } from 'lucide-react';
 import { cleanMediaUrl, PLACEHOLDER_IMAGE } from '../utils/mediaUtils';
+import { calculateVolumePrice } from '../utils';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -292,13 +293,12 @@ export default function ProductDetailView({
               <span className="absolute top-4 left-4 bg-indigo-600 text-white text-[9px] font-black uppercase py-1 px-3 rounded-full border border-indigo-500 tracking-wider">
                 {product.vendor}
               </span>
-              {((activeVariant ? activeVariant.inventory : product.inventory) < 10 && (activeVariant ? activeVariant.inventory : product.inventory) > 0) && (
-                <span className="absolute top-4 right-4 bg-amber-500 text-slate-950 text-[9px] font-black uppercase py-1 px-3 rounded-full">
-                  Only {activeVariant ? activeVariant.inventory : product.inventory} Left
+              {(activeVariant ? activeVariant.inventory : product.inventory) > 0 ? (
+                <span className="absolute top-4 right-4 bg-emerald-600 text-white text-[9px] font-black uppercase py-1 px-3 rounded-full shadow-sm">
+                  In Stock
                 </span>
-              )}
-              {(activeVariant ? activeVariant.inventory : product.inventory) === 0 && (
-                <span className="absolute top-4 right-4 bg-red-650 text-white text-[9px] font-black uppercase py-1 px-3 rounded-full">
+              ) : (
+                <span className="absolute top-4 right-4 bg-rose-600 text-white text-[9px] font-black uppercase py-1 px-3 rounded-full shadow-sm">
                   Sold Out
                 </span>
               )}
@@ -368,27 +368,47 @@ export default function ProductDetailView({
                 </div>
               </div>
 
-              {/* Price Row */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-150/80 flex items-baseline gap-4 flex-wrap">
-                <span className="text-2xl font-black text-slate-900">
-                  £{((activeVariant ? activeVariant.price : product.price) * quantity).toFixed(2)}
-                </span>
-                {quantity > 1 && (
-                  <span className="text-xs text-slate-500 font-bold">
-                    (£{(activeVariant ? activeVariant.price : product.price).toFixed(2)} each)
-                  </span>
-                )}
-                {product.compareAtPrice > (activeVariant ? activeVariant.price : product.price) && (
-                  <>
-                    <span className="text-xs text-slate-400 line-through font-medium">
-                      £{(product.compareAtPrice * quantity).toFixed(2)}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wide">
-                      Save £{((product.compareAtPrice - (activeVariant ? activeVariant.price : product.price)) * quantity).toFixed(2)}
-                    </span>
-                  </>
-                )}
-              </div>
+              {/* Price Row with Volume Tier Pricing */}
+              {(() => {
+                const baseUnitPrice = activeVariant ? activeVariant.price : product.price;
+                const volumeTotal = calculateVolumePrice(baseUnitPrice, quantity);
+                const standardTotal = Number((baseUnitPrice * quantity).toFixed(2));
+                const hasVolumeDiscount = volumeTotal < standardTotal;
+                const effectiveUnitPrice = (volumeTotal / quantity).toFixed(2);
+
+                return (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-150/80 space-y-2">
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span className="text-2xl font-black text-slate-900">
+                        £{volumeTotal.toFixed(2)}
+                      </span>
+                      {hasVolumeDiscount && (
+                        <span className="text-sm font-bold text-slate-400 line-through">
+                          £{standardTotal.toFixed(2)}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-500 font-bold">
+                        {quantity > 1 ? `(£${effectiveUnitPrice} each)` : 'each'}
+                      </span>
+                      {hasVolumeDiscount && (
+                        <span className="text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 uppercase tracking-wide">
+                          Volume Savings Applied! (Saved £{(standardTotal - volumeTotal).toFixed(2)})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Volume Tiers Quick Indicator */}
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 pt-1 border-t border-slate-200/60 flex-wrap">
+                      <span className="text-slate-800 font-extrabold">Volume Pricing:</span>
+                      <span className={`px-1.5 py-0.5 rounded ${quantity === 5 ? 'bg-indigo-600 text-white font-extrabold' : 'bg-slate-100 text-slate-700'}`}>5 = £23.50</span>
+                      <span>•</span>
+                      <span className={`px-1.5 py-0.5 rounded ${quantity === 10 ? 'bg-indigo-600 text-white font-extrabold' : 'bg-slate-100 text-slate-700'}`}>10 = £42.00</span>
+                      <span>•</span>
+                      <span className={`px-1.5 py-0.5 rounded ${quantity === 20 ? 'bg-indigo-600 text-white font-extrabold' : 'bg-slate-100 text-slate-700'}`}>20 = £77.00</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Description */}
               <div className="space-y-2">
@@ -461,13 +481,12 @@ export default function ProductDetailView({
                     <span className="px-5 font-extrabold text-xs text-[#1a1c1d] min-w-[40px] text-center">{quantity}</span>
                     <button
                       type="button"
-                      onClick={() => setQuantity(Math.min(activeVariant ? activeVariant.inventory : product.inventory, quantity + 1))}
+                      onClick={() => setQuantity(Math.min(100, quantity + 1))}
                       className="px-3.5 py-2 hover:bg-slate-200 text-slate-600 font-bold transition-colors cursor-pointer select-none"
                     >
                       +
                     </button>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-extrabold uppercase">({activeVariant ? activeVariant.inventory : product.inventory} available)</span>
                 </div>
               )}
 

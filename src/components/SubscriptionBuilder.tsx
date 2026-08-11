@@ -656,7 +656,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
                               >
                                 {prod.concreteVariants!.map(v => (
                                   <option key={v.id || v.name} value={v.id}>
-                                    {v.name} - £{v.price.toFixed(2)}
+                                    {v.name}
                                   </option>
                                 ))}
                               </select>
@@ -690,7 +690,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
                         </div>
 
                         <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
-                          <span className="text-xs font-bold text-slate-900">£{currentPrice.toFixed(2)} / each</span>
+                          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">Included in plan</span>
                           
                           <div className="flex items-center gap-1">
                             {countAllocated > 0 && (

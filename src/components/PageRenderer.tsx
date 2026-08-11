@@ -965,7 +965,7 @@ function ClearanceSaleSection({
                     }}
                     className="w-full bg-[#FAFAFA] hover:bg-red-50 hover:border-red-200 transition-all border border-slate-100 py-2 px-2.5 rounded-xl flex items-center justify-between text-[9px] text-slate-500 font-bold cursor-pointer font-sans"
                   >
-                    <span className="text-red-600 font-bold">Limited stocks available</span>
+                    <span className="text-emerald-700 font-bold">In Stock</span>
                     <span className="text-slate-700 underline flex items-center gap-0.5 hover:text-red-600 font-extrabold">Final Sale →</span>
                   </div>
 

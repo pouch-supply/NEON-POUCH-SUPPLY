@@ -1,5 +1,33 @@
 import { Discount, CartItem } from './types';
 
+/**
+ * Calculates total price for a product based on volume pricing tiers:
+ * - 1 to 4 cans: £4.99 each (1 = £4.99, 2 = £9.98, 3 = £14.97, 4 = £19.96)
+ * - 5 cans = £23.50 (£4.70/can)
+ * - 10 cans = £42.00 (£4.20/can)
+ * - 20 cans = £77.00 (£3.85/can)
+ */
+export function calculateVolumePrice(basePrice: number, quantity: number): number {
+  if (quantity <= 0) return 0;
+
+  // Scale ratio if base price is custom (default base is £4.99)
+  const ratio = basePrice > 0 ? basePrice / 4.99 : 1;
+
+  const twenties = Math.floor(quantity / 20);
+  let rem = quantity % 20;
+
+  const tens = Math.floor(rem / 10);
+  rem = rem % 10;
+
+  const fives = Math.floor(rem / 5);
+  rem = rem % 5;
+
+  const singles = rem;
+
+  const totalBaseTiers = (twenties * 77.00) + (tens * 42.00) + (fives * 23.50) + (singles * 4.99);
+  return Number((totalBaseTiers * ratio).toFixed(2));
+}
+
 export function calculateDiscountAmount(
   discount: Discount | null,
   cartItems: CartItem[],

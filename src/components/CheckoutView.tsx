@@ -8,7 +8,7 @@ import {
   Clock, ExternalLink
 } from 'lucide-react';
 import SubscriptionIcon from './SubscriptionIcon';
-import { calculateDiscountAmount } from '../utils';
+import { calculateDiscountAmount, calculateVolumePrice } from '../utils';
 
 interface CheckoutViewProps {
   cartItems: CartItem[];
@@ -227,8 +227,15 @@ export default function CheckoutView({
     setPollingInterval(interval);
   };
 
+  const getItemTotal = (item: CartItem) => {
+    if (item.productId && (item.productId.startsWith('sub-pack-') || item.productId.includes('sub-pack') || item.isSubscription)) {
+      return item.price * item.quantity;
+    }
+    return calculateVolumePrice(item.price, item.quantity);
+  };
+
   // Calculate totals
-  const rawSubtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const rawSubtotal = cartItems.reduce((acc, item) => acc + getItemTotal(item), 0);
   const discountValue = calculateDiscountAmount(currentDiscount, cartItems, rawSubtotal);
   const subtotalAfterDiscount = Math.max(rawSubtotal - discountValue, 0);
   const deliveryCost = subtotalAfterDiscount >= 40 ? 0 : 2.99;
@@ -882,7 +889,7 @@ export default function CheckoutView({
                     <h4 className="font-extrabold text-slate-800 text-[11px]">{item.productTitle}</h4>
                     <p className="text-slate-400 text-[10px] font-bold">Qty: {item.quantity} × £{item.price.toFixed(2)}</p>
                   </div>
-                  <span className="font-black text-slate-800 text-[11px]">£{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-black text-slate-800 text-[11px]">£{getItemTotal(item).toFixed(2)}</span>
                 </div>
               ))}
             </div>
