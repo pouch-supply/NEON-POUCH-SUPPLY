@@ -23,6 +23,7 @@ import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
 import royalMailRouter from "./backend/routes/royalMail";
 import contactMessagesRouter from "./backend/routes/contactMessages";
+import authRouter, { handleGoogleOAuthCallback } from "./backend/routes/auth";
 
 import mediaRouter from "./backend/routes/media";
 import { uploadToCloudinary, isCloudinaryConfigured } from "./backend/services/cloudinary";
@@ -550,6 +551,8 @@ export async function createExpressApp() {
     return royalMailRouter(req, res, next);
   });
   app.use("/api/contact-messages", contactMessagesRouter);
+  app.use("/api/auth", authRouter);
+  app.get(["/auth/google/callback", "/auth/google/callback/"], handleGoogleOAuthCallback);
 
   // Fallback 404 handler for unhandled /api endpoints (ensures JSON response instead of HTML)
   app.all("/api/*", (req, res) => {

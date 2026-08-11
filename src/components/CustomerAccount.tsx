@@ -58,6 +58,24 @@ export default function CustomerAccount({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
+  useEffect(() => {
+    const handleOAuthMessage = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+        return;
+      }
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.customer) {
+        onLogin(event.data.customer);
+        setIsGoogleModalOpen(false);
+        setSuccessMsg(`Logged in with Google (${event.data.customer.email})!`);
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        setErrorMsg(event.data.error || 'Google Authentication failed.');
+      }
+    };
+    window.addEventListener('message', handleOAuthMessage);
+    return () => window.removeEventListener('message', handleOAuthMessage);
+  }, [onLogin]);
+
   const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string }) => {
     const targetEmail = account.email.toLowerCase().trim();
     setIsSubmitting(true);
