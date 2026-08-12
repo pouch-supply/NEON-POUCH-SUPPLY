@@ -20,6 +20,11 @@ import {
   sendAdminNewOrderNotification
 } from '../services/emailService';
 import {
+  verifyRecaptchaToken,
+  getRecaptchaSettings,
+  saveRecaptchaSettings
+} from '../services/recaptchaService';
+import {
   renderOrderConfirmationTemplate,
   renderOrderProcessingTemplate,
   renderOrderShippedTemplate,
@@ -243,12 +248,46 @@ router.post('/send-trigger', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/email/recaptcha-settings - Return reCAPTCHA settings
+router.get('/recaptcha-settings', async (_req: Request, res: Response) => {
+  try {
+    const settings = await getRecaptchaSettings();
+    res.json({
+      enabled: settings.enabled,
+      siteKey: settings.siteKey,
+      minScore: settings.minScore,
+      hasSecretKey: Boolean(settings.secretKey && settings.secretKey.trim().length > 0)
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch reCAPTCHA settings' });
+  }
+});
+
+// POST /api/email/recaptcha-settings - Save reCAPTCHA settings
+router.post('/recaptcha-settings', async (req: Request, res: Response) => {
+  try {
+    const updated = await saveRecaptchaSettings(req.body);
+    res.json({ success: true, settings: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to save reCAPTCHA settings' });
+  }
+});
+
 // POST /api/email/contact - Handle contact form submissions & send email via Resend
 router.post('/contact', async (req: Request, res: Response) => {
   try {
-    const { name, email, subject, message, phone } = req.body;
+    const { name, email, subject, message, phone, recaptchaToken, token } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Name, email, and message are required fields.' });
+    }
+
+    // Verify Google reCAPTCHA v3 score
+    const captchaCheck = await verifyRecaptchaToken(recaptchaToken || token, 'contact_form_submit');
+    if (!captchaCheck.success) {
+      console.warn('[ContactForm] reCAPTCHA check failed:', captchaCheck);
+      return res.status(403).json({
+        error: captchaCheck.error || 'reCAPTCHA security validation failed. Automated submission detected.'
+      });
     }
 
     const settings = await getEmailSettings();
@@ -469,9 +508,18 @@ router.post('/contact', async (req: Request, res: Response) => {
 // POST /api/email/subscribe - Handle newsletter subscription & send welcome email
 router.post('/subscribe', async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, recaptchaToken, token } = req.body;
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email address is required.' });
+    }
+
+    // Verify Google reCAPTCHA v3 score
+    const captchaCheck = await verifyRecaptchaToken(recaptchaToken || token, 'newsletter_subscribe');
+    if (!captchaCheck.success) {
+      console.warn('[Newsletter] reCAPTCHA check failed:', captchaCheck);
+      return res.status(403).json({
+        error: captchaCheck.error || 'reCAPTCHA security check failed. Automated subscription blocked.'
+      });
     }
 
     const emailTrim = email.trim().toLowerCase();

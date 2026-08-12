@@ -563,11 +563,19 @@ export async function createRoyalMailShipment(orderId: string, options: {
       senderObj.emailAddress = settings.senderAddress.contactEmail.trim();
     }
 
+    const totalVal = Number(order.total) || 10;
+    const shippingVal = Number(order.shipping) || Number(selectedRate?.price) || 0;
+    const subtotalVal = Number(order.subtotal) || (totalVal - shippingVal > 0 ? totalVal - shippingVal : totalVal);
+
     const payload: CreateRoyalMailOrderRequest = {
       orderReference: String(order.id),
       isRecipientABusiness: Boolean(recipient.companyName?.trim()),
       recipient: recipientObj,
       sender: senderObj,
+      subtotal: Math.round(subtotalVal * 100) / 100,
+      shippingCostCharged: Math.round(shippingVal * 100) / 100,
+      total: Math.round(totalVal * 100) / 100,
+      currencyCode: 'GBP',
       orderDate: order.createdAt || new Date().toISOString(),
       packages: [
         {

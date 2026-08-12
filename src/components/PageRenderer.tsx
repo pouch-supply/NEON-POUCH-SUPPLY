@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import PremiumSlideshow from './PremiumSlideshow';
 import PlansCanOverlay from './PlansCanOverlay';
+import { useRecaptcha } from '../hooks/useRecaptcha';
 
 interface BrandsWeOfferSectionProps {
   sec: PageSection;
@@ -1362,6 +1363,7 @@ interface ContactFormSectionProps {
 }
 
 function ContactFormSection({ sec }: ContactFormSectionProps) {
+  const { executeRecaptcha } = useRecaptcha();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -1392,10 +1394,11 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
     setSuccessNote('');
 
     try {
+      const recaptchaToken = await executeRecaptcha('contact_form_submit');
       const res = await fetch('/api/email/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, recaptchaToken })
       });
 
       const data = await res.json();
@@ -1600,6 +1603,22 @@ function ContactFormSection({ sec }: ContactFormSectionProps) {
                     </>
                   )}
                 </button>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[10px] text-slate-400 font-medium border-t border-slate-100">
+                  <span className="flex items-center gap-1.5 text-slate-500">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    Protected by Google reCAPTCHA v3
+                  </span>
+                  <div className="flex gap-2 text-slate-400">
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      Privacy
+                    </a>
+                    <span>•</span>
+                    <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      Terms
+                    </a>
+                  </div>
+                </div>
               </form>
             )}
           </div>

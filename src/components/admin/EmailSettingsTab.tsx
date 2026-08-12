@@ -5,6 +5,7 @@ import {
   ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw, Truck
 } from 'lucide-react';
 import { RoyalMailSettingsCard } from './RoyalMailSettingsCard';
+import { RecaptchaSettingsCard } from './RecaptchaSettingsCard';
 
 export interface EmailSettings {
   enabled: boolean;
@@ -479,6 +480,10 @@ export function EmailSettingsTab() {
               {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Save Email Configuration
             </button>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
+            <RecaptchaSettingsCard />
           </div>
         </div>
       )}

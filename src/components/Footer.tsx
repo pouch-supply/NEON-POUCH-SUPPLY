@@ -3,6 +3,7 @@ import { Mail, ShieldCheck, Truck, RefreshCw, Sparkles, HelpCircle, ArrowRight }
 import { LayoutSettings } from '../types';
 import { klaviyoTrackNewsletterSubscribe } from '../utils/klaviyo';
 import { cleanMediaUrl } from '../utils/mediaUtils';
+import { useRecaptcha } from '../hooks/useRecaptcha';
 
 interface FooterProps {
   onNavigate?: (tab: string) => void;
@@ -13,6 +14,7 @@ export default function Footer({ onNavigate, layoutSettings }: FooterProps) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const { executeRecaptcha } = useRecaptcha();
 
   const handleSubscribe = async () => {
     setErrorMsg('');
@@ -24,10 +26,11 @@ export default function Footer({ onNavigate, layoutSettings }: FooterProps) {
     setSubscribed(true);
 
     try {
+      const recaptchaToken = await executeRecaptcha('newsletter_subscribe');
       await fetch('/api/email/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() })
+        body: JSON.stringify({ email: email.trim(), recaptchaToken })
       });
     } catch (err) {
       console.warn('Newsletter subscribe email dispatch warning:', err);
@@ -226,6 +229,10 @@ export default function Footer({ onNavigate, layoutSettings }: FooterProps) {
               {errorMsg && (
                 <p className="text-red-400 text-[10px] font-bold leading-none">{errorMsg}</p>
               )}
+              <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium pt-1">
+                <ShieldCheck className="h-3 w-3 text-emerald-500 shrink-0" />
+                <span>Protected by Google reCAPTCHA v3</span>
+              </div>
             </div>
           )}
         </div>
