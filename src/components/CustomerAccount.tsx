@@ -77,7 +77,15 @@ export default function CustomerAccount({
     return () => window.removeEventListener('message', handleOAuthMessage);
   }, [onLogin]);
 
-  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string }) => {
+  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string; customer?: any }) => {
+    if (account.customer) {
+      localStorage.setItem('ps_logged_in_customer', JSON.stringify(account.customer));
+      onLogin(account.customer);
+      setIsGoogleModalOpen(false);
+      setSuccessMsg(`Signed in with Google (${account.customer.email})!`);
+      return;
+    }
+
     const targetEmail = account.email.toLowerCase().trim();
     setIsSubmitting(true);
     setErrorMsg('');
@@ -96,9 +104,10 @@ export default function CustomerAccount({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Google authentication failed.');
 
+      localStorage.setItem('ps_logged_in_customer', JSON.stringify(data.customer));
       onLogin(data.customer);
       setIsGoogleModalOpen(false);
-      setSuccessMsg(`Logged in with Google (${targetEmail})!`);
+      setSuccessMsg(`Signed in with Google (${targetEmail})!`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Server connection error during Google sign in.');
     } finally {

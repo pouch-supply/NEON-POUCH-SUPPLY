@@ -111,7 +111,15 @@ export default function CustomerDrawer({
   }, [onLogin]);
   const [customGmailInput, setCustomGmailInput] = useState('');
 
-  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string }) => {
+  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string; customer?: any }) => {
+    if (account.customer) {
+      localStorage.setItem('ps_logged_in_customer', JSON.stringify(account.customer));
+      onLogin(account.customer);
+      setIsGoogleModalOpen(false);
+      setSuccessMsg(`Signed in with Google (${account.customer.email})!`);
+      return;
+    }
+
     const targetEmail = account.email.toLowerCase().trim();
     if (!targetEmail || !targetEmail.includes('@')) {
       setErrorMsg('Please enter a valid Gmail address.');
@@ -134,9 +142,10 @@ export default function CustomerDrawer({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Google login failed.');
 
+      localStorage.setItem('ps_logged_in_customer', JSON.stringify(data.customer));
       onLogin(data.customer);
       setIsGoogleModalOpen(false);
-      setSuccessMsg(`Logged in with Google (${targetEmail})!`);
+      setSuccessMsg(`Signed in with Google (${targetEmail})!`);
     } catch (err: any) {
       setErrorMsg(err.message || 'Server connection error during Google sign in.');
     } finally {

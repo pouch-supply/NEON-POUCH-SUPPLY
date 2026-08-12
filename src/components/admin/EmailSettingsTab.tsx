@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Mail, Send, CheckCircle2, AlertCircle, Eye, Settings, RefreshCw, 
+  Mail, Send, CheckCircle, CheckCircle2, AlertCircle, Eye, Settings, RefreshCw, 
   Trash2, ShieldCheck, Zap, Lock, Filter, Smartphone, Monitor, Code, 
   ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw, Truck
 } from 'lucide-react';
@@ -102,6 +102,11 @@ export function EmailSettingsTab() {
   const [testTemplate, setTestTemplate] = useState('order_confirmation');
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+
+  // Test Klaviyo state
+  const [testKlaviyoEmail, setTestKlaviyoEmail] = useState('scottkivlinpouch@gmail.com');
+  const [sendingKlaviyoTest, setSendingKlaviyoTest] = useState(false);
+  const [testKlaviyoResult, setTestKlaviyoResult] = useState<any>(null);
 
   // Fetch all configuration and logs on load
   const loadData = async () => {
@@ -230,6 +235,55 @@ export function EmailSettingsTab() {
       setTestResult({ success: false, error: err.message || 'Failed to send test email' });
     } finally {
       setTestSending(false);
+    }
+  };
+
+  const handleSendTestKlaviyoOrderEvent = async () => {
+    if (!testKlaviyoEmail) return;
+    setSendingKlaviyoTest(true);
+    setTestKlaviyoResult(null);
+    try {
+      const res = await fetch('/api/klaviyo/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventType: 'purchase',
+          customerEmail: testKlaviyoEmail.trim().toLowerCase(),
+          data: {
+            id: `PS-KLAV-${Math.floor(Math.random() * 90000 + 10000)}`,
+            customerEmail: testKlaviyoEmail.trim().toLowerCase(),
+            customerName: 'Scott Kivlin',
+            total: 34.99,
+            destination: 'London, United Kingdom',
+            deliveryMethod: 'Royal Mail Tracked 24',
+            items: [
+              {
+                productId: 'prod-velo-freeze',
+                productTitle: 'VELO Freeze MAX 14mg',
+                price: 14.99,
+                quantity: 2,
+                image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300'
+              },
+              {
+                productId: 'prod-nordic-mint',
+                productTitle: 'Nordic Spirit Smooth Mint 6mg',
+                price: 5.01,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300'
+              }
+            ]
+          }
+        })
+      });
+      const data = await res.json();
+      setTestKlaviyoResult(data);
+      // Reload Klaviyo logs
+      const logsRes = await fetch('/api/klaviyo/logs');
+      if (logsRes.ok) setKlaviyoLogs(await logsRes.json());
+    } catch (err: any) {
+      setTestKlaviyoResult({ success: false, error: err.message || 'Failed to dispatch Klaviyo test event' });
+    } finally {
+      setSendingKlaviyoTest(false);
     }
   };
 
@@ -1009,6 +1063,68 @@ export function EmailSettingsTab() {
               {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Save Klaviyo Settings
             </button>
+          </div>
+
+          {/* Test Klaviyo Event Dispatcher */}
+          <div className="pt-6 border-t border-slate-100 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-indigo-600" />
+                  Test Klaviyo Order Confirmation Event Flow
+                </h4>
+                <p className="text-[11px] text-indigo-700">
+                  Trigger an immediate <code className="font-mono bg-indigo-100 px-1 py-0.5 rounded text-indigo-900 font-bold">Placed Order</code> event to your Klaviyo account for testing order confirmation emails.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="email"
+                value={testKlaviyoEmail}
+                onChange={(e) => setTestKlaviyoEmail(e.target.value)}
+                placeholder="scottkivlinpouch@gmail.com"
+                className="flex-1 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                onClick={handleSendTestKlaviyoOrderEvent}
+                disabled={sendingKlaviyoTest || !testKlaviyoEmail}
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0"
+              >
+                {sendingKlaviyoTest ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Sending Event...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    Send 'Placed Order' Event
+                  </>
+                )}
+              </button>
+            </div>
+
+            {testKlaviyoResult && (
+              <div className={`p-3 rounded-lg text-xs border ${
+                testKlaviyoResult.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}>
+                {testKlaviyoResult.success ? (
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    Event successfully dispatched to Klaviyo for <strong>{testKlaviyoEmail}</strong>! Check your Klaviyo flows and Gmail inbox.
+                  </p>
+                ) : (
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 text-rose-600" />
+                    {testKlaviyoResult.error || testKlaviyoResult.log?.error || 'Klaviyo event dispatch failed.'}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Klaviyo Logs Section */}

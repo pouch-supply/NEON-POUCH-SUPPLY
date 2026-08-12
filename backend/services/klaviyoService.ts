@@ -265,13 +265,55 @@ export async function trackCheckoutStarted(email: string, cartItems: any[], tota
 export async function trackPurchaseCompleted(order: any) {
   const settings = await getKlaviyoSettings();
   if (!settings.trackEvents.purchase) return;
-  const email = order.customerEmail || 'customer@pouch-supply.com';
+  const email = (order.customerEmail || 'customer@pouch-supply.com').toLowerCase().trim();
+
+  const nameParts = (order.customerName || '').trim().split(/\s+/);
+  const firstName = nameParts[0] || 'Valued';
+  const lastName = nameParts.slice(1).join(' ') || 'Customer';
+
+  const rawItems = Array.isArray(order.items) ? order.items : [];
+  const formattedItems = rawItems.map((i: any) => {
+    const priceNum = typeof i.price === 'number' ? i.price : parseFloat(i.price) || 0;
+    const qtyNum = typeof i.quantity === 'number' ? i.quantity : parseInt(i.quantity) || 1;
+    return {
+      ProductID: String(i.productId || i.id || 'prod-generic'),
+      SKU: String(i.sku || i.productId || i.id || 'SKU-001'),
+      ProductName: String(i.productTitle || i.title || i.name || 'Nicotine Pouch Pack'),
+      Quantity: qtyNum,
+      ItemPrice: priceNum,
+      Price: priceNum,
+      RowTotal: priceNum * qtyNum,
+      ImageURL: i.image || i.imageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300',
+      Vendor: i.vendor || 'Pouch Supply Co.'
+    };
+  });
+
+  const itemNames = formattedItems.map((i: any) => i.ProductName);
+  const totalVal = typeof order.total === 'number' ? order.total : parseFloat(order.total) || 0;
+  const orderIdStr = String(order.id || `PS${Math.floor(Math.random() * 90000 + 10000)}`);
+
   return trackKlaviyoEvent('Placed Order', email, {
-    $event_id: String(order.id),
-    $value: typeof order.total === 'number' ? order.total : parseFloat(order.total) || 0,
-    ItemNames: (order.items || []).map((i: any) => i.productTitle || i.title),
-    Items: order.items || [],
-    Destination: order.destination || order.address
+    $event_id: orderIdStr,
+    $value: totalVal,
+    OrderId: orderIdStr,
+    ItemNames: itemNames,
+    Items: formattedItems,
+    Categories: ['Nicotine Pouches', 'Storefront'],
+    Destination: order.destination || order.address || 'United Kingdom',
+    DeliveryMethod: order.deliveryMethod || 'Royal Mail Tracked 24/48',
+    DiscountApplied: order.discountApplied || null,
+    StoreCreditApplied: order.storeCreditApplied || 0,
+    ShippingAddress: {
+      first_name: firstName,
+      last_name: lastName,
+      address1: order.destination || order.address || 'United Kingdom'
+    }
+  }, {
+    $email: email,
+    $first_name: firstName,
+    $last_name: lastName,
+    first_name: firstName,
+    last_name: lastName
   });
 }
 
