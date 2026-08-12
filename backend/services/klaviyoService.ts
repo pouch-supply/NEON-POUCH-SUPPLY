@@ -142,6 +142,10 @@ export async function trackKlaviyoEvent(
 
   try {
     // Official Klaviyo Events API v3 endpoint
+    const numValue = typeof eventProperties.$value === 'number' 
+      ? eventProperties.$value 
+      : (typeof eventProperties.value === 'number' ? eventProperties.value : undefined);
+
     const response = await fetch('https://a.klaviyo.com/api/events/', {
       method: 'POST',
       headers: {
@@ -165,12 +169,13 @@ export async function trackKlaviyoEvent(
               data: {
                 type: 'profile',
                 attributes: {
-                  email: customerEmail,
+                  email: customerEmail.trim().toLowerCase(),
                   ...customerProperties
                 }
               }
             },
             properties: eventProperties,
+            value: numValue,
             time: new Date().toISOString()
           }
         }
@@ -264,7 +269,7 @@ export async function trackCheckoutStarted(email: string, cartItems: any[], tota
 
 export async function trackPurchaseCompleted(order: any) {
   const settings = await getKlaviyoSettings();
-  if (!settings.trackEvents.purchase) return;
+  if (settings.trackEvents && settings.trackEvents.purchase === false) return;
   const email = (order.customerEmail || 'customer@pouch-supply.com').toLowerCase().trim();
 
   const nameParts = (order.customerName || '').trim().split(/\s+/);
