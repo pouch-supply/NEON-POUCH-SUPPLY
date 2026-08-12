@@ -45,6 +45,75 @@ router.get('/google/url', (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to verify Google OAuth Bearer Token / Access Token directly from client
+router.post('/google/verify', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const { accessToken, idToken } = req.body;
+    const token = (authHeader && authHeader.startsWith('Bearer '))
+      ? authHeader.slice(7)
+      : (accessToken || idToken);
+
+    if (!token) {
+      return res.status(400).json({ error: 'OAuth token missing in request.' });
+    }
+
+    // Call Google UserInfo API
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const googleUser = await userRes.json();
+
+    if (!userRes.ok || !googleUser || !googleUser.email) {
+      return res.status(401).json({ error: 'Invalid or expired Google OAuth token.' });
+    }
+
+    const emailTrim = googleUser.email.trim().toLowerCase();
+    const customerName = googleUser.name || googleUser.given_name || emailTrim.split('@')[0];
+    const picture = googleUser.picture || '';
+
+    // Find or create customer
+    const customersList = await fetchResource('customers');
+    let found: any = customersList.find((c: any) => c.email.toLowerCase() === emailTrim);
+
+    if (found) {
+      found.emailVerified = true;
+      found.emailVerifiedAt = found.emailVerifiedAt || new Date().toISOString();
+      if (picture && !found.avatarUrl) found.avatarUrl = picture;
+      if (googleUser.id) found.googleId = googleUser.id;
+    } else {
+      found = {
+        id: `cust_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        name: customerName,
+        email: emailTrim,
+        subscriptionStatus: 'Not subscribed',
+        location: 'United Kingdom',
+        ordersCount: 0,
+        amountSpent: 0,
+        addresses: ['United Kingdom'],
+        wishlist: [],
+        emailVerified: true,
+        emailVerifiedAt: new Date().toISOString(),
+        avatarUrl: picture,
+        googleId: googleUser.id,
+        referralCode: `POUCH-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+        storeCredit: 0
+      };
+      customersList.unshift(found);
+      sendWelcomeEmail(emailTrim, customerName, found.referralCode).catch(e => console.warn('Welcome email error:', e));
+    }
+
+    await saveResource('customers', customersList);
+    const { passwordHash, ...safeCustomer } = found;
+
+    return res.json({ success: true, customer: safeCustomer });
+  } catch (err: any) {
+    console.error('[Google OAuth Verify Error]', err);
+    return res.status(500).json({ error: 'Failed to verify Google authentication token.' });
+  }
+});
+
 // OAuth Callback Handler (handles GET /auth/google/callback)
 export async function handleGoogleOAuthCallback(req: Request, res: Response) {
   const { code, error } = req.query;
