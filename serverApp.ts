@@ -23,6 +23,7 @@ import emailRouter from "./backend/routes/email";
 import klaviyoRouter from "./backend/routes/klaviyo";
 import royalMailRouter from "./backend/routes/royalMail";
 import contactMessagesRouter from "./backend/routes/contactMessages";
+import agecheckedRouter from "./backend/routes/agechecked";
 import authRouter, { handleGoogleOAuthCallback } from "./backend/routes/auth";
 
 import mediaRouter from "./backend/routes/media";
@@ -547,6 +548,7 @@ export async function createExpressApp() {
   app.use("/api/klaviyo", klaviyoRouter);
   app.use("/api/royalmail", royalMailRouter);
   app.use("/api/royal-mail", royalMailRouter);
+  app.use("/api/agechecked", agecheckedRouter);
   app.post("/api/create-order", (req, res, next) => {
     req.url = "/create-order";
     return royalMailRouter(req, res, next);

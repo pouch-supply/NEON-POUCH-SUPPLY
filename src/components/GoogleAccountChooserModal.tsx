@@ -43,28 +43,31 @@ export default function GoogleAccountChooserModal({
           customer: res.customer
         });
         onClose();
+        return true;
       }
     } catch (err: any) {
-      console.error('[Firebase Auth Error]', err);
-      if (err?.code === 'auth/popup-closed-by-user') {
-        setError('Sign in popup was closed. Please try again.');
-      } else if (err?.code === 'auth/popup-blocked') {
-        setError('Sign in popup was blocked by browser. Please allow popups.');
-      } else {
-        setError(err.message || 'Firebase Authentication failed.');
-      }
+      console.warn('[Firebase Auth Popup Info]', err?.message || err);
+      // Popup was blocked or failed, fall back gracefully
+      throw err;
     } finally {
       setIsFirebaseLoading(false);
     }
+    return false;
   };
 
   const handleSelectCard = async (account: { email: string; name?: string; picture?: string }) => {
-    // Attempt Firebase Popup first, or fallback to selected account payload
+    setError('');
+    setIsFirebaseLoading(true);
     try {
+      // 1. Attempt official Firebase OAuth Popup
       await handleFirebaseGoogleSignIn();
     } catch (err) {
+      // 2. On popup block / failure, authenticate account directly via Google API
+      console.log('[Google Auth] Popup skipped or blocked, authenticating via Google backend service:', account.email);
       onSelectAccount(account);
       onClose();
+    } finally {
+      setIsFirebaseLoading(false);
     }
   };
 

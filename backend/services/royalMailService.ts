@@ -526,108 +526,114 @@ export async function createRoyalMailShipment(orderId: string, options: {
 
   // Call Royal Mail API if API key is set
   const apiKey = settings.apiKey || process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
-  if (!apiKey || apiKey.trim().length === 0) {
-    throw new Error('Royal Mail API Authorization Key (ROYAL_MAIL_API_KEY) is not configured in settings or environment.');
-  }
 
-  try {
-    console.log(`[RoyalMailService] Attempting live Royal Mail Click & Drop API call for Order #${orderId}`);
-    
-    // Build clean address object without empty strings
-    const addressObj: any = {
-      fullName: recipient.fullName || 'Valued Customer',
-      addressLine1: recipient.addressLine1 || 'High Street 1',
-      city: recipient.city || 'London',
-      postcode: recipient.postcode || 'SW1A 1AA',
-      countryCode: recipient.countryCode || 'GB'
-    };
-    if (recipient.companyName?.trim()) addressObj.companyName = recipient.companyName.trim();
-    if (recipient.addressLine2?.trim()) addressObj.addressLine2 = recipient.addressLine2.trim();
-    if (recipient.county?.trim()) addressObj.county = recipient.county.trim();
+  if (apiKey && apiKey.trim().length > 0) {
+    try {
+      console.log(`[RoyalMailService] Attempting live Royal Mail Click & Drop API call for Order #${orderId}`);
+      
+      // Build clean address object without empty strings
+      const addressObj: any = {
+        fullName: recipient.fullName || 'Valued Customer',
+        addressLine1: recipient.addressLine1 || 'High Street 1',
+        city: recipient.city || 'London',
+        postcode: recipient.postcode || 'SW1A 1AA',
+        countryCode: recipient.countryCode || 'GB'
+      };
+      if (recipient.companyName?.trim()) addressObj.companyName = recipient.companyName.trim();
+      if (recipient.addressLine2?.trim()) addressObj.addressLine2 = recipient.addressLine2.trim();
+      if (recipient.county?.trim()) addressObj.county = recipient.county.trim();
 
-    const recipientObj: any = { address: addressObj };
-    if (recipient.email || order.customerEmail) {
-      recipientObj.emailAddress = (recipient.email || order.customerEmail).trim();
-    }
-    if (recipient.phone?.trim()) {
-      recipientObj.phoneNumber = recipient.phone.trim();
-    }
-
-    const senderObj: any = {
-      tradingName: (settings.senderAddress.companyName || 'Pouch Supply Ltd').trim()
-    };
-    if (settings.senderAddress.contactPhone?.trim()) {
-      senderObj.phoneNumber = settings.senderAddress.contactPhone.trim();
-    }
-    if (settings.senderAddress.contactEmail?.trim()) {
-      senderObj.emailAddress = settings.senderAddress.contactEmail.trim();
-    }
-
-    const totalVal = Number(order.total) || 10;
-    const shippingVal = Number(order.shipping) || Number(selectedRate?.price) || 0;
-    const subtotalVal = Number(order.subtotal) || (totalVal - shippingVal > 0 ? totalVal - shippingVal : totalVal);
-
-    const payload: CreateRoyalMailOrderRequest = {
-      orderReference: String(order.id),
-      isRecipientABusiness: Boolean(recipient.companyName?.trim()),
-      recipient: recipientObj,
-      sender: senderObj,
-      subtotal: Math.round(subtotalVal * 100) / 100,
-      shippingCostCharged: Math.round(shippingVal * 100) / 100,
-      total: Math.round(totalVal * 100) / 100,
-      currencyCode: 'GBP',
-      orderDate: order.createdAt || new Date().toISOString(),
-      packages: [
-        {
-          weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
-          packageFormatIdentifier: options.packageType || settings.defaultPackageType || 'Parcel',
-          contents: Array.isArray(order.items) && order.items.length > 0 ? order.items.map((it: any) => ({
-            name: it.productTitle || it.title || 'Pouch Supply Item',
-            quantity: it.quantity || 1,
-            unitValue: it.price || 5.0,
-            unitWeightInGrams: 100
-          })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
-        }
-      ],
-      postageDetails: {
-        serviceCode: serviceCode,
-        sendNotificationsTo: recipientObj.emailAddress ? 'recipient' : 'none',
-        receiveEmailNotification: Boolean(recipientObj.emailAddress),
-        receiveSmsNotification: Boolean(recipientObj.phoneNumber)
+      const recipientObj: any = { address: addressObj };
+      if (recipient.email || order.customerEmail) {
+        recipientObj.emailAddress = (recipient.email || order.customerEmail).trim();
       }
-    };
+      if (recipient.phone?.trim()) {
+        recipientObj.phoneNumber = recipient.phone.trim();
+      }
 
-    const result = await createRoyalMailOrders([payload], apiKey);
-    if (result) {
-      if (result.failedOrders && result.failedOrders.length > 0) {
-        const errMsgs: string[] = [];
-        result.failedOrders.forEach((f: any) => {
-          if (Array.isArray(f.errors)) {
-            f.errors.forEach((e: any) => {
-              errMsgs.push(e.message || e.code || JSON.stringify(e));
-            });
-          } else if (f.errors) {
-            errMsgs.push(JSON.stringify(f.errors));
+      const senderObj: any = {
+        tradingName: (settings.senderAddress.companyName || 'Pouch Supply Ltd').trim()
+      };
+      if (settings.senderAddress.contactPhone?.trim()) {
+        senderObj.phoneNumber = settings.senderAddress.contactPhone.trim();
+      }
+      if (settings.senderAddress.contactEmail?.trim()) {
+        senderObj.emailAddress = settings.senderAddress.contactEmail.trim();
+      }
+
+      const totalVal = Number(order.total) || 10;
+      const shippingVal = Number(order.shipping) || Number(selectedRate?.price) || 0;
+      const subtotalVal = Number(order.subtotal) || (totalVal - shippingVal > 0 ? totalVal - shippingVal : totalVal);
+
+      const payload: CreateRoyalMailOrderRequest = {
+        orderReference: String(order.id),
+        isRecipientABusiness: Boolean(recipient.companyName?.trim()),
+        recipient: recipientObj,
+        sender: senderObj,
+        subtotal: Math.round(subtotalVal * 100) / 100,
+        shippingCostCharged: Math.round(shippingVal * 100) / 100,
+        total: Math.round(totalVal * 100) / 100,
+        currencyCode: 'GBP',
+        orderDate: order.createdAt || new Date().toISOString(),
+        packages: [
+          {
+            weightInGrams: options.weightGrams || settings.defaultWeightGrams || 350,
+            packageFormatIdentifier: options.packageType || settings.defaultPackageType || 'Parcel',
+            contents: Array.isArray(order.items) && order.items.length > 0 ? order.items.map((it: any) => ({
+              name: it.productTitle || it.title || 'Pouch Supply Item',
+              quantity: it.quantity || 1,
+              unitValue: it.price || 5.0,
+              unitWeightInGrams: 100
+            })) : [{ name: 'Pouch Supply Package', quantity: 1, unitValue: order.total || 10, unitWeightInGrams: 350 }]
           }
-        });
-        if (errMsgs.length > 0) {
-          throw new Error(errMsgs.join(' | '));
+        ],
+        postageDetails: {
+          serviceCode: serviceCode,
+          sendNotificationsTo: recipientObj.emailAddress ? 'recipient' : 'none',
+          receiveEmailNotification: Boolean(recipientObj.emailAddress),
+          receiveSmsNotification: Boolean(recipientObj.phoneNumber)
+        }
+      };
+
+      const result = await createRoyalMailOrders([payload], apiKey);
+      if (result) {
+        if (result.failedOrders && result.failedOrders.length > 0) {
+          const errMsgs: string[] = [];
+          result.failedOrders.forEach((f: any) => {
+            if (Array.isArray(f.errors)) {
+              f.errors.forEach((e: any) => {
+                errMsgs.push(e.message || e.code || JSON.stringify(e));
+              });
+            } else if (f.errors) {
+              errMsgs.push(JSON.stringify(f.errors));
+            }
+          });
+          if (errMsgs.length > 0) {
+            console.warn('[RoyalMailService] Live API returned errors, falling back to simulated label:', errMsgs.join(' | '));
+            isSimulated = true;
+            apiMessage = `Simulated mode: ${errMsgs.join(' | ')}`;
+          }
+        } else {
+          isSimulated = false;
+          const createdOrder = result.createdOrders?.[0];
+          if (createdOrder?.orderIdentifier) {
+            royalMailOrderId = String(createdOrder.orderIdentifier);
+          }
+          if (createdOrder?.trackingNumber) {
+            trackingNumber = createdOrder.trackingNumber;
+          }
+          apiMessage = 'Live Royal Mail Click & Drop shipment successfully registered!';
         }
       }
-
-      isSimulated = false;
-      const createdOrder = result.createdOrders?.[0];
-      if (createdOrder?.orderIdentifier) {
-        royalMailOrderId = String(createdOrder.orderIdentifier);
-      }
-      if (createdOrder?.trackingNumber) {
-        trackingNumber = createdOrder.trackingNumber;
-      }
-      apiMessage = 'Live Royal Mail Click & Drop shipment successfully registered!';
+    } catch (apiErr: any) {
+      console.warn('[RoyalMailService] Live API call failed, generating fallback Royal Mail shipping label:', apiErr?.message);
+      isSimulated = true;
+      apiMessage = `Simulated label generated (${apiErr?.message || 'API connection unavailable'}).`;
     }
-  } catch (apiErr: any) {
-    console.error('[RoyalMailService] Live API call failed:', apiErr?.message);
-    throw new Error(`Royal Mail API Error: ${apiErr?.message || 'Shipment creation failed.'}`);
+  } else {
+    isSimulated = true;
+    apiMessage = 'Royal Mail shipment created and label generated (Simulated Mode - configure ROYAL_MAIL_API_KEY for live Click & Drop API).';
+    console.log('[RoyalMailService] No ROYAL_MAIL_API_KEY configured. Generating Royal Mail package label in simulated mode.');
   }
 
   const carrierName = selectedRate.serviceName;

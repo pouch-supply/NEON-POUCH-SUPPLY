@@ -840,14 +840,16 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
       }
 
       // Delete items removed from list in StoreResource
-      await prisma.storeResource.deleteMany({
-        where: {
-          resource: normResource,
-          itemId: {
-            notIn: validItemIds
+      if (validItemIds.length > 0) {
+        await prisma.storeResource.deleteMany({
+          where: {
+            resource: normResource,
+            itemId: {
+              notIn: validItemIds
+            }
           }
-        }
-      });
+        });
+      }
 
       // Delete items removed from list in dedicated Prisma tables
       const norm = normResource.toLowerCase();
