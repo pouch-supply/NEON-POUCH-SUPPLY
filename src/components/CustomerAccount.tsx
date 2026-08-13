@@ -383,16 +383,88 @@ export default function CustomerAccount({
       credit: r.credit
     }));
 
+    // Extract real subscription plan from latest real subscription order if present
+    const latestSubOrder = mySubOrders[0] || null;
+    let realPlanName = 'lite';
+    let realCansCount = 6;
+    let realPriceVal = 27.99;
+    let realFreqVal = 'Bi-Weekly';
+    let realNextPayment = 'In 14 days';
+    let realNextDelivery = 'In 16 days';
+
+    if (latestSubOrder) {
+      const subItem = (latestSubOrder.items || []).find((i: any) => 
+        i.isSubscription || 
+        i.vendor === 'Subscription Pack' || 
+        i.subscriptionPlan ||
+        (i.productTitle && (i.productTitle.toLowerCase().includes('plan') || i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+      ) || latestSubOrder.items[0];
+
+      const titleLower = ((subItem as any)?.subscriptionPlan || subItem?.productTitle || '').toLowerCase();
+      if (titleLower.includes('ultimate')) {
+        realPlanName = 'ultimate';
+        realCansCount = 12;
+        realPriceVal = 46.99;
+      } else if (titleLower.includes('pro')) {
+        realPlanName = 'pro';
+        realCansCount = 10;
+        realPriceVal = 40.99;
+      } else if (titleLower.includes('core')) {
+        realPlanName = 'core';
+        realCansCount = 8;
+        realPriceVal = 35.99;
+      } else {
+        realPlanName = 'lite';
+        realCansCount = 6;
+        realPriceVal = 27.99;
+      }
+
+      if (subItem?.price) {
+        realPriceVal = subItem.price;
+      } else if (latestSubOrder.total) {
+        realPriceVal = latestSubOrder.total;
+      }
+
+      if ((subItem as any)?.subscriptionFrequency) {
+        realFreqVal = (subItem as any).subscriptionFrequency;
+      } else if (titleLower.includes('next day')) {
+        realFreqVal = 'Next Day (Test)';
+      } else if (titleLower.includes('weekly') && !titleLower.includes('bi')) {
+        realFreqVal = 'Weekly';
+      } else if (titleLower.includes('month')) {
+        realFreqVal = 'One Month';
+      } else {
+        realFreqVal = 'Bi-Weekly';
+      }
+
+      if ((subItem as any)?.nextPaymentDate) {
+        realNextPayment = (subItem as any).nextPaymentDate;
+      } else {
+        const orderDate = latestSubOrder.createdAt ? new Date(latestSubOrder.createdAt) : new Date();
+        const nextDate = new Date(orderDate);
+        if (realFreqVal.includes('Next Day')) nextDate.setDate(orderDate.getDate() + 1);
+        else if (realFreqVal === 'Weekly') nextDate.setDate(orderDate.getDate() + 7);
+        else if (realFreqVal === 'One Month') nextDate.setDate(orderDate.getDate() + 30);
+        else nextDate.setDate(orderDate.getDate() + 14);
+        realNextPayment = nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    }
+
     if (!state) {
-      // Set default state, preferring values already saved in the database on loggedInCustomer
+      // Set default state, preferring values from actual subscription order or saved customer profile
+      const chosenPlan = (loggedInCustomer as any).subPlan || (latestSubOrder ? realPlanName : 'lite');
+      const chosenCans = (loggedInCustomer as any).subCansCount || (latestSubOrder ? realCansCount : (chosenPlan === 'lite' ? 6 : chosenPlan === 'pro' ? 10 : chosenPlan === 'ultimate' ? 12 : 8));
+      const chosenPrice = (loggedInCustomer as any).subPrice || (latestSubOrder ? realPriceVal : (chosenPlan === 'lite' ? 27.99 : chosenPlan === 'pro' ? 40.99 : chosenPlan === 'ultimate' ? 46.99 : 35.99));
+      const chosenFreq = (loggedInCustomer as any).subFrequency || (latestSubOrder ? realFreqVal : 'Bi-Weekly');
+
       state = {
-        subPlan: (loggedInCustomer as any).subPlan || 'core',
+        subPlan: chosenPlan,
         subStatus: (loggedInCustomer as any).subStatus || 'Active',
-        subFrequency: (loggedInCustomer as any).subFrequency || 'Every 4 Weeks',
-        subCansCount: (loggedInCustomer as any).subCansCount || 8,
-        subPrice: (loggedInCustomer as any).subPrice || 35.99,
-        nextPayment: (loggedInCustomer as any).nextPayment || '19 June 2026',
-        nextDelivery: (loggedInCustomer as any).nextDelivery || '24 June 2026',
+        subFrequency: chosenFreq,
+        subCansCount: chosenCans,
+        subPrice: chosenPrice,
+        nextPayment: (loggedInCustomer as any).nextPayment || realNextPayment,
+        nextDelivery: (loggedInCustomer as any).nextDelivery || realNextDelivery,
         unlockedRewards: (loggedInCustomer as any).unlockedRewards || [
           { id: 'reward_1', title: 'Free Royal Mail Tracked Delivery', desc: 'Complimentary Royal Mail shipping upgrade', redeemed: false, code: 'FREESHIP' },
           { id: 'reward_2', title: '£5.00 Off Order', desc: 'Direct cash discount voucher', redeemed: false, code: 'POUCH5OFF' },
@@ -405,41 +477,52 @@ export default function CustomerAccount({
         savedCards: (loggedInCustomer as any).savedCards || [
           { id: 'card_1', brand: 'Visa', last4: '4242', exp: '12/28', default: true }
         ],
-        ordersCount: orders.filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase()).length,
+        ordersCount: orders.filter(o => o.customerEmail && o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase()).length,
         subItems: (loggedInCustomer as any).subItems || (allProducts.length >= 2 ? [
-          { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(((loggedInCustomer as any).subCansCount || 8) / 2) || 4, image: allProducts[0].image, price: allProducts[0].price },
-          { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(((loggedInCustomer as any).subCansCount || 8) / 2) || 4, image: allProducts[1].image, price: allProducts[1].price }
+          { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(chosenCans / 2) || 3, image: allProducts[0].image, price: allProducts[0].price },
+          { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(chosenCans / 2) || 3, image: allProducts[1].image, price: allProducts[1].price }
         ] : [
-          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(((loggedInCustomer as any).subCansCount || 8) / 2) || 4, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
-          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(((loggedInCustomer as any).subCansCount || 8) / 2) || 4, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
+          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(chosenCans / 2) || 3, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
+          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(chosenCans / 2) || 3, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
         ])
       };
     } else {
-      // Ensure sync with loggedInCustomer's real storeCredit and referralCode from Neon PostgreSQL database
+      // Ensure sync with loggedInCustomer's real storeCredit, referralCode, and real subscription orders
       state.referralCode = realReferralCode;
       state.referralCredit = realStoreCredit;
       state.referredCount = referredCount;
       state.referralsList = referralsList;
-      if ((loggedInCustomer as any).subStatus !== undefined) state.subStatus = (loggedInCustomer as any).subStatus;
-      if ((loggedInCustomer as any).subPlan !== undefined) state.subPlan = (loggedInCustomer as any).subPlan;
-      if ((loggedInCustomer as any).subFrequency !== undefined) state.subFrequency = (loggedInCustomer as any).subFrequency;
-      if ((loggedInCustomer as any).subCansCount !== undefined) state.subCansCount = (loggedInCustomer as any).subCansCount;
-      if ((loggedInCustomer as any).subPrice !== undefined) state.subPrice = (loggedInCustomer as any).subPrice;
-      if ((loggedInCustomer as any).nextPayment !== undefined) state.nextPayment = (loggedInCustomer as any).nextPayment;
-      if ((loggedInCustomer as any).nextDelivery !== undefined) state.nextDelivery = (loggedInCustomer as any).nextDelivery;
+
+      // If user hasn't explicitly customized plan in profile, sync with latest real subscription order
+      if (latestSubOrder && !(loggedInCustomer as any).subPlanManuallyConfigured) {
+        state.subPlan = realPlanName;
+        state.subCansCount = realCansCount;
+        state.subPrice = realPriceVal;
+        state.subFrequency = realFreqVal;
+        state.nextPayment = realNextPayment;
+      } else {
+        if ((loggedInCustomer as any).subStatus !== undefined) state.subStatus = (loggedInCustomer as any).subStatus;
+        if ((loggedInCustomer as any).subPlan !== undefined) state.subPlan = (loggedInCustomer as any).subPlan;
+        if ((loggedInCustomer as any).subFrequency !== undefined) state.subFrequency = (loggedInCustomer as any).subFrequency;
+        if ((loggedInCustomer as any).subCansCount !== undefined) state.subCansCount = (loggedInCustomer as any).subCansCount;
+        if ((loggedInCustomer as any).subPrice !== undefined) state.subPrice = (loggedInCustomer as any).subPrice;
+        if ((loggedInCustomer as any).nextPayment !== undefined) state.nextPayment = (loggedInCustomer as any).nextPayment;
+        if ((loggedInCustomer as any).nextDelivery !== undefined) state.nextDelivery = (loggedInCustomer as any).nextDelivery;
+      }
+
       if ((loggedInCustomer as any).unlockedRewards !== undefined) state.unlockedRewards = (loggedInCustomer as any).unlockedRewards;
       if ((loggedInCustomer as any).savedCards !== undefined) state.savedCards = (loggedInCustomer as any).savedCards;
 
       if ((loggedInCustomer as any).subItems !== undefined) {
         state.subItems = (loggedInCustomer as any).subItems;
-      } else if (!state.subItems) {
-        const cansCount = state.subCansCount || 8;
+      } else if (!state.subItems || state.subItems.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) !== state.subCansCount) {
+        const cansCount = state.subCansCount || 6;
         state.subItems = allProducts.length >= 2 ? [
-          { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(cansCount / 2) || 4, image: allProducts[0].image, price: allProducts[0].price },
-          { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(cansCount / 2) || 4, image: allProducts[1].image, price: allProducts[1].price }
+          { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(cansCount / 2) || 3, image: allProducts[0].image, price: allProducts[0].price },
+          { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(cansCount / 2) || 3, image: allProducts[1].image, price: allProducts[1].price }
         ] : [
-          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(cansCount / 2) || 4, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
-          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(cansCount / 2) || 4, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
+          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(cansCount / 2) || 3, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
+          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(cansCount / 2) || 3, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
         ];
       }
     }
@@ -1839,15 +1922,41 @@ export default function CustomerAccount({
                       <p className="text-xs text-slate-400 py-4 text-center">You haven't placed any order transactions yet.</p>
                     ) : (
                       <div className="space-y-3">
-                        {myOrders.map(order => (
-                          <div key={order.id} className="bg-[#f4f6f9] border border-slate-100 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-slate-300 transition-all">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-black text-xs text-[#071d37] font-mono">{order.id}</span>
-                                <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-100 uppercase">{order.fulfillmentStatus}</span>
+                        {myOrders.map(order => {
+                          const isSubOrder = Boolean(
+                            order.isSubscription || 
+                            (Array.isArray(order.tags) && order.tags.some(t => t && t.toLowerCase().includes('subscription'))) ||
+                            (Array.isArray(order.items) && order.items.some((i: any) => 
+                              i && (
+                                i.isSubscription || 
+                                i.vendor === 'Subscription Pack' || 
+                                (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('plan') || i.productTitle.toLowerCase().includes('pack')))
+                              )
+                            ))
+                          );
+
+                          return (
+                            <div 
+                              key={order.id} 
+                              className={`p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all border ${
+                                isSubOrder
+                                  ? 'bg-gradient-to-r from-indigo-50/80 via-white to-violet-50/50 border-indigo-200/90 hover:border-indigo-300 shadow-xs ring-1 ring-indigo-500/10'
+                                  : 'bg-[#f4f6f9] border-slate-100 hover:border-slate-300'
+                              }`}
+                            >
+                              <div className="space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-black text-xs text-[#071d37] font-mono">{order.id}</span>
+                                  <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-100 uppercase">{order.fulfillmentStatus}</span>
+                                  {isSubOrder && (
+                                    <span className="text-[9px] font-black uppercase py-0.5 px-2.5 rounded-full leading-none shrink-0 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-2xs flex items-center gap-1">
+                                      <RefreshCw className="h-2.5 w-2.5 text-amber-300 animate-spin-slow" />
+                                      Subscription Order
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-500">{order.date} • {order.items.length} unique lines • {order.deliveryMethod}</p>
                               </div>
-                              <p className="text-[10px] text-slate-500">{order.date} • {order.items.length} unique lines • {order.deliveryMethod}</p>
-                            </div>
                             <div className="flex sm:flex-col items-end gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
                               <span className="text-xs font-black text-slate-900">£{(Number(order.total || 0)).toFixed(2)}</span>
                               <div className="flex gap-2">
@@ -1872,7 +1981,8 @@ export default function CustomerAccount({
                               </div>
                             </div>
                           </div>
-                        ))}
+                        );
+                      })}
                       </div>
                     )}
                   </div>

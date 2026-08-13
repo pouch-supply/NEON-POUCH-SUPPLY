@@ -5,7 +5,7 @@ import { parseOrderTime } from '../utils';
 import { 
   X, User, LogIn, Heart, MapPin, Package, ShoppingBag, 
   Plus, Trash2, Eye, ShieldCheck, Sparkles, Smile, ArrowRight,
-  Truck, Check, Clock, Mail
+  Truck, Check, Clock, Mail, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SubscriptionIcon from './SubscriptionIcon';
@@ -791,10 +791,26 @@ export default function CustomerDrawer({
                           ) : (
                             myOrders.map((order) => {
                               const isExpanded = expandedOrderId === order.id;
+                              const isSubOrder = Boolean(
+                                order.isSubscription || 
+                                (Array.isArray(order.tags) && order.tags.some(t => t && t.toLowerCase().includes('subscription'))) ||
+                                (Array.isArray(order.items) && order.items.some((i: any) => 
+                                  i && (
+                                    i.isSubscription || 
+                                    i.vendor === 'Subscription Pack' || 
+                                    (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('plan') || i.productTitle.toLowerCase().includes('pack')))
+                                  )
+                                ))
+                              );
+
                               return (
                                 <div 
                                   key={order.id} 
-                                  className="bg-white border border-slate-200/95 hover:border-slate-300 rounded-2xl p-3.5 transition-all shadow-3xs"
+                                  className={`rounded-2xl p-3.5 transition-all shadow-3xs border ${
+                                    isSubOrder
+                                      ? 'bg-gradient-to-r from-indigo-50/80 via-white to-violet-50/50 border-indigo-200/90 hover:border-indigo-300 shadow-xs ring-1 ring-indigo-500/10'
+                                      : 'bg-white border-slate-200/95 hover:border-slate-300'
+                                  }`}
                                 >
                                   {/* Order Header Summary Row */}
                                   <div className="flex justify-between items-center gap-2">
@@ -808,6 +824,12 @@ export default function CustomerDrawer({
                                         }`}>
                                           {order.fulfillmentStatus}
                                         </span>
+                                        {isSubOrder && (
+                                          <span className="text-[8.5px] font-black uppercase py-0.5 px-2 rounded-full leading-none shrink-0 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-2xs flex items-center gap-1">
+                                            <RefreshCw className="h-2.5 w-2.5 text-amber-300 animate-spin-slow" />
+                                            Subscription Order
+                                          </span>
+                                        )}
                                         {Array.isArray(order.tags) && order.tags.includes('Withdrawal Requested') && (
                                           <span className="text-[8.5px] font-black uppercase py-0.5 px-2 rounded-full leading-none shrink-0 bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
                                             Withdrawal Requested
