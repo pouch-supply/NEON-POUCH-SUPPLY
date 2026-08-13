@@ -192,11 +192,11 @@ export async function saveSingleOrder(orderData: any) {
   return formattedOrder;
 }
 
-// GET all orders - only return valid paid or refunded orders
+// GET all orders - return all valid persisted orders
 router.get("/", async (_req: Request, res: Response) => {
   try {
     const data: any[] = (await fetchResource("orders")) || [];
-    const validOrders = data.filter((o: any) => o && (o.paymentStatus === 'Paid' || o.paymentStatus === 'Refunded'));
+    const validOrders = data.filter((o: any) => o && o.id);
     res.json(validOrders);
   } catch (err: any) {
     console.error("[Orders Router] GET Error:", err);

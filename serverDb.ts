@@ -944,7 +944,7 @@ export async function deleteSingleItem(resource: string, id: string): Promise<bo
   const normResource = normalizeResourceName(resource);
 
   if (memoryCache[normResource]) {
-    memoryCache[normResource] = memoryCache[normResource].filter((i: any) => i.id !== id && i.slug !== id);
+    memoryCache[normResource] = memoryCache[normResource].filter((i: any) => String(i.id) !== String(id) && String(i.slug || '') !== String(id));
   }
   persistMemoryCacheToBackup();
 

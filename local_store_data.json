@@ -6133,7 +6133,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-10T07:12:04.156Z"
+      "createdAt": "2026-08-13T10:05:35.772Z"
     },
     {
       "id": "PS62243",
@@ -6167,7 +6167,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-10T07:15:17.549Z"
+      "createdAt": "2026-08-13T10:05:37.930Z"
     },
     {
       "id": "PS59531",
@@ -6201,7 +6201,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-10T07:15:20.110Z"
+      "createdAt": "2026-08-13T10:05:37.937Z"
     },
     {
       "id": "PS66138",
@@ -6241,7 +6241,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-10T07:57:56.147Z"
+      "createdAt": "2026-08-13T10:05:37.942Z"
     },
     {
       "id": "PS53183",
@@ -6282,7 +6282,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-11T08:09:31.051Z"
+      "createdAt": "2026-08-13T10:05:37.950Z"
     },
     {
       "id": "PS81256",
@@ -6322,7 +6322,7 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-12T07:50:16.275Z"
+      "createdAt": "2026-08-13T10:05:37.957Z"
     },
     {
       "id": "PS82336",
@@ -6362,11 +6362,50 @@
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-12T08:17:43.459Z"
+      "createdAt": "2026-08-13T10:05:37.962Z"
     },
     {
       "id": "PS10231",
-      "data": {},
+      "data": {
+        "id": "PS10231",
+        "data": {},
+        "date": "Aug 12, 2026 at 09:49 AM",
+        "tags": [
+          "Storefront",
+          "Worldpay Test Order"
+        ],
+        "items": [
+          {
+            "sku": "PCH-563404-MELON-MINT",
+            "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785235965/storefront_media/file_e1ub8p.jpg",
+            "price": 4.99,
+            "vendor": "77",
+            "variant": "Standard",
+            "quantity": 1,
+            "productId": "PCH-563404-MELON-MINT",
+            "productTitle": "77 5.2 mg - Melon Mint"
+          }
+        ],
+        "total": 7.98,
+        "carrier": "Royal Mail",
+        "cardBrand": "Worldpay Test Visa",
+        "createdAt": "2026-08-13T10:05:37.969Z",
+        "trackingId": null,
+        "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+        "gatewayTxId": "WP-TEST-TXN-770317",
+        "customerName": "neha",
+        "worldpayTxId": "WP-TEST-TXN-770317",
+        "customerEmail": "nehabhardwaz.gtl@gmail.com",
+        "paymentStatus": "Paid",
+        "deliveryMethod": "Royal Mail Tracked 24/48",
+        "trackingNumber": null,
+        "discountApplied": null,
+        "gatewayAuthCode": "AUTH-TEST-9208",
+        "trackingHistory": null,
+        "worldpayAuthCode": "AUTH-TEST-9208",
+        "fulfillmentStatus": "Unfulfilled",
+        "storeCreditApplied": 0
+      },
       "date": "Aug 12, 2026 at 09:49 AM",
       "tags": [
         "Storefront",
@@ -6392,17 +6431,181 @@
       "customerName": "neha",
       "worldpayTxId": "WP-TEST-TXN-770317",
       "customerEmail": "nehabhardwaz.gtl@gmail.com",
-      "paymentStatus": "Paid",
+      "paymentStatus": "Refunded",
       "deliveryMethod": "Royal Mail Tracked 24/48",
       "trackingNumber": null,
       "discountApplied": null,
       "gatewayAuthCode": "AUTH-TEST-9208",
       "worldpayAuthCode": "AUTH-TEST-9208",
-      "fulfillmentStatus": "Unfulfilled",
+      "fulfillmentStatus": "Cancelled",
       "storeCreditApplied": 0,
       "trackingId": null,
       "trackingHistory": null,
-      "createdAt": "2026-08-12T09:49:56.365Z"
+      "createdAt": "2026-08-13T10:05:37.969Z"
+    },
+    {
+      "id": "PS10964",
+      "data": {},
+      "date": "Aug 13, 2026 at 10:31 AM",
+      "tags": [
+        "Storefront",
+        "Worldpay Test Order",
+        "Subscription Order"
+      ],
+      "items": [
+        {
+          "sku": "sub-pack-1786606955010",
+          "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+          "price": 25.19,
+          "vendor": "Subscription Pack",
+          "variant": "Standard",
+          "quantity": 1,
+          "productId": "sub-pack-1786606955010",
+          "productTitle": "LITE Plan [Next Day (Test) - 10% OFF] - (3 mg Apple Mint Mini (Qty:1), 6 mg Coffee Mini (Qty:1), 1.5 mg Spearmint Mini (Qty:1), 9 mg Red Fruits (Qty:1), 11 mg Guava Spice (Qty:1), 13.5 mg Menthol Ice (Qty:1))"
+        }
+      ],
+      "total": 28.18,
+      "carrier": "Royal Mail",
+      "cardBrand": "Worldpay Test Visa",
+      "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+      "gatewayTxId": "WP-TEST-TXN-566805",
+      "customerName": "neha",
+      "worldpayTxId": "WP-TEST-TXN-566805",
+      "customerEmail": "nehabhardwaz.gtl@gmail.com",
+      "paymentStatus": "Paid",
+      "deliveryMethod": "Royal Mail Tracked 24/48",
+      "trackingNumber": null,
+      "discountApplied": null,
+      "gatewayAuthCode": "AUTH-TEST-4197",
+      "worldpayAuthCode": "AUTH-TEST-4197",
+      "fulfillmentStatus": "Fulfilled",
+      "storeCreditApplied": 0,
+      "trackingId": null,
+      "trackingHistory": null,
+      "createdAt": "2026-08-13T10:31:44.461Z"
+    },
+    {
+      "id": "PS20788",
+      "data": {},
+      "date": "Aug 13, 2026 at 10:45 AM",
+      "tags": [
+        "Storefront",
+        "Worldpay Test Order",
+        "Subscription Order"
+      ],
+      "items": [
+        {
+          "sku": "sub-pack-1786617908421",
+          "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+          "price": 25.19,
+          "vendor": "Subscription Pack",
+          "variant": "Standard",
+          "quantity": 1,
+          "productId": "sub-pack-1786617908421",
+          "productTitle": "LITE Plan [Next Day (Test) - 10% OFF] - (9 mg Wild Cherry (Qty:1), 18 mg Wild Cherry (Qty:1), 45 mg Wild Cherry (Qty:1), 45 mg Tropical Punch (Qty:1), 18 mg Tropical Punch (Qty:1), 9 mg Grape (Qty:1))"
+        }
+      ],
+      "total": 28.18,
+      "carrier": "Royal Mail",
+      "cardBrand": "Worldpay Test Visa",
+      "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+      "gatewayTxId": "WP-TEST-TXN-656083",
+      "customerName": "neha",
+      "worldpayTxId": "WP-TEST-TXN-656083",
+      "customerEmail": "nehabhardwaz.gtl@gmail.com",
+      "paymentStatus": "Paid",
+      "deliveryMethod": "Royal Mail Tracked 24/48",
+      "trackingNumber": null,
+      "discountApplied": null,
+      "gatewayAuthCode": "AUTH-TEST-7482",
+      "worldpayAuthCode": "AUTH-TEST-7482",
+      "fulfillmentStatus": "Fulfilled",
+      "storeCreditApplied": 0,
+      "trackingId": null,
+      "trackingHistory": null,
+      "createdAt": "2026-08-13T10:45:21.736Z"
+    },
+    {
+      "id": "PS14393",
+      "data": {},
+      "date": "Aug 13, 2026 at 11:42 AM",
+      "tags": [
+        "Storefront",
+        "Worldpay Test Order",
+        "Subscription Order"
+      ],
+      "items": [
+        {
+          "sku": "sub-pack-1786621347505",
+          "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+          "price": 36.89,
+          "vendor": "Subscription Pack",
+          "variant": "Standard",
+          "quantity": 1,
+          "productId": "sub-pack-1786621347505",
+          "productTitle": "PRO Plan [Next Day (Test) - 10% OFF] - (5.2 mg Watermelon ice (Qty:5), 20 mg Ghost Cola Ice (Qty:5))"
+        }
+      ],
+      "total": 39.88,
+      "carrier": "Royal Mail",
+      "cardBrand": "Worldpay Test Visa",
+      "destination": "VPO Gharoh Tehsil Dharamshala District Kangra Himachal Pradesh, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+      "gatewayTxId": "WP-TEST-TXN-802448",
+      "customerName": "Ritesh Dhiman",
+      "worldpayTxId": "WP-TEST-TXN-802448",
+      "customerEmail": "info@gtlofficial.com",
+      "paymentStatus": "Paid",
+      "deliveryMethod": "Royal Mail Tracked 24/48",
+      "trackingNumber": null,
+      "discountApplied": null,
+      "gatewayAuthCode": "AUTH-TEST-1888",
+      "worldpayAuthCode": "AUTH-TEST-1888",
+      "fulfillmentStatus": "Fulfilled",
+      "storeCreditApplied": 0,
+      "trackingId": null,
+      "trackingHistory": null,
+      "createdAt": "2026-08-13T11:42:36.847Z"
+    },
+    {
+      "id": "PS93756",
+      "data": {},
+      "date": "Aug 13, 2026 at 11:41 AM",
+      "tags": [
+        "Storefront",
+        "Worldpay Test Order",
+        "Subscription Order"
+      ],
+      "items": [
+        {
+          "sku": "sub-pack-1786621285137",
+          "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+          "price": 32.39,
+          "vendor": "Subscription Pack",
+          "variant": "Standard",
+          "quantity": 1,
+          "productId": "sub-pack-1786621285137",
+          "productTitle": "CORE Plan [Bi-Weekly - 10% OFF] - (5.2 mg Watermelon ice (Qty:5), 20 mg Ghost Cola Ice (Qty:3))"
+        }
+      ],
+      "total": 35.38,
+      "carrier": "Royal Mail",
+      "cardBrand": "Worldpay Test Visa",
+      "destination": "VPO Gharoh Tehsil Dharamshala District Kangra Himachal Pradesh, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+      "gatewayTxId": "WP-TEST-TXN-191145",
+      "customerName": "Ritesh Dhiman",
+      "worldpayTxId": "WP-TEST-TXN-191145",
+      "customerEmail": "info@gtlofficial.com",
+      "paymentStatus": "Paid",
+      "deliveryMethod": "Royal Mail Tracked 24/48",
+      "trackingNumber": null,
+      "discountApplied": null,
+      "gatewayAuthCode": "AUTH-TEST-8101",
+      "worldpayAuthCode": "AUTH-TEST-8101",
+      "fulfillmentStatus": "Fulfilled",
+      "storeCreditApplied": 0,
+      "trackingId": null,
+      "trackingHistory": null,
+      "createdAt": "2026-08-13T11:46:52.357Z"
     }
   ],
   "files": [],
@@ -6451,9 +6654,9 @@
           "default": true
         }
       ],
-      "amountSpent": 60.10000000000001,
+      "amountSpent": 116.46,
       "nextPayment": "19 June 2026",
-      "ordersCount": 5,
+      "ordersCount": 7,
       "storeCredit": 0,
       "nextDelivery": "24 June 2026",
       "referralCode": "REF-PS-NEHA-OZCP",
@@ -6500,12 +6703,8 @@
       "addresses": [
         "Sidhpur, Rana Motor Care, London, EC1A 1BB, United Kingdom"
       ],
-      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
       "amountSpent": 0,
       "ordersCount": 0,
-      "referralCode": "REF-PS-AGASTYA-5YYH",
-      "emailVerified": true,
-      "emailVerifiedAt": "2026-08-12T07:20:53.673Z",
       "subscriptionStatus": "Not subscribed"
     },
     {
@@ -6529,13 +6728,74 @@
       "id": "cust-1785410706738-eq2m2",
       "name": "Scott Kivlin",
       "email": "scott@pouch-supply.com",
+      "subPlan": "core",
       "location": "39 Tonks Drive, London, EC1A 1BB, United Kingdom",
+      "subItems": [
+        {
+          "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785235958/storefront_media/file_s2q4qz.jpg",
+          "price": 4.99,
+          "title": "77 5.2 mg",
+          "quantity": 4,
+          "productId": "77-52-mg"
+        },
+        {
+          "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785236308/storefront_media/file_cpdbpp.jpg",
+          "price": 4.99,
+          "title": "77 20 mg",
+          "quantity": 4,
+          "productId": "77-20-mg"
+        }
+      ],
+      "subPrice": 35.99,
       "wishlist": [],
       "addresses": [
         "39 Tonks Drive, London, EC1A 1BB, United Kingdom"
       ],
+      "subStatus": "Active",
+      "savedCards": [
+        {
+          "id": "card_1",
+          "exp": "12/28",
+          "brand": "Visa",
+          "last4": "4242",
+          "default": true
+        }
+      ],
       "amountSpent": 0,
+      "nextPayment": "19 June 2026",
       "ordersCount": 0,
+      "storeCredit": 0,
+      "nextDelivery": "24 June 2026",
+      "referralCode": "REF-PS-SCOTT-6YXM",
+      "subCansCount": 8,
+      "subFrequency": "Every 4 Weeks",
+      "referralsList": [],
+      "referredCount": 0,
+      "referralCredit": 0,
+      "referredByCode": null,
+      "unlockedRewards": [
+        {
+          "id": "reward_1",
+          "code": "FREESHIP",
+          "desc": "Complimentary Royal Mail shipping upgrade",
+          "title": "Free Royal Mail Tracked Delivery",
+          "redeemed": true
+        },
+        {
+          "id": "reward_2",
+          "code": "POUCH5OFF",
+          "desc": "Direct cash discount voucher",
+          "title": "£5.00 Off Order",
+          "redeemed": false
+        },
+        {
+          "id": "reward_3",
+          "code": "FREECAN",
+          "desc": "Unlock a free sample in next box",
+          "title": "Free Extra Can",
+          "redeemed": false
+        }
+      ],
       "subscriptionStatus": "Not subscribed"
     },
     {
@@ -6713,119 +6973,294 @@
   ],
   "customPages": [
     {
-      "id": "brands",
-      "slug": "brands",
-      "title": "Brands Directory",
+      "id": "homepage",
+      "slug": "homepage",
+      "title": "Home Page",
       "sections": [
         {
-          "id": "s2",
-          "type": "Rich text",
+          "id": "sec-1785239010171",
+          "type": "Video banner",
           "settings": {
-            "title": "Official Brands Matrix",
-            "fullWidth": false,
-            "textColor": "#64748B",
-            "description": "Explore our catalog of certified compounding premium brands retrieved directly from our synchronized database.",
-            "headingColor": "#1E293B",
+            "title": "Watch Our Laboratory Showcase",
+            "videoUrl": "",
+            "fullWidth": true,
+            "textColor": "#ffffff",
+            "buttonLink": "/pages/subscribe",
+            "buttonText": "Purchase Packs",
+            "buttonLink2": "/collections/all",
+            "buttonText2": "BROWSE ALL PRODUCTS",
+            "description": "Witness the clinical sterile compounding process behind our sub-zero cooling pouches.",
+            "videoMp4Url": "https://res.cloudinary.com/qfoxl8ia/video/upload/v1785238997/storefront_media/file_kfrbzd.mp4",
+            "headingColor": "#ffffff",
+            "marqueeSpeed": 3,
             "backgroundColor": "#FFFFFF"
           }
         },
         {
-          "id": "s3",
-          "type": "Brand list",
+          "id": "sec-1785239091454",
+          "type": "Brands we offer",
           "settings": {
-            "title": "Official Brands Directory",
+            "title": "Brands we offer",
             "fullWidth": false,
             "textColor": "#64748B",
             "brandItems": [
               {
                 "title": "77",
                 "linkUrl": "/collections/77",
-                "imageUrl": ""
-              },
-              {
-                "title": "Cuba",
-                "linkUrl": "/collections/cuba",
-                "imageUrl": ""
-              },
-              {
-                "title": "Killa",
-                "linkUrl": "/collections/killa",
-                "imageUrl": ""
-              },
-              {
-                "title": "Pablo",
-                "linkUrl": "/collections/pablo",
-                "imageUrl": ""
-              },
-              {
-                "title": "Velo",
-                "linkUrl": "/collections/velo",
-                "imageUrl": ""
-              },
-              {
-                "title": "White Fox",
-                "linkUrl": "/collections/white-fox",
-                "imageUrl": ""
-              },
-              {
-                "title": "Zyn",
-                "linkUrl": "/collections/zyn",
-                "imageUrl": ""
-              },
-              {
-                "title": "XQS",
-                "linkUrl": "/collections/xqs",
-                "imageUrl": ""
-              },
-              {
-                "title": "Nordic Spirit",
-                "linkUrl": "/collections/nordic-spirit",
-                "imageUrl": ""
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785324552/storefront_media/file_s7z7wi.png"
               },
               {
                 "title": "Clew",
                 "linkUrl": "/collections/clew",
-                "imageUrl": ""
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239130/storefront_media/file_mmym7y.webp"
+              },
+              {
+                "title": "Cuba",
+                "linkUrl": "/collections/cuba",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239141/storefront_media/file_zhn4qy.webp"
+              },
+              {
+                "title": "Maggie",
+                "linkUrl": "/collections/maggie",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239150/storefront_media/file_eqg6ow.webp"
+              },
+              {
+                "title": "Nordic Spirit",
+                "linkUrl": "/collections/nordic-spirit",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239170/storefront_media/file_nqm3dh.webp"
+              },
+              {
+                "title": "XQS",
+                "linkUrl": "/collections/xqs",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239176/storefront_media/file_x78lfg.webp"
+              },
+              {
+                "title": "ZYN",
+                "linkUrl": "/collections/zyn",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239186/storefront_media/file_w76obl.webp"
+              },
+              {
+                "title": "Pablo",
+                "linkUrl": "/collections/pablo",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239201/storefront_media/file_djxelq.webp"
+              },
+              {
+                "title": "Killa",
+                "linkUrl": "/collections/killa",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239210/storefront_media/file_lakrwo.webp"
               },
               {
                 "title": "Fumi",
                 "linkUrl": "/collections/fumi",
-                "imageUrl": ""
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239221/storefront_media/file_rr7uw4.webp"
               },
               {
-                "title": "Snu",
+                "title": "Velo",
+                "linkUrl": "/collections/velo",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785239230/storefront_media/file_lwgyat.webp"
+              },
+              {
+                "title": "White Fox",
+                "linkUrl": "/collections/white-fox",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785324457/storefront_media/file_nhwzsb.png"
+              },
+              {
+                "title": "Snü",
                 "linkUrl": "/collections/snu",
-                "imageUrl": ""
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785324492/storefront_media/file_wdtwrg.png"
               }
             ],
-            "description": "Explore our catalog of certified compounding premium brands.",
-            "headingColor": "#0C1017",
+            "description": "Explore our curated roster of premium nicotine pouches and global compounding series.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
             "backgroundColor": "#FFFFFF"
           }
-        }
-      ],
-      "updatedAt": "Jun 23, 2026",
-      "visibility": "Visible",
-      "isHomepage": false
-    },
-    {
-      "id": "homepage",
-      "slug": "homepage",
-      "title": "Home Page",
-      "sections": [
+        },
         {
-          "id": "h-s1",
-          "type": "Image banner",
+          "id": "sec-1785239267010",
+          "type": "Icon with text",
           "settings": {
-            "title": "Pouch Supply Storefront",
-            "imageUrl": "",
-            "fullWidth": true,
-            "textColor": "#E5E7EB",
-            "buttonLink": "frontend-shop",
-            "buttonText": "View Store Catalog",
-            "description": "Start managing your products, collections, and page sections inside the Admin Dashboard.",
-            "headingColor": "#FFFFFF",
-            "backgroundColor": "#111827"
+            "title": "Why subscribe to Pouch Supply?",
+            "fullWidth": false,
+            "iconColor": "#4F46E5",
+            "iconItems": [
+              {
+                "title": "Delivered on your schedule",
+                "linkUrl": "frontend-shop",
+                "iconName": "Truck",
+                "description": "Flexible delivery, when you need it."
+              },
+              {
+                "title": "Save vs. shop prices",
+                "linkUrl": "frontend-shop",
+                "iconName": "Zap",
+                "description": "Better prices than retail stores."
+              },
+              {
+                "title": "Discreet delivery",
+                "linkUrl": "frontend-shop",
+                "iconName": "Shield",
+                "description": "Plain, private, and secure packaging."
+              },
+              {
+                "title": "Cancel anytime",
+                "linkUrl": "frontend-shop",
+                "iconName": "Clock",
+                "description": "No commitments, full control."
+              },
+              {
+                "title": "Loyalty scheme",
+                "linkUrl": "frontend-shop",
+                "iconName": "Award",
+                "description": "Earn rewards on every order."
+              },
+              {
+                "title": "Never run out",
+                "linkUrl": "frontend-shop",
+                "iconName": "Package",
+                "description": "Auto-refill and easy reordering."
+              }
+            ],
+            "textColor": "#64748B",
+            "description": "Explore exclusive rewards and reliable logistics built directly into our ecosystem.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1785239276374",
+          "type": "How it works",
+          "settings": {
+            "title": "Custom How it works",
+            "fullWidth": false,
+            "stepItems": [
+              {
+                "title": "Choose your plan",
+                "number": "1",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785314357/storefront_media/file_jdjpl7.png",
+                "description": "Select one of our flexible subscription plans"
+              },
+              {
+                "title": "Choose your pouches",
+                "number": "2",
+                "imageUrl": "",
+                "description": "Mix and match your favourite brands, flavours and strengths. (these can be changed at anytime)"
+              },
+              {
+                "title": "We handle the rest",
+                "number": "3",
+                "imageUrl": "/api/uploads/file-1785314385630-62140.png",
+                "description": "Delivered automatically to your door hassle free weekly, Bi-weekly or monthly"
+              }
+            ],
+            "textColor": "#64748B",
+            "description": "Edit option elements inside options sidebar",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1785239282614",
+          "type": "Plans",
+          "settings": {
+            "title": "Custom Plans",
+            "fullWidth": false,
+            "planItems": [
+              {
+                "name": "LITE",
+                "slug": "lite",
+                "limit": 6,
+                "price": 27.99,
+                "features": [
+                  "6 premium cans",
+                  "Flexible delivery",
+                  "Change flavours anytime",
+                  "Skip or pause anytime"
+                ],
+                "imageUrl": "",
+                "subtitle": "Best for getting started",
+                "isPopular": false,
+                "buttonLink": "/pages/subscribe/lite",
+                "saveAmountText": "Save £5.00/month"
+              },
+              {
+                "name": "CORE",
+                "slug": "core",
+                "limit": 8,
+                "price": 35.99,
+                "features": [
+                  "8 premium cans",
+                  "Lower price per can",
+                  "Change or swap brands",
+                  "Skip or pause anytime"
+                ],
+                "imageUrl": "",
+                "subtitle": "Most flexible",
+                "isPopular": false,
+                "buttonLink": "/pages/subscribe/core",
+                "saveAmountText": "Save £10.00/month"
+              },
+              {
+                "name": "PRO",
+                "slug": "pro",
+                "limit": 10,
+                "price": 40.99,
+                "features": [
+                  "10 premium cans",
+                  "FREE delivery 📦",
+                  "Best price per can",
+                  "Loyalty rewards boost",
+                  "Skip or pause anytime"
+                ],
+                "imageUrl": "",
+                "subtitle": "Best value",
+                "isPopular": true,
+                "buttonLink": "/pages/subscribe/pro",
+                "saveAmountText": "Save £14.00/month"
+              },
+              {
+                "name": "ULTIMATE",
+                "slug": "ultimate",
+                "limit": 12,
+                "price": 46.99,
+                "features": [
+                  "12 premium cans",
+                  "FREE delivery 📦",
+                  "Lowest price per can",
+                  "£3.80 for any extra can",
+                  "Skip or pause anytime"
+                ],
+                "imageUrl": "",
+                "subtitle": "Maximum savings",
+                "extraText": "£3.80 FOR ANY ADDITIONAL CAN",
+                "isPopular": false,
+                "buttonLink": "/pages/subscribe/ultimate",
+                "saveAmountText": "Save £19.00/month"
+              }
+            ],
+            "textColor": "#64748B",
+            "description": "Edit option elements inside options sidebar",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "alertBadgeText": "Most customers save up to £55/month",
+            "backgroundColor": "#FFFFFF",
+            "promoBannerText": "★ FIRST 50 SUBSCRIBERS - Get 10% OFF FOR LIFE >"
+          }
+        },
+        {
+          "id": "sec-1785314424267",
+          "type": "Featured collection",
+          "settings": {
+            "title": "Featured Collection Highlights",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "itemsCount": 4,
+            "description": "Sourced cleanly from European chemical compounding centers with direct-to-door courier dispatch.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
           }
         }
       ],
@@ -6834,42 +7269,117 @@
       "visibility": "Visible"
     },
     {
-      "id": "contact",
-      "slug": "contact",
-      "title": "Contact Us",
+      "id": "brands",
+      "slug": "brands",
+      "title": "Brands Directory",
       "sections": [
         {
-          "id": "contact-sec-1",
-          "type": "Contact Form",
+          "id": "s3",
+          "type": "Brand list",
           "settings": {
-            "title": "Get in Touch with Our Team",
+            "title": "Official Brands Directory",
             "fullWidth": false,
-            "textColor": "#475569",
-            "description": "Have questions about your order, shipping, or nicotine pouch brands? Fill out the form below or reach us directly. Our customer support team responds within 24 hours.",
-            "headingColor": "#0F172A",
+            "textColor": "#ffffff",
+            "brandItems": [
+              {
+                "title": "77",
+                "linkUrl": "/collections/77",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340624/storefront_media/file_dpm502.jpg"
+              },
+              {
+                "title": "Clew",
+                "linkUrl": "/collections/clew",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340652/storefront_media/file_spibxy.jpg"
+              },
+              {
+                "title": "Cuba",
+                "linkUrl": "/collections/cuba",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340685/storefront_media/file_iwvyic.jpg"
+              },
+              {
+                "title": "Maggie",
+                "linkUrl": "front/collections/maggie",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340678/storefront_media/file_w59uhn.jpg"
+              },
+              {
+                "title": "Nordic Spirit",
+                "linkUrl": "/collections/nordic-spirit",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340672/storefront_media/file_svvqvu.jpg"
+              },
+              {
+                "title": "XQS",
+                "linkUrl": "/collections/xqs",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340747/storefront_media/file_jnemfb.jpg"
+              },
+              {
+                "title": "Zyn",
+                "linkUrl": "/collections/zyn",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340742/storefront_media/file_ejx2jl.jpg"
+              },
+              {
+                "title": "Pablo",
+                "linkUrl": "/collections/pablo",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340738/storefront_media/file_tpulby.png"
+              },
+              {
+                "title": "Killa",
+                "linkUrl": "/collections/killa",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340731/storefront_media/file_syckye.png"
+              },
+              {
+                "title": "Fumi",
+                "linkUrl": "/collections/fumi",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340726/storefront_media/file_e22oq0.png"
+              },
+              {
+                "title": "Velo",
+                "linkUrl": "/collections/velo",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340720/storefront_media/file_xbjkv3.png"
+              },
+              {
+                "title": "White Fox",
+                "linkUrl": "/collections/white-fox",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340772/storefront_media/file_kp7jnq.png"
+              },
+              {
+                "title": "Snu",
+                "linkUrl": "/collections/snu",
+                "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1786340767/storefront_media/file_ve1qm2.png"
+              }
+            ],
+            "description": "Explore our catalog of certified compounding premium brands.",
+            "headingColor": "#0C1017",
+            "buttonBgColor": "#bcbcbd",
+            "cardTextColor": "#ffffff",
             "backgroundColor": "#FFFFFF"
-          }
-        },
-        {
-          "id": "contact-sec-2",
-          "type": "Trust badges",
-          "settings": {
-            "fullWidth": false,
-            "textColor": "#64748B",
-            "headingColor": "#0F172A",
-            "backgroundColor": "#F8FAFC"
           }
         }
       ],
-      "updatedAt": "Aug 04, 2026",
-      "visibility": "Visible",
-      "isHomepage": false
+      "updatedAt": "Jun 23, 2026",
+      "isHomepage": false,
+      "visibility": "Visible"
     },
     {
       "id": "about",
       "slug": "about",
       "title": "About Us",
       "sections": [
+        {
+          "id": "sec-1786341240876-xx4we",
+          "type": "Image banner",
+          "settings": {
+            "title": "",
+            "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785241912/storefront_media/file_hhelpo.png",
+            "fullWidth": true,
+            "textColor": "#64748B",
+            "buttonLink": "",
+            "buttonText": "",
+            "description": "",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        },
         {
           "id": "about-sec-1",
           "type": "Rich text",
@@ -6879,6 +7389,21 @@
             "textColor": "#475569",
             "description": "Pouch Supply is Europe’s premier directory and depot for tobacco-free nicotine slim white canisters. We source directly from certified manufacturing laboratories across Sweden, Poland, Germany, and Europe, ensuring 100% genuine products, freshness guarantees, and rapid worldwide dispatch.",
             "headingColor": "#0F172A",
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1786341376195-beju7",
+          "type": "Rich text",
+          "settings": {
+            "title": "What Are Nicotine Pouches?",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "buttonLink": "frontend-shop",
+            "buttonText": "Purchase Packs",
+            "description": "Nicotine pouches are small, soft pouches designed to deliver nicotine without smoke, vapor, or tobacco leaf. They are placed between the gum and upper lip where nicotine is gradually absorbed through the oral tissue.\n\nUnlike cigarettes or traditional smokeless tobacco, nicotine pouches are clean, discreet, and easy to use. They don’t produce smoke or require spitting, making them a convenient option for adult nicotine users.\n\nEach pouch typically contains nicotine, plant-based fibres, flavourings, and stabilizers that provide a smooth release of flavour and nicotine.\n\nUsers can enjoy a pouch for around 20–60 minutes, depending on the brand and strength.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
             "backgroundColor": "#FFFFFF"
           }
         },
@@ -6894,8 +7419,8 @@
         }
       ],
       "updatedAt": "Jul 20, 2026",
-      "visibility": "Visible",
-      "isHomepage": false
+      "isHomepage": false,
+      "visibility": "Visible"
     },
     {
       "id": "subscribe",
@@ -6987,8 +7512,85 @@
         }
       ],
       "updatedAt": "Jul 10, 2026",
-      "visibility": "Visible",
-      "isHomepage": false
+      "isHomepage": false,
+      "visibility": "Visible"
+    },
+    {
+      "id": "page-1785314096347",
+      "slug": "strength-guide",
+      "title": "Strength Guide",
+      "sections": [
+        {
+          "id": "sec-1785314096347",
+          "type": "Rich text",
+          "settings": {
+            "title": "Strength Guide",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "description": "",
+            "headingColor": "#1E293B",
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1785314113178",
+          "type": "Image with text",
+          "settings": {
+            "title": "Find the Right Nicotine Strength",
+            "imageUrl": "/api/uploads/file-1785314152748-77766.png",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "buttonLink": "/pages/subscribe",
+            "buttonText": "Purchase Packs",
+            "description": "Choosing the right nicotine strength is essential for a comfortable and satisfying experience. Whether you're new to nicotine pouches, transitioning from smoking or vaping, or an experienced user, our strength guide helps you select the option that best matches your tolerance and preferences. If you're unsure, we recommend starting with a lower strength and adjusting gradually over time.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        }
+      ],
+      "updatedAt": "Just now",
+      "isHomepage": false,
+      "visibility": "Visible"
+    },
+    {
+      "id": "page-1784697403555",
+      "slug": "test",
+      "title": "test",
+      "sections": [
+        {
+          "id": "sec-1784697403555",
+          "type": "Rich text",
+          "settings": {
+            "title": "test",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "description": "Custom sections will display below here.",
+            "headingColor": "#1E293B",
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1784697407787",
+          "type": "Image with text",
+          "settings": {
+            "title": "Curate Your Premium Package2",
+            "imageUrl": "/uploads/img-1784698495279-48330.webp",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "buttonLink": "frontend-shop",
+            "buttonText": "Purchase Packs",
+            "description": "Our plant-fiber formulations are packed under sterile medical conditions for persistent, smooth boosts.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        }
+      ],
+      "createdAt": "2026-07-22T05:17:00.395Z",
+      "updatedAt": "2026-07-22T05:17:10.126Z",
+      "isHomepage": false,
+      "visibility": "Visible"
     },
     {
       "id": "page-1785239768436",
@@ -7527,33 +8129,49 @@
       "visibility": "Visible"
     },
     {
-      "id": "page-1785314096347",
-      "slug": "strength-guide",
-      "title": "Strength Guide",
+      "id": "page-1785241844390",
+      "slug": "contact-page-1785241844390",
+      "title": "Contact Us",
       "sections": [
         {
-          "id": "sec-1785314096347",
-          "type": "Rich text",
+          "id": "sec-1785241848654",
+          "type": "Image banner",
           "settings": {
-            "title": "Strength Guide",
-            "fullWidth": false,
+            "title": "Exclusive Pouch Launch",
+            "imageUrl": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785241912/storefront_media/file_hhelpo.png",
+            "fullWidth": true,
             "textColor": "#64748B",
-            "description": "",
-            "headingColor": "#1E293B",
+            "buttonLink": "frontend-shop",
+            "buttonText": "Purchase Packs",
+            "description": "Edit option elements inside options sidebar",
+            "headingColor": "#ffffff",
+            "marqueeSpeed": 3,
             "backgroundColor": "#FFFFFF"
           }
         },
         {
-          "id": "sec-1785314113178",
-          "type": "Image with text",
+          "id": "sec-1785241855998",
+          "type": "Rich text",
           "settings": {
-            "title": "Find the Right Nicotine Strength",
-            "imageUrl": "/api/uploads/file-1785314152748-77766.png",
+            "title": "Contact Our Team",
             "fullWidth": false,
             "textColor": "#64748B",
             "buttonLink": "/pages/subscribe",
             "buttonText": "Purchase Packs",
-            "description": "Choosing the right nicotine strength is essential for a comfortable and satisfying experience. Whether you're new to nicotine pouches, transitioning from smoking or vaping, or an experienced user, our strength guide helps you select the option that best matches your tolerance and preferences. If you're unsure, we recommend starting with a lower strength and adjusting gradually over time.",
+            "description": "Have a question? Our team is here to help. Reach out to us at\nsupport@pouch-supply.com.",
+            "headingColor": "#1E293B",
+            "marqueeSpeed": 3,
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        {
+          "id": "sec-1785925760749-kp2t6",
+          "type": "Contact Form",
+          "settings": {
+            "title": "Custom Contact Form",
+            "fullWidth": false,
+            "textColor": "#64748B",
+            "description": "Edit option elements inside options sidebar",
             "headingColor": "#1E293B",
             "marqueeSpeed": 3,
             "backgroundColor": "#FFFFFF"
@@ -7565,41 +8183,34 @@
       "visibility": "Visible"
     },
     {
-      "id": "page-1784697403555",
-      "slug": "test",
-      "title": "test",
+      "id": "contact",
+      "slug": "contact",
+      "title": "Contact Us",
       "sections": [
         {
-          "id": "sec-1784697403555",
-          "type": "Rich text",
+          "id": "contact-sec-1",
+          "type": "Contact Form",
           "settings": {
-            "title": "test",
+            "title": "Get in Touch with Our Team",
             "fullWidth": false,
-            "textColor": "#64748B",
-            "description": "Custom sections will display below here.",
-            "headingColor": "#1E293B",
+            "textColor": "#475569",
+            "description": "Have questions about your order, shipping, or nicotine pouch brands? Fill out the form below or reach us directly. Our customer support team responds within 24 hours.",
+            "headingColor": "#0F172A",
             "backgroundColor": "#FFFFFF"
           }
         },
         {
-          "id": "sec-1784697407787",
-          "type": "Image with text",
+          "id": "contact-sec-2",
+          "type": "Trust badges",
           "settings": {
-            "title": "Curate Your Premium Package2",
-            "imageUrl": "/uploads/img-1784698495279-48330.webp",
             "fullWidth": false,
             "textColor": "#64748B",
-            "buttonLink": "frontend-shop",
-            "buttonText": "Purchase Packs",
-            "description": "Our plant-fiber formulations are packed under sterile medical conditions for persistent, smooth boosts.",
-            "headingColor": "#1E293B",
-            "marqueeSpeed": 3,
-            "backgroundColor": "#FFFFFF"
+            "headingColor": "#0F172A",
+            "backgroundColor": "#F8FAFC"
           }
         }
       ],
-      "createdAt": "2026-07-22T05:17:00.395Z",
-      "updatedAt": "2026-07-22T05:17:10.126Z",
+      "updatedAt": "Aug 04, 2026",
       "isHomepage": false,
       "visibility": "Visible"
     }
@@ -7671,21 +8282,6 @@
     }
   ],
   "email_logs": [
-    {
-      "type": "email_verification",
-      "recipient": "nehadice2020@gmail.com",
-      "subject": "Security Alert: New Account Login - Pouch Supply Co.",
-      "status": "sent",
-      "resendId": "0abecedb-a53c-47ad-9f3a-cffdd5697180",
-      "metadata": {
-        "data": {
-          "customerName": "neha bhardwazz",
-          "customerEmail": "nehadice2020@gmail.com"
-        }
-      },
-      "id": "log_1786520385007_e7fpr",
-      "timestamp": "2026-08-12T07:39:45.007Z"
-    },
     {
       "id": "log_1785583455067_xfufk",
       "type": "order_processing",
@@ -10649,6 +11245,233 @@
       },
       "recipient": "nehabhardwaz.gtl@gmail.com",
       "timestamp": "2026-08-11T11:42:15.981Z"
+    },
+    {
+      "id": "log_1786520385007_e7fpr",
+      "type": "email_verification",
+      "status": "sent",
+      "subject": "Security Alert: New Account Login - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "customerName": "neha bhardwazz",
+          "customerEmail": "nehadice2020@gmail.com"
+        }
+      },
+      "resendId": "0abecedb-a53c-47ad-9f3a-cffdd5697180",
+      "recipient": "nehadice2020@gmail.com",
+      "timestamp": "2026-08-12T07:39:45.007Z"
+    },
+    {
+      "id": "log_1786520995620_yu020",
+      "type": "email_verification",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "Security Alert: New Account Login - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Verify Your Email</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">Verify Your Email</h1>\n        <p class=\"subheading\">Welcome to Pouch Supply Co., neha!</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\" style=\"text-align: center;\">\n      <p style=\"font-size: 13px; color: #475569; margin: 0 0 16px 0;\">\n        Please verify your email address to complete your account setup and access member-only canister pricing.\n      </p>\n      \n      <div style=\"background-color: #0f172a; color: #00e599; font-size: 28px; font-weight: 900; letter-spacing: 6px; padding: 16px; border-radius: 8px; font-family: monospace; display: inline-block;\">\n        849201\n      </div>\n\n      <p style=\"font-size: 12px; color: #64748b; margin-top: 16px;\">\n        Enter this 6-digit verification code on the account verification page.\n      </p>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "nehabhardwaz.gtl@gmail.com",
+      "timestamp": "2026-08-12T07:49:55.620Z"
+    },
+    {
+      "id": "log_1786522664138_wz5lg",
+      "type": "order_confirmation",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "Order Confirmation - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "items": [
+            {
+              "sku": "PCH-563404-RASPBERRY-ICE",
+              "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785235962/storefront_media/file_xpemob.jpg",
+              "price": 4.99,
+              "vendor": "77",
+              "variant": "Standard",
+              "quantity": 1,
+              "productId": "PCH-563404-RASPBERRY-ICE",
+              "productTitle": "77 5.2 mg - Raspberry Ice"
+            }
+          ],
+          "total": 7.98,
+          "orderId": "PS82336",
+          "orderDate": "Aug 12, 2026 at 08:17 AM",
+          "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com",
+          "deliveryMethod": "Royal Mail Tracked 24/48"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Order Confirmation #PS82336</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">Order Confirmation #PS82336</h1>\n        <p class=\"subheading\">Thank you for your order, neha!</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\">\n      <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;\">\n        <div>\n          <span style=\"font-size: 12px; color: #64748b; font-weight: 700;\">ORDER REFERENCE</span>\n          <div style=\"font-size: 16px; font-weight: 900; color: #0f172a;\">PS82336</div>\n        </div>\n        <div>\n          <span class=\"badge badge-success\">Payment Confirmed</span>\n        </div>\n      </div>\n      <p style=\"font-size: 13px; color: #475569; margin: 0;\">\n        Your nicotine pouch order has been received and sent to our compounding lab for priority dispatch.\n      </p>\n    </div>\n\n    <h3 style=\"font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-top: 20px; margin-bottom: 8px;\">Order Summary</h3>\n    \n    <table class=\"item-table\">\n      <thead>\n        <tr>\n          <th>Item</th>\n          <th style=\"text-align: right;\">Amount</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n    <tr>\n      <td style=\"width: 60%; font-weight: 600; color: #1e293b;\">\n        77 5.2 mg - Raspberry Ice\n        <div style=\"font-size: 11px; color: #64748b; font-weight: normal;\">Qty: 1</div>\n      </td>\n      <td style=\"width: 40%; text-align: right; font-weight: 700; color: #0f172a;\">\n        £4.99\n      </td>\n    </tr>\n  \n      </tbody>\n    </table>\n\n    <div style=\"background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px;\">\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Subtotal</span>\n        <span style=\"font-weight: 600; color: #334155;\">£4.99</span>\n      </div>\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Royal Mail Delivery</span>\n        <span style=\"font-weight: 600; color: #334155;\">£2.99</span>\n      </div>\n      \n      <div style=\"display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; pt: 8px; margin-top: 8px;\">\n        <span>Total Paid</span>\n        <span style=\"color: #071d37;\">£7.98 GBP</span>\n      </div>\n    </div>\n  \n\n    <div class=\"card\" style=\"margin-top: 20px;\">\n      <h4 style=\"margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; color: #475569;\">Delivery Address</h4>\n      <p style=\"margin: 0; font-size: 13px; color: #1e293b; font-weight: 600;\">\n        Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom\n      </p>\n      <p style=\"margin: 4px 0 0 0; font-size: 12px; color: #64748b;\">\n        Method: Royal Mail Tracked 24/48\n      </p>\n    </div>\n\n    <div style=\"text-align: center; margin-top: 24px;\">\n      <a href=\"#\" class=\"btn\">View Order Status</a>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "nehabhardwaz.gtl@gmail.com",
+      "timestamp": "2026-08-12T08:17:44.138Z"
+    },
+    {
+      "id": "log_1786522867525_44ukn",
+      "type": "admin_new_order",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "🚨 New Storefront Order Placed",
+      "metadata": {
+        "data": {
+          "items": [
+            {
+              "sku": "PCH-563404-RASPBERRY-ICE",
+              "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785235962/storefront_media/file_xpemob.jpg",
+              "price": 4.99,
+              "vendor": "77",
+              "variant": "Standard",
+              "quantity": 1,
+              "productId": "PCH-563404-RASPBERRY-ICE",
+              "productTitle": "77 5.2 mg - Raspberry Ice"
+            }
+          ],
+          "total": 7.98,
+          "orderId": "PS82336",
+          "orderDate": "Aug 12, 2026 at 08:17 AM",
+          "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com",
+          "deliveryMethod": "Royal Mail Tracked 24/48"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>🚨 New Order #PS82336</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">🚨 New Order #PS82336</h1>\n        <p class=\"subheading\">Storefront Sale Alert: £7.98 GBP</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\" style=\"background-color: #f0fdf4; border-color: #bbf7d0;\">\n      <div style=\"display: flex; justify-content: space-between; align-items: center;\">\n        <div>\n          <span style=\"font-size: 11px; color: #166534; font-weight: 800; text-transform: uppercase;\">CUSTOMER</span>\n          <div style=\"font-size: 15px; font-weight: 800; color: #14532d;\">neha</div>\n          <div style=\"font-size: 12px; color: #15803d;\">nehabhardwaz.gtl@gmail.com</div>\n        </div>\n        <div>\n          <span class=\"badge badge-success\">£7.98</span>\n        </div>\n      </div>\n    </div>\n\n    <h3 style=\"font-size: 13px; text-transform: uppercase; color: #64748b; margin-top: 16px;\">Order Items</h3>\n    \n    <table class=\"item-table\">\n      <thead>\n        <tr>\n          <th>Item</th>\n          <th style=\"text-align: right;\">Amount</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n    <tr>\n      <td style=\"width: 60%; font-weight: 600; color: #1e293b;\">\n        77 5.2 mg - Raspberry Ice\n        <div style=\"font-size: 11px; color: #64748b; font-weight: normal;\">Qty: 1</div>\n      </td>\n      <td style=\"width: 40%; text-align: right; font-weight: 700; color: #0f172a;\">\n        £4.99\n      </td>\n    </tr>\n  \n      </tbody>\n    </table>\n\n    <div style=\"background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px;\">\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Subtotal</span>\n        <span style=\"font-weight: 600; color: #334155;\">£4.99</span>\n      </div>\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Royal Mail Delivery</span>\n        <span style=\"font-weight: 600; color: #334155;\">£2.99</span>\n      </div>\n      \n      <div style=\"display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; pt: 8px; margin-top: 8px;\">\n        <span>Total Paid</span>\n        <span style=\"color: #071d37;\">£7.98 GBP</span>\n      </div>\n    </div>\n  \n\n    <div class=\"card\" style=\"margin-top: 16px;\">\n      <h4 style=\"margin: 0 0 6px 0; font-size: 12px; text-transform: uppercase; color: #475569;\">Destination Address</h4>\n      <p style=\"margin: 0; font-size: 12px; color: #1e293b; font-weight: 600;\">\n        Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom\n      </p>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "scott@pouch-supply.com",
+      "timestamp": "2026-08-12T08:21:07.525Z"
+    },
+    {
+      "id": "log_1786528201864_wtwkc",
+      "type": "order_confirmation",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "Order Confirmation - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "items": [
+            {
+              "sku": "PCH-563404-MELON-MINT",
+              "image": "https://res.cloudinary.com/qfoxl8ia/image/upload/v1785235965/storefront_media/file_e1ub8p.jpg",
+              "price": 4.99,
+              "vendor": "77",
+              "variant": "Standard",
+              "quantity": 1,
+              "productId": "PCH-563404-MELON-MINT",
+              "productTitle": "77 5.2 mg - Melon Mint"
+            }
+          ],
+          "total": 7.98,
+          "orderId": "PS10231",
+          "orderDate": "Aug 12, 2026 at 09:49 AM",
+          "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com",
+          "deliveryMethod": "Royal Mail Tracked 24/48"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Order Confirmation #PS10231</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">Order Confirmation #PS10231</h1>\n        <p class=\"subheading\">Thank you for your order, neha!</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\">\n      <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;\">\n        <div>\n          <span style=\"font-size: 12px; color: #64748b; font-weight: 700;\">ORDER REFERENCE</span>\n          <div style=\"font-size: 16px; font-weight: 900; color: #0f172a;\">PS10231</div>\n        </div>\n        <div>\n          <span class=\"badge badge-success\">Payment Confirmed</span>\n        </div>\n      </div>\n      <p style=\"font-size: 13px; color: #475569; margin: 0;\">\n        Your nicotine pouch order has been received and sent to our compounding lab for priority dispatch.\n      </p>\n    </div>\n\n    <h3 style=\"font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-top: 20px; margin-bottom: 8px;\">Order Summary</h3>\n    \n    <table class=\"item-table\">\n      <thead>\n        <tr>\n          <th>Item</th>\n          <th style=\"text-align: right;\">Amount</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n    <tr>\n      <td style=\"width: 60%; font-weight: 600; color: #1e293b;\">\n        77 5.2 mg - Melon Mint\n        <div style=\"font-size: 11px; color: #64748b; font-weight: normal;\">Qty: 1</div>\n      </td>\n      <td style=\"width: 40%; text-align: right; font-weight: 700; color: #0f172a;\">\n        £4.99\n      </td>\n    </tr>\n  \n      </tbody>\n    </table>\n\n    <div style=\"background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px;\">\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Subtotal</span>\n        <span style=\"font-weight: 600; color: #334155;\">£4.99</span>\n      </div>\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Royal Mail Delivery</span>\n        <span style=\"font-weight: 600; color: #334155;\">£2.99</span>\n      </div>\n      \n      <div style=\"display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; pt: 8px; margin-top: 8px;\">\n        <span>Total Paid</span>\n        <span style=\"color: #071d37;\">£7.98 GBP</span>\n      </div>\n    </div>\n  \n\n    <div class=\"card\" style=\"margin-top: 20px;\">\n      <h4 style=\"margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; color: #475569;\">Delivery Address</h4>\n      <p style=\"margin: 0; font-size: 13px; color: #1e293b; font-weight: 600;\">\n        Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom\n      </p>\n      <p style=\"margin: 4px 0 0 0; font-size: 12px; color: #64748b;\">\n        Method: Royal Mail Tracked 24/48\n      </p>\n    </div>\n\n    <div style=\"text-align: center; margin-top: 24px;\">\n      <a href=\"#\" class=\"btn\">View Order Status</a>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "nehabhardwaz.gtl@gmail.com",
+      "timestamp": "2026-08-12T09:50:01.864Z"
+    },
+    {
+      "id": "log_1786532580798_hy5oi",
+      "type": "email_verification",
+      "status": "sent",
+      "subject": "Security Alert: New Account Login - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com"
+        }
+      },
+      "resendId": "09a3181f-d52c-4f47-bc98-f88ade5542e9",
+      "recipient": "nehabhardwaz.gtl@gmail.com",
+      "timestamp": "2026-08-12T11:03:00.798Z"
+    },
+    {
+      "id": "log_1786533448245_zt6gx",
+      "type": "email_verification",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "Security Alert: New Account Login - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "customerName": "Scott Kivlin",
+          "customerEmail": "scott@pouch-supply.com"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Verify Your Email</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">Verify Your Email</h1>\n        <p class=\"subheading\">Welcome to Pouch Supply Co., Scott Kivlin!</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\" style=\"text-align: center;\">\n      <p style=\"font-size: 13px; color: #475569; margin: 0 0 16px 0;\">\n        Please verify your email address to complete your account setup and access member-only canister pricing.\n      </p>\n      \n      <div style=\"background-color: #0f172a; color: #00e599; font-size: 28px; font-weight: 900; letter-spacing: 6px; padding: 16px; border-radius: 8px; font-family: monospace; display: inline-block;\">\n        849201\n      </div>\n\n      <p style=\"font-size: 12px; color: #64748b; margin-top: 16px;\">\n        Enter this 6-digit verification code on the account verification page.\n      </p>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "scott@pouch-supply.com",
+      "timestamp": "2026-08-12T11:17:28.245Z"
+    },
+    {
+      "id": "log_1786617105193_lr3gj",
+      "type": "order_confirmation",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "Order Confirmation - Pouch Supply Co.",
+      "metadata": {
+        "data": {
+          "items": [
+            {
+              "sku": "sub-pack-1786606955010",
+              "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+              "price": 25.19,
+              "vendor": "Subscription Pack",
+              "variant": "Standard",
+              "quantity": 1,
+              "productId": "sub-pack-1786606955010",
+              "productTitle": "LITE Plan [Next Day (Test) - 10% OFF] - (3 mg Apple Mint Mini (Qty:1), 6 mg Coffee Mini (Qty:1), 1.5 mg Spearmint Mini (Qty:1), 9 mg Red Fruits (Qty:1), 11 mg Guava Spice (Qty:1), 13.5 mg Menthol Ice (Qty:1))"
+            }
+          ],
+          "total": 28.18,
+          "orderId": "PS10964",
+          "orderDate": "Aug 13, 2026 at 10:31 AM",
+          "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com",
+          "deliveryMethod": "Royal Mail Tracked 24/48"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Order Confirmation #PS10964</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">Order Confirmation #PS10964</h1>\n        <p class=\"subheading\">Thank you for your order, neha!</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\">\n      <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;\">\n        <div>\n          <span style=\"font-size: 12px; color: #64748b; font-weight: 700;\">ORDER REFERENCE</span>\n          <div style=\"font-size: 16px; font-weight: 900; color: #0f172a;\">PS10964</div>\n        </div>\n        <div>\n          <span class=\"badge badge-success\">Payment Confirmed</span>\n        </div>\n      </div>\n      <p style=\"font-size: 13px; color: #475569; margin: 0;\">\n        Your nicotine pouch order has been received and sent to our compounding lab for priority dispatch.\n      </p>\n    </div>\n\n    <h3 style=\"font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-top: 20px; margin-bottom: 8px;\">Order Summary</h3>\n    \n    <table class=\"item-table\">\n      <thead>\n        <tr>\n          <th>Item</th>\n          <th style=\"text-align: right;\">Amount</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n    <tr>\n      <td style=\"width: 60%; font-weight: 600; color: #1e293b;\">\n        LITE Plan [Next Day (Test) - 10% OFF] - (3 mg Apple Mint Mini (Qty:1), 6 mg Coffee Mini (Qty:1), 1.5 mg Spearmint Mini (Qty:1), 9 mg Red Fruits (Qty:1), 11 mg Guava Spice (Qty:1), 13.5 mg Menthol Ice (Qty:1))\n        <div style=\"font-size: 11px; color: #64748b; font-weight: normal;\">Qty: 1</div>\n      </td>\n      <td style=\"width: 40%; text-align: right; font-weight: 700; color: #0f172a;\">\n        £25.19\n      </td>\n    </tr>\n  \n      </tbody>\n    </table>\n\n    <div style=\"background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px;\">\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Subtotal</span>\n        <span style=\"font-weight: 600; color: #334155;\">£25.19</span>\n      </div>\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Royal Mail Delivery</span>\n        <span style=\"font-weight: 600; color: #334155;\">£2.99</span>\n      </div>\n      \n      <div style=\"display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; pt: 8px; margin-top: 8px;\">\n        <span>Total Paid</span>\n        <span style=\"color: #071d37;\">£28.18 GBP</span>\n      </div>\n    </div>\n  \n\n    <div class=\"card\" style=\"margin-top: 20px;\">\n      <h4 style=\"margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; color: #475569;\">Delivery Address</h4>\n      <p style=\"margin: 0; font-size: 13px; color: #1e293b; font-weight: 600;\">\n        Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom\n      </p>\n      <p style=\"margin: 4px 0 0 0; font-size: 12px; color: #64748b;\">\n        Method: Royal Mail Tracked 24/48\n      </p>\n    </div>\n\n    <div style=\"text-align: center; margin-top: 24px;\">\n      <a href=\"#\" class=\"btn\">View Order Status</a>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "nehabhardwaz.gtl@gmail.com",
+      "timestamp": "2026-08-13T10:31:45.193Z"
+    },
+    {
+      "id": "log_1786617239299_qhwy0",
+      "type": "admin_new_order",
+      "error": "Invalid `from` field. The email address needs to follow the `email@example.com` or `Name <email@example.com>` format.",
+      "status": "failed",
+      "subject": "🚨 New Storefront Order Placed",
+      "metadata": {
+        "data": {
+          "items": [
+            {
+              "sku": "sub-pack-1786606955010",
+              "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+              "price": 25.19,
+              "vendor": "Subscription Pack",
+              "variant": "Standard",
+              "quantity": 1,
+              "productId": "sub-pack-1786606955010",
+              "productTitle": "LITE Plan [Next Day (Test) - 10% OFF] - (3 mg Apple Mint Mini (Qty:1), 6 mg Coffee Mini (Qty:1), 1.5 mg Spearmint Mini (Qty:1), 9 mg Red Fruits (Qty:1), 11 mg Guava Spice (Qty:1), 13.5 mg Menthol Ice (Qty:1))"
+            }
+          ],
+          "total": 28.18,
+          "orderId": "PS10964",
+          "orderDate": "Aug 13, 2026 at 10:31 AM",
+          "destination": "Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom",
+          "customerName": "neha",
+          "customerEmail": "nehabhardwaz.gtl@gmail.com",
+          "deliveryMethod": "Royal Mail Tracked 24/48"
+        },
+        "html": "\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>🚨 New Order #PS10964</title>\n    <style>\n      body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155; }\n      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }\n      .header { background-color: #071d37; padding: 32px 24px; text-align: center; color: #ffffff; }\n      .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0; color: #ffffff; }\n      .tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #00e599; margin-top: 6px; font-weight: 700; }\n      .title-box { padding: 24px 24px 12px 24px; text-align: center; }\n      .heading { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }\n      .subheading { font-size: 14px; color: #64748b; margin: 0; leading: 1.5; }\n      .body-content { padding: 0 24px 24px 24px; }\n      .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }\n      .btn { display: inline-block; background-color: #071d37; color: #ffffff !important; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 24px; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 12px; }\n      .footer { background-color: #0f172a; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; }\n      .footer a { color: #00e599; text-decoration: none; }\n      .item-table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; }\n      .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-b: 1px solid #e2e8f0; padding-bottom: 8px; }\n      .item-table td { padding: 12px 0; border-b: 1px solid #f1f5f9; font-size: 13px; }\n      .total-row { font-weight: 700; font-size: 15px; color: #0f172a; }\n      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }\n      .badge-success { background-color: #dcfce7; color: #166534; }\n      .badge-info { background-color: #e0f2fe; color: #0369a1; }\n      .badge-warning { background-color: #fef3c7; color: #92400e; }\n      .badge-danger { background-color: #fee2e2; color: #991b1b; }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <div class=\"header\">\n        <div class=\"logo\">POUCH SUPPLY CO.</div>\n        <div class=\"tagline\">Premium Nicotine Canisters • UK Lab Standards</div>\n      </div>\n      <div class=\"title-box\">\n        <h1 class=\"heading\">🚨 New Order #PS10964</h1>\n        <p class=\"subheading\">Storefront Sale Alert: £28.18 GBP</p>\n      </div>\n      <div class=\"body-content\">\n  \n    <div class=\"card\" style=\"background-color: #f0fdf4; border-color: #bbf7d0;\">\n      <div style=\"display: flex; justify-content: space-between; align-items: center;\">\n        <div>\n          <span style=\"font-size: 11px; color: #166534; font-weight: 800; text-transform: uppercase;\">CUSTOMER</span>\n          <div style=\"font-size: 15px; font-weight: 800; color: #14532d;\">neha</div>\n          <div style=\"font-size: 12px; color: #15803d;\">nehabhardwaz.gtl@gmail.com</div>\n        </div>\n        <div>\n          <span class=\"badge badge-success\">£28.18</span>\n        </div>\n      </div>\n    </div>\n\n    <h3 style=\"font-size: 13px; text-transform: uppercase; color: #64748b; margin-top: 16px;\">Order Items</h3>\n    \n    <table class=\"item-table\">\n      <thead>\n        <tr>\n          <th>Item</th>\n          <th style=\"text-align: right;\">Amount</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n    <tr>\n      <td style=\"width: 60%; font-weight: 600; color: #1e293b;\">\n        LITE Plan [Next Day (Test) - 10% OFF] - (3 mg Apple Mint Mini (Qty:1), 6 mg Coffee Mini (Qty:1), 1.5 mg Spearmint Mini (Qty:1), 9 mg Red Fruits (Qty:1), 11 mg Guava Spice (Qty:1), 13.5 mg Menthol Ice (Qty:1))\n        <div style=\"font-size: 11px; color: #64748b; font-weight: normal;\">Qty: 1</div>\n      </td>\n      <td style=\"width: 40%; text-align: right; font-weight: 700; color: #0f172a;\">\n        £25.19\n      </td>\n    </tr>\n  \n      </tbody>\n    </table>\n\n    <div style=\"background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px;\">\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Subtotal</span>\n        <span style=\"font-weight: 600; color: #334155;\">£25.19</span>\n      </div>\n      <div style=\"display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #64748b;\">\n        <span>Royal Mail Delivery</span>\n        <span style=\"font-weight: 600; color: #334155;\">£2.99</span>\n      </div>\n      \n      <div style=\"display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; pt: 8px; margin-top: 8px;\">\n        <span>Total Paid</span>\n        <span style=\"color: #071d37;\">£28.18 GBP</span>\n      </div>\n    </div>\n  \n\n    <div class=\"card\" style=\"margin-top: 16px;\">\n      <h4 style=\"margin: 0 0 6px 0; font-size: 12px; text-transform: uppercase; color: #475569;\">Destination Address</h4>\n      <p style=\"margin: 0; font-size: 12px; color: #1e293b; font-weight: 600;\">\n        Daari, London, EC1A 1BB, United Kingdom, London, EC1A 1BB, United Kingdom\n      </p>\n    </div>\n  \n      </div>\n      <div class=\"footer\">\n        <p style=\"margin: 0 0 8px 0; font-weight: 700; color: #ffffff;\">Pouch Supply Co.</p>\n        <p style=\"margin: 0 0 12px 0;\">UK-Licensed Laboratory Pouch Compounding Facility</p>\n        <p style=\"margin: 0;\">Need support? Email us at <a href=\"mailto:scott@pouch-supply.com\">scott@pouch-supply.com</a></p>\n        <p style=\"margin-top: 16px; font-size: 10px; color: #64748b;\">© 2026 Pouch Supply Co.. All rights reserved.</p>\n      </div>\n    </div>\n  </body>\n  </html>\n  "
+      },
+      "recipient": "scott@pouch-supply.com",
+      "timestamp": "2026-08-13T10:33:59.299Z"
     }
   ]
 }

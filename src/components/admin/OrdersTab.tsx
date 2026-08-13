@@ -197,10 +197,10 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
       `Are you sure you want to delete Order #${orderToDelete.id}? An undo option will be available to restore it.`,
       () => {
         setRecentlyDeletedOrders([orderToDelete]);
-        if (selectedOrder && selectedOrder.id === orderToDelete.id) {
+        if (selectedOrder && String(selectedOrder.id) === String(orderToDelete.id)) {
           setSelectedOrder(null);
         }
-        parentOnUpdateOrders(parentOrders.filter(o => o.id !== orderToDelete.id));
+        parentOnUpdateOrders(parentOrders.filter(o => String(o.id) !== String(orderToDelete.id)));
 
         // Send explicit DELETE request to API
         fetch(`/api/orders/${orderToDelete.id}`, { method: 'DELETE' }).catch(err => console.warn('Failed API DELETE for order:', orderToDelete.id, err));
