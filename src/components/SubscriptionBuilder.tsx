@@ -836,6 +836,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
                 onChange={(e) => setFrequency(e.target.value)}
                 className="w-full text-xs font-semibold border border-slate-200 p-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
               >
+                <option value="Next Day (Test)">Next Day (Test - 1 Day Recurring)</option>
                 <option value="Weekly">Weekly (5% Discount)</option>
                 <option value="Bi-Weekly">Bi-Weekly (10% Discount - Most Popular)</option>
                 <option value="One Month">One Month (12% Discount)</option>
@@ -846,7 +847,7 @@ export default function SubscriptionBuilder({ allProducts, collections, onAddSub
             {(() => {
               const extraCans = activePlanSlug === 'ultimate' && totalSelectedCount > 12 ? totalSelectedCount - 12 : 0;
               const rawSubTotal = activePrice + (extraCans * 3.80);
-              const discountPct = frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10);
+              const discountPct = frequency === 'Next Day (Test)' ? 10 : (frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10));
               const calculatedRate = rawSubTotal * ((100 - discountPct) / 100);
 
               return (

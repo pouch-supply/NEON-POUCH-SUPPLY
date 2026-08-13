@@ -69,8 +69,12 @@ router.post(
 
       const nextBillingDate = new Date();
 
-      if (billingInterval === "week") {
+      if (billingInterval === "Next Day (Test)" || billingInterval === "Next Day" || billingInterval === "next_day" || billingInterval === "1day" || billingInterval === "day") {
+        nextBillingDate.setDate(nextBillingDate.getDate() + 1);
+      } else if (billingInterval === "week" || billingInterval === "Weekly" || billingInterval === "weekly") {
         nextBillingDate.setDate(nextBillingDate.getDate() + 7);
+      } else if (billingInterval === "Bi-Weekly" || billingInterval === "bi-weekly" || billingInterval === "biweekly") {
+        nextBillingDate.setDate(nextBillingDate.getDate() + 14);
       } else if (billingInterval === "year") {
         nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
       } else {
@@ -215,8 +219,12 @@ router.post(
         ? new Date(subscription.nextBillingDate)
         : new Date();
 
-      if (subscription.billingInterval === "week") {
+      if (subscription.billingInterval === "Next Day (Test)" || subscription.billingInterval === "Next Day" || subscription.billingInterval === "next_day" || subscription.billingInterval === "1day" || subscription.billingInterval === "day") {
+        nextBillingDate.setDate(nextBillingDate.getDate() + 1);
+      } else if (subscription.billingInterval === "week" || subscription.billingInterval === "Weekly" || subscription.billingInterval === "weekly") {
         nextBillingDate.setDate(nextBillingDate.getDate() + 7);
+      } else if (subscription.billingInterval === "Bi-Weekly" || subscription.billingInterval === "bi-weekly" || subscription.billingInterval === "biweekly") {
+        nextBillingDate.setDate(nextBillingDate.getDate() + 14);
       } else if (subscription.billingInterval === "year") {
         nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
       } else {
