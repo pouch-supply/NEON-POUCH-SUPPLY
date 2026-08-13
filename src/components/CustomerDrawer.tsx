@@ -59,9 +59,9 @@ export default function CustomerDrawer({
       if (res.ok) {
         const logs = await res.json();
         if (Array.isArray(logs)) {
-          const userEmail = loggedInCustomer?.email?.toLowerCase();
+          const userEmail = (loggedInCustomer?.email || '').toLowerCase();
           const filtered = logs.filter((l: any) => 
-            (!userEmail || l.recipient?.toLowerCase() === userEmail) && l.status !== 'simulated'
+            (!userEmail || (l.recipient || l.to || '').toLowerCase() === userEmail) && l.status !== 'simulated'
           );
           setEmailsList(filtered);
         }
@@ -330,9 +330,9 @@ export default function CustomerDrawer({
     }
   };
 
-  const myOrders = loggedInCustomer 
+  const myOrders = (loggedInCustomer && loggedInCustomer.email)
     ? orders
-        .filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase())
+        .filter(o => o && o.customerEmail && o.customerEmail.toLowerCase() === (loggedInCustomer.email || '').toLowerCase())
         .sort((a, b) => parseOrderTime(b) - parseOrderTime(a))
     : [];
 
@@ -772,7 +772,7 @@ export default function CustomerDrawer({
                         }`}
                       >
                         <Mail className="h-3 w-3 inline-block mr-1 -mt-0.5 text-slate-500" />
-                        Inbox ({loggedInCustomer ? emailsList.filter(e => e.to.toLowerCase() === loggedInCustomer.email.toLowerCase()).length : 0})
+                        Inbox ({loggedInCustomer && loggedInCustomer.email ? emailsList.filter(e => e && (e.recipient || e.to || '').toLowerCase() === (loggedInCustomer.email || '').toLowerCase()).length : 0})
                       </button>
                     </div>
 
@@ -1121,14 +1121,14 @@ export default function CustomerDrawer({
                           ) : (
                             <div className="grid grid-cols-1 gap-2.5">
                               {(loggedInCustomer.wishlist || []).map((productId, wIdx) => {
-                                const pidStr = String(productId).trim().toLowerCase();
-                                const prod = allProducts.find(p => 
-                                  String(p.id).toLowerCase() === pidStr || 
+                                const pidStr = String(productId || '').trim().toLowerCase();
+                                const prod = allProducts.find(p => p && (
+                                  String(p.id || '').toLowerCase() === pidStr || 
                                   (p.slug && String(p.slug).toLowerCase() === pidStr) || 
                                   (p.title && String(p.title).toLowerCase() === pidStr) ||
                                   (p.concreteVariantId && String(p.concreteVariantId).toLowerCase() === pidStr) ||
-                                  (p.concreteVariants && p.concreteVariants.some(v => String(v.id).toLowerCase() === pidStr || String(v.name).toLowerCase() === pidStr))
-                                );
+                                  (p.concreteVariants && p.concreteVariants.some(v => v && ((v.id && String(v.id || '').toLowerCase() === pidStr) || (v.name && String(v.name || '').toLowerCase() === pidStr))))
+                                ));
                                 if (!prod) return null;
                                 const displayTitle = getWishlistProductTitle(prod, String(productId));
 
@@ -1191,7 +1191,8 @@ export default function CustomerDrawer({
                               <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-[200px] mx-auto">Please sign in to view dispatched order notifications sent to your address.</p>
                             </div>
                           ) : (() => {
-                            const myEmails = emailsList.filter(e => e.to.toLowerCase() === loggedInCustomer.email.toLowerCase());
+                            const userEmail = (loggedInCustomer?.email || '').toLowerCase();
+                            const myEmails = emailsList.filter(e => e && userEmail && (e.recipient || e.to || '').toLowerCase() === userEmail);
                             return myEmails.length === 0 ? (
                               <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                 <Mail className="h-8 w-8 text-neutral-300 mx-auto mb-2" />

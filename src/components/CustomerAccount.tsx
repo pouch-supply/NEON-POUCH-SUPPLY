@@ -156,20 +156,22 @@ export default function CustomerAccount({
     { level: 4, name: "Platinum Member", required: 31 }
   ];
 
-  const myOrders = loggedInCustomer 
+  const myOrders = (loggedInCustomer && loggedInCustomer.email) 
     ? orders
-        .filter(o => o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase())
+        .filter(o => o && o.customerEmail && o.customerEmail.toLowerCase() === (loggedInCustomer.email || '').toLowerCase())
         .sort((a, b) => parseOrderTime(b) - parseOrderTime(a))
     : [];
   const ordersCount = myOrders.length;
 
   const mySubOrders = myOrders.filter(o => 
     o.isSubscription ||
-    (Array.isArray(o.tags) && o.tags.some(t => t.toLowerCase().includes('subscription'))) ||
+    (Array.isArray(o.tags) && o.tags.some(t => t && t.toLowerCase().includes('subscription'))) ||
     (Array.isArray(o.items) && o.items.some((i: any) => 
-      i.isSubscription || 
-      i.vendor === 'Subscription Pack' || 
-      (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+      i && (
+        i.isSubscription || 
+        i.vendor === 'Subscription Pack' || 
+        (i.productTitle && (i.productTitle.toLowerCase().includes('subscription') || i.productTitle.toLowerCase().includes('pack')))
+      )
     ))
   );
 
@@ -323,13 +325,15 @@ export default function CustomerAccount({
 
     // 1. Scan registered customers
     customers.forEach(c => {
-      if (c.referredByCode && c.referredByCode.toUpperCase() === realReferralCode.toUpperCase()) {
-        if (c.email.toLowerCase() !== loggedInCustomer.email.toLowerCase()) {
-          referredEmails.add(c.email.toLowerCase());
-          const hasOrdered = orders.some(o => o.customerEmail.toLowerCase() === c.email.toLowerCase());
+      if (c && c.email && c.referredByCode && c.referredByCode.toUpperCase() === realReferralCode.toUpperCase()) {
+        const cEmail = c.email.toLowerCase();
+        const myEmail = (loggedInCustomer?.email || '').toLowerCase();
+        if (cEmail !== myEmail) {
+          referredEmails.add(cEmail);
+          const hasOrdered = orders.some(o => o && o.customerEmail && o.customerEmail.toLowerCase() === cEmail);
           dynamicReferrals.push({
-            name: c.name,
-            email: c.email.toLowerCase(),
+            name: c.name || 'Friend',
+            email: cEmail,
             date: "Recently Registered",
             status: hasOrdered ? 'Ordered' : 'Registered',
             credit: hasOrdered ? '£5.00' : 'Pending'
@@ -340,17 +344,19 @@ export default function CustomerAccount({
 
     // 2. Scan orders for guest or other users who applied this referrer's code at checkout
     orders.forEach(o => {
+      if (!o || !o.customerEmail) return;
       const disc = o.discountApplied;
       const isMyReferralCode = disc && (
         disc.id === `disc-ref-virtual-${loggedInCustomer.id}` ||
         disc.id === `disc-ref-${loggedInCustomer.id}` ||
-        disc.title.toUpperCase() === realReferralCode.toUpperCase()
+        (disc.title && disc.title.toUpperCase() === realReferralCode.toUpperCase())
       );
-      if (isMyReferralCode && o.customerEmail.toLowerCase() !== loggedInCustomer.email.toLowerCase()) {
-        const emailLower = o.customerEmail.toLowerCase();
+      const emailLower = o.customerEmail.toLowerCase();
+      const myEmail = (loggedInCustomer?.email || '').toLowerCase();
+      if (isMyReferralCode && emailLower !== myEmail) {
         if (!referredEmails.has(emailLower)) {
           referredEmails.add(emailLower);
-          const matchCust = customers.find(c => c.email.toLowerCase() === emailLower);
+          const matchCust = customers.find(c => c && c.email && c.email.toLowerCase() === emailLower);
           const displayName = matchCust ? matchCust.name : (o.customerName || "Friend");
           dynamicReferrals.push({
             name: displayName,

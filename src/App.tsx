@@ -432,7 +432,7 @@ export default function App() {
             try {
               const savedObj = JSON.parse(savedStr);
               if (savedObj && savedObj.email) {
-                const fresh = custsRes.find((c: any) => c.id === savedObj.id || c.email.toLowerCase() === savedObj.email.toLowerCase());
+                const fresh = custsRes.find((c: any) => c.id === savedObj.id || (c.email && c.email.toLowerCase() === savedObj.email.toLowerCase()));
                 if (fresh) {
                   setLoggedInCustomer(fresh);
                 }
@@ -1055,14 +1055,15 @@ export default function App() {
     setCustomers(prevCustomers => {
       let changed = false;
       const updatedCustomers = prevCustomers.map(cust => {
+        if (!cust || !cust.email) return cust;
         const emailLower = cust.email.toLowerCase();
-        const custOrders = orders.filter(o => o.customerEmail.toLowerCase() === emailLower);
+        const custOrders = orders.filter(o => o && o.customerEmail && o.customerEmail.toLowerCase() === emailLower);
         const actualOrdersCount = custOrders.length;
         const actualAmountSpent = custOrders.reduce((sum, o) => sum + (o.paymentStatus === 'Failed' ? 0 : o.total), 0);
         
         // Collect any unique non-placeholder destinations from their orders
         const orderAddresses = custOrders
-          .map(o => o.destination.trim())
+          .map(o => (o.destination || '').trim())
           .filter(dest => dest && dest !== "100 Main Street, New York, NY, 10001");
         
         // Merge with existing addresses
@@ -1073,7 +1074,7 @@ export default function App() {
         const addressesChanged = JSON.stringify(cust.addresses) !== JSON.stringify(mergedAddresses);
         if (
           cust.ordersCount !== actualOrdersCount ||
-          Math.abs(cust.amountSpent - actualAmountSpent) > 0.01 ||
+          Math.abs((cust.amountSpent || 0) - actualAmountSpent) > 0.01 ||
           addressesChanged
         ) {
           changed = true;
@@ -1088,14 +1089,15 @@ export default function App() {
       });
 
       // Find any emails in orders that do not exist in customers list
-      const existingEmails = new Set(prevCustomers.map(c => c.email.toLowerCase()));
+      const existingEmails = new Set(prevCustomers.filter(c => c && c.email).map(c => c.email.toLowerCase()));
       const newCustomersToAdd: Customer[] = [];
 
       orders.forEach(order => {
+        if (!order || !order.customerEmail) return;
         const emailLower = order.customerEmail.toLowerCase();
         if (emailLower && !existingEmails.has(emailLower)) {
           // Construct customer object from this order
-          const custOrders = orders.filter(o => o.customerEmail.toLowerCase() === emailLower);
+          const custOrders = orders.filter(o => o && o.customerEmail && o.customerEmail.toLowerCase() === emailLower);
           const actualOrdersCount = custOrders.length;
           const actualAmountSpent = custOrders.reduce((sum, o) => sum + (o.paymentStatus === 'Failed' ? 0 : o.total), 0);
           
@@ -1172,12 +1174,14 @@ export default function App() {
       return `${cleanTitle} (Qty:${i.quantity})`;
     }).join(', ');
 
-    const freqDiscountPct = frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10);
+    const freqDiscountPct = (frequency === 'Next Day (Test)' || frequency === 'Next Day') ? 10 : (frequency === 'Weekly' ? 5 : (frequency === 'One Month' ? 12 : 10));
     const desc = `${packName} [${frequency} - ${freqDiscountPct}% OFF] - (${listSummary})`;
 
     const now = new Date();
     const nextPaymentDate = new Date(now);
-    if (frequency === 'Weekly') {
+    if (frequency === 'Next Day (Test)' || frequency === 'Next Day') {
+      nextPaymentDate.setDate(now.getDate() + 1);
+    } else if (frequency === 'Weekly') {
       nextPaymentDate.setDate(now.getDate() + 7);
     } else if (frequency === 'Bi-Weekly') {
       nextPaymentDate.setDate(now.getDate() + 14);

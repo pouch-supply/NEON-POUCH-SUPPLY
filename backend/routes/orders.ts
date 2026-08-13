@@ -37,8 +37,8 @@ export async function saveSingleOrder(orderData: any) {
 
   if (isSubscription && !subscriptionDetails) {
     let planName = subItem?.subscriptionPlan || 'LITE Plan';
-    let frequency = subItem?.subscriptionFrequency || 'Bi-Weekly';
-    let frequencyDiscount = subItem?.frequencyDiscount || '10%';
+    let frequency = subItem?.subscriptionFrequency || '';
+    let frequencyDiscount = subItem?.frequencyDiscount || '';
 
     const title = (subItem?.productTitle || '').toLowerCase();
     if (title.includes('core')) planName = 'CORE Plan';
@@ -46,20 +46,32 @@ export async function saveSingleOrder(orderData: any) {
     else if (title.includes('ultimate')) planName = 'ULTIMATE Plan';
     else if (title.includes('lite')) planName = 'LITE Plan';
 
-    if (title.includes('weekly') && !title.includes('bi')) {
-      frequency = 'Weekly';
-      frequencyDiscount = '5%';
-    } else if (title.includes('bi-weekly') || title.includes('by weekly') || title.includes('2 week')) {
-      frequency = 'Bi-Weekly';
-      frequencyDiscount = '10%';
-    } else if (title.includes('month') || title.includes('one month')) {
-      frequency = 'One Month';
-      frequencyDiscount = '12%';
+    if (!frequency) {
+      if (title.includes('next day') || title.includes('1 day')) {
+        frequency = 'Next Day (Test)';
+      } else if (title.includes('weekly') && !title.includes('bi')) {
+        frequency = 'Weekly';
+      } else if (title.includes('bi-weekly') || title.includes('by weekly') || title.includes('2 week')) {
+        frequency = 'Bi-Weekly';
+      } else if (title.includes('month') || title.includes('one month')) {
+        frequency = 'One Month';
+      } else {
+        frequency = 'Bi-Weekly';
+      }
+    }
+
+    if (!frequencyDiscount) {
+      if (frequency.includes('Next Day')) frequencyDiscount = '10%';
+      else if (frequency === 'Weekly') frequencyDiscount = '5%';
+      else if (frequency === 'One Month') frequencyDiscount = '12%';
+      else frequencyDiscount = '10%';
     }
 
     const baseDate = new Date();
     const nextDate = new Date(baseDate);
-    if (frequency === 'Weekly') {
+    if (frequency.includes('Next Day')) {
+      nextDate.setDate(baseDate.getDate() + 1);
+    } else if (frequency === 'Weekly') {
       nextDate.setDate(baseDate.getDate() + 7);
     } else if (frequency === 'Bi-Weekly') {
       nextDate.setDate(baseDate.getDate() + 14);
