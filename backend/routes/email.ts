@@ -359,11 +359,11 @@ router.post('/contact', async (req: Request, res: Response) => {
       </div>
     `;
 
-    let adminStatus: 'sent' | 'simulated' | 'failed' = 'simulated';
+    let adminStatus: 'sent' | 'failed' = 'failed';
     let adminResendId: string | undefined = undefined;
     let adminError: string | undefined = undefined;
 
-    let custStatus: 'sent' | 'simulated' | 'failed' = 'simulated';
+    let custStatus: 'sent' | 'failed' = 'failed';
     let custResendId: string | undefined = undefined;
     let custError: string | undefined = undefined;
 
@@ -436,8 +436,8 @@ router.post('/contact', async (req: Request, res: Response) => {
         custError = err.message || String(err);
       }
     } else {
-      adminError = 'No Resend API key configured (simulated mode)';
-      custError = 'No Resend API key configured (simulated mode)';
+      adminError = 'No Resend API key configured';
+      custError = 'No Resend API key configured';
     }
 
     // Save logs for both emails

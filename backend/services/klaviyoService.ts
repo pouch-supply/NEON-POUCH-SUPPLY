@@ -22,7 +22,7 @@ export interface KlaviyoEventLog {
   id: string;
   eventName: string;
   customerEmail: string;
-  status: 'sent' | 'simulated' | 'failed' | 'disabled';
+  status: 'sent' | 'failed' | 'disabled';
   error?: string;
   timestamp: string;
   payload?: any;
@@ -86,7 +86,10 @@ export async function saveKlaviyoSettings(settings: Partial<KlaviyoSettings>): P
 export async function getKlaviyoLogs(): Promise<KlaviyoEventLog[]> {
   try {
     const logs = await fetchResource('klaviyo_logs');
-    return Array.isArray(logs) ? logs : [];
+    if (Array.isArray(logs)) {
+      return logs.filter((l: any) => l.status !== 'simulated');
+    }
+    return [];
   } catch (err) {
     return [];
   }
@@ -129,15 +132,15 @@ export async function trackKlaviyoEvent(
   const apiKey = settings.apiKey || process.env.KLAVIYO_API_KEY;
 
   if (!apiKey || apiKey.trim() === '') {
-    console.log(`[Klaviyo] Simulated event '${eventName}' for ${customerEmail} (No KLAVIYO_API_KEY configured)`);
+    console.warn(`[Klaviyo] Event '${eventName}' not tracked for ${customerEmail} (No KLAVIYO_API_KEY configured)`);
     const log = await logKlaviyoEvent({
       eventName,
       customerEmail,
-      status: 'simulated',
-      error: 'No KLAVIYO_API_KEY configured (simulated mode active)',
+      status: 'failed',
+      error: 'Klaviyo Private API Key is not configured. Enter an API key in Klaviyo Settings to track events.',
       payload: { eventProperties, customerProperties }
     });
-    return { success: true, log };
+    return { success: false, log };
   }
 
   try {

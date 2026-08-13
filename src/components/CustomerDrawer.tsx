@@ -53,13 +53,18 @@ export default function CustomerDrawer({
   const [emailsList, setEmailsList] = useState<any[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<any | null>(null);
 
-  const loadEmails = () => {
+  const loadEmails = async () => {
     try {
-      const stored = localStorage.getItem('ps_simulated_emails');
-      if (stored) {
-        setEmailsList(JSON.parse(stored));
-      } else {
-        setEmailsList([]);
+      const res = await fetch('/api/email/logs');
+      if (res.ok) {
+        const logs = await res.json();
+        if (Array.isArray(logs)) {
+          const userEmail = loggedInCustomer?.email?.toLowerCase();
+          const filtered = logs.filter((l: any) => 
+            (!userEmail || l.recipient?.toLowerCase() === userEmail) && l.status !== 'simulated'
+          );
+          setEmailsList(filtered);
+        }
       }
     } catch (e) {
       console.error(e);

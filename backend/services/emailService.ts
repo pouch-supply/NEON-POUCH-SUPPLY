@@ -46,7 +46,7 @@ export interface EmailLogEntry {
   type: EmailTemplateType;
   recipient: string;
   subject: string;
-  status: 'sent' | 'simulated' | 'failed' | 'disabled';
+  status: 'sent' | 'failed' | 'disabled';
   resendId?: string;
   error?: string;
   timestamp: string;
@@ -110,7 +110,10 @@ export async function saveEmailSettings(settings: Partial<EmailSettings>): Promi
 export async function getEmailLogs(): Promise<EmailLogEntry[]> {
   try {
     const logs = await fetchResource('email_logs');
-    return Array.isArray(logs) ? logs : [];
+    if (Array.isArray(logs)) {
+      return logs.filter((l: any) => l.status !== 'simulated');
+    }
+    return [];
   } catch (err) {
     return [];
   }
@@ -222,19 +225,19 @@ export async function sendEmail(
     : (settings.resendApiKey || process.env.RESEND_API_KEY || '').trim();
 
   if (!apiKey) {
-    console.warn(`[EmailService] No RESEND_API_KEY found. Simulating email dispatch to ${recipient}.`);
+    console.warn(`[EmailService] No RESEND_API_KEY configured. Cannot send email to ${recipient}.`);
     const log = await logEmail({
       type,
       recipient,
       subject,
-      status: 'simulated',
-      error: 'No RESEND_API_KEY configured (simulated mode active)',
+      status: 'failed',
+      error: 'Resend API key is not configured. Enter an API key in Email Settings to send emails.',
       metadata: { data, html }
     });
     return {
-      success: true,
-      mode: 'simulated',
-      message: `Simulated Email Sent! Test email for '${type}' generated for ${recipient}. To send live emails to external inboxes, enter a Resend API Key in Email Settings.`,
+      success: false,
+      mode: 'live',
+      message: 'Resend API key is not configured. Enter a Resend API key in Email Settings to dispatch real emails.',
       log
     };
   }

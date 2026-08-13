@@ -715,14 +715,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                           date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         };
 
-                        try {
-                          const stored = localStorage.getItem('ps_simulated_emails');
-                          const emails = stored ? JSON.parse(stored) : [];
-                          localStorage.setItem('ps_simulated_emails', JSON.stringify([newEmail, ...emails]));
-                          window.dispatchEvent(new CustomEvent('ps-emails-updated'));
-                        } catch (e) {
-                          console.error(e);
-                        }
+                        fetch('/api/email/send-trigger', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            type: 'order_refunded',
+                            recipient: selectedOrder.customerEmail,
+                            data: { orderId: selectedOrder.id, customerName: selectedOrder.customerName }
+                          })
+                        }).catch(() => {});
 
                         parentOnUpdateOrders(updatedOrders);
                         setSelectedOrder({
@@ -789,14 +790,15 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                           date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         };
 
-                        try {
-                          const stored = localStorage.getItem('ps_simulated_emails');
-                          const emails = stored ? JSON.parse(stored) : [];
-                          localStorage.setItem('ps_simulated_emails', JSON.stringify([newEmail, ...emails]));
-                          window.dispatchEvent(new CustomEvent('ps-emails-updated'));
-                        } catch (e) {
-                          console.error(e);
-                        }
+                        fetch('/api/email/send-trigger', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            type: 'order_processing',
+                            recipient: selectedOrder.customerEmail,
+                            data: { orderId: selectedOrder.id, customerName: selectedOrder.customerName }
+                          })
+                        }).catch(() => {});
 
                         parentOnUpdateOrders(updatedOrders);
                         setSelectedOrder({

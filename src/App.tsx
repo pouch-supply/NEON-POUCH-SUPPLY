@@ -1474,17 +1474,6 @@ export default function App() {
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    try {
-      const stored = localStorage.getItem('ps_simulated_emails');
-      const emails = stored ? JSON.parse(stored) : [];
-      localStorage.setItem('ps_simulated_emails', JSON.stringify([customerEmailObj, adminEmailObj, ...emails]));
-    } catch (err) {
-      console.error("Failed to save simulated emails", err);
-    }
-
-    // Dispatch global event for visual updates
-    window.dispatchEvent(new CustomEvent('ps-emails-updated'));
-
     // Automatically send order confirmation email to the customer's checkout email (from scottkivlinpouch@gmail.com)
     fetch('/api/send-order-confirmation', {
       method: 'POST',
@@ -1687,13 +1676,16 @@ export default function App() {
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
-      try {
-        const stored = localStorage.getItem('ps_simulated_emails');
-        const emails = stored ? JSON.parse(stored) : [];
-        localStorage.setItem('ps_simulated_emails', JSON.stringify([newEmail, ...emails]));
-      } catch (err) {
-        console.error("Failed to save simulated email", err);
-      }
+      // Dispatch real email via API trigger
+      fetch('/api/email/send-trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'order_processing',
+          recipient: email || targetOrder.customerEmail,
+          data: { orderId, customerName: targetOrder.customerName }
+        })
+      }).catch(() => {});
 
       // Dispatch real-time global listener alert
       window.dispatchEvent(new CustomEvent('ps-emails-updated'));

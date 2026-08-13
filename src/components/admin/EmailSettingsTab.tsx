@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Mail, Send, CheckCircle, CheckCircle2, AlertCircle, Eye, Settings, RefreshCw, 
   Trash2, ShieldCheck, Zap, Lock, Filter, Smartphone, Monitor, Code, 
-  ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw, Truck
+  ExternalLink, Layers, Sparkles, Check, Play, User, ShoppingBag, DollarSign, RotateCcw
 } from 'lucide-react';
-import { RoyalMailSettingsCard } from './RoyalMailSettingsCard';
-import { RecaptchaSettingsCard } from './RecaptchaSettingsCard';
 
 export interface EmailSettings {
   enabled: boolean;
@@ -32,7 +30,7 @@ export interface EmailLogEntry {
   type: string;
   recipient: string;
   subject: string;
-  status: 'sent' | 'simulated' | 'failed' | 'disabled';
+  status: 'sent' | 'failed' | 'disabled';
   resendId?: string;
   error?: string;
   timestamp: string;
@@ -43,7 +41,7 @@ export interface KlaviyoLogEntry {
   id: string;
   eventName: string;
   customerEmail: string;
-  status: 'sent' | 'simulated' | 'failed' | 'disabled';
+  status: 'sent' | 'failed' | 'disabled';
   error?: string;
   timestamp: string;
   payload?: any;
@@ -75,7 +73,7 @@ export interface ContactMessageEntry {
 }
 
 export function EmailSettingsTab() {
-  const [activeSubTab, setActiveSubTab] = useState<'config' | 'templates' | 'preview' | 'test' | 'logs' | 'klaviyo' | 'royalmail' | 'inquiries'>('config');
+  const [activeSubTab, setActiveSubTab] = useState<'config' | 'templates' | 'preview' | 'test' | 'logs' | 'klaviyo' | 'inquiries'>('config');
   
   // Settings state
   const [emailSettings, setEmailSettings] = useState<EmailSettings | null>(null);
@@ -88,6 +86,7 @@ export function EmailSettingsTab() {
   const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([]);
   const [klaviyoLogs, setKlaviyoLogs] = useState<KlaviyoLogEntry[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessageEntry[]>([]);
+  const [storeProducts, setStoreProducts] = useState<any[]>([]);
   const [logFilter, setLogFilter] = useState('all');
   const [inquirySearch, setInquirySearch] = useState('');
 
@@ -112,23 +111,38 @@ export function EmailSettingsTab() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [emailRes, klaviyoRes, emailLogsRes, klaviyoLogsRes, contactMsgsRes] = await Promise.all([
+      const [emailRes, klaviyoRes, emailLogsRes, klaviyoLogsRes, contactMsgsRes, productsRes] = await Promise.all([
         fetch('/api/email/settings'),
         fetch('/api/klaviyo/settings'),
         fetch('/api/email/logs'),
         fetch('/api/klaviyo/logs'),
-        fetch('/api/contact-messages')
+        fetch('/api/contact-messages'),
+        fetch('/api/products')
       ]);
 
       if (emailRes.ok) setEmailSettings(await emailRes.json());
       if (klaviyoRes.ok) setKlaviyoSettings(await klaviyoRes.json());
-      if (emailLogsRes.ok) setEmailLogs(await emailLogsRes.json());
-      if (klaviyoLogsRes.ok) setKlaviyoLogs(await klaviyoLogsRes.json());
+      if (emailLogsRes.ok) {
+        const rawLogs = await emailLogsRes.json();
+        if (Array.isArray(rawLogs)) {
+          setEmailLogs(rawLogs.filter(l => l.status !== 'simulated'));
+        }
+      }
+      if (klaviyoLogsRes.ok) {
+        const rawKlav = await klaviyoLogsRes.json();
+        if (Array.isArray(rawKlav)) {
+          setKlaviyoLogs(rawKlav.filter(l => l.status !== 'simulated'));
+        }
+      }
       if (contactMsgsRes.ok) {
         const msgs = await contactMsgsRes.json();
         if (Array.isArray(msgs)) {
           setContactMessages(msgs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         }
+      }
+      if (productsRes.ok) {
+        const prods = await productsRes.json();
+        if (Array.isArray(prods)) setStoreProducts(prods);
       }
     } catch (err: any) {
       console.error('Failed to load email settings data:', err);
@@ -243,6 +257,24 @@ export function EmailSettingsTab() {
     setSendingKlaviyoTest(true);
     setTestKlaviyoResult(null);
     try {
+      const itemsPayload = (storeProducts && storeProducts.length > 0)
+        ? storeProducts.slice(0, 2).map((p: any) => ({
+            productId: p.id || 'prod-sample',
+            productTitle: p.title || p.name || 'Sample Product',
+            price: Number(p.price || 5.99),
+            quantity: 1,
+            image: p.image || p.imageUrl || ''
+          }))
+        : [
+            {
+              productId: 'prod-pouch-sample',
+              productTitle: 'Pouch Supply Co. Sample Pack',
+              price: 14.99,
+              quantity: 1,
+              image: ''
+            }
+          ];
+
       const res = await fetch('/api/klaviyo/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -253,25 +285,10 @@ export function EmailSettingsTab() {
             id: `PS-KLAV-${Math.floor(Math.random() * 90000 + 10000)}`,
             customerEmail: testKlaviyoEmail.trim().toLowerCase(),
             customerName: 'Scott Kivlin',
-            total: 34.99,
-            destination: 'London, United Kingdom',
+            total: itemsPayload.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0),
+            destination: 'United Kingdom',
             deliveryMethod: 'Royal Mail Tracked 24',
-            items: [
-              {
-                productId: 'prod-velo-freeze',
-                productTitle: 'VELO Freeze MAX 14mg',
-                price: 14.99,
-                quantity: 2,
-                image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300'
-              },
-              {
-                productId: 'prod-nordic-mint',
-                productTitle: 'Nordic Spirit Smooth Mint 6mg',
-                price: 5.01,
-                quantity: 1,
-                image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300'
-              }
-            ]
+            items: itemsPayload
           }
         })
       });
@@ -279,7 +296,10 @@ export function EmailSettingsTab() {
       setTestKlaviyoResult(data);
       // Reload Klaviyo logs
       const logsRes = await fetch('/api/klaviyo/logs');
-      if (logsRes.ok) setKlaviyoLogs(await logsRes.json());
+      if (logsRes.ok) {
+        const rawKlav = await logsRes.json();
+        if (Array.isArray(rawKlav)) setKlaviyoLogs(rawKlav.filter((l: any) => l.status !== 'simulated'));
+      }
     } catch (err: any) {
       setTestKlaviyoResult({ success: false, error: err.message || 'Failed to dispatch Klaviyo test event' });
     } finally {
@@ -292,6 +312,14 @@ export function EmailSettingsTab() {
     try {
       await fetch('/api/email/logs/clear', { method: 'POST' });
       setEmailLogs([]);
+    } catch (err) {}
+  };
+
+  const handleClearKlaviyoLogs = async () => {
+    if (!confirm('Are you sure you want to clear all Klaviyo activity logs?')) return;
+    try {
+      await fetch('/api/klaviyo/logs/clear', { method: 'POST' });
+      setKlaviyoLogs([]);
     } catch (err) {}
   };
 
@@ -431,15 +459,6 @@ export function EmailSettingsTab() {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('royalmail')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeSubTab === 'royalmail' ? 'bg-rose-600 text-white shadow-lg' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <Truck className="h-3.5 w-3.5" /> Royal Mail Click & Drop
-          </button>
-
-          <button
             onClick={() => setActiveSubTab('inquiries')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeSubTab === 'inquiries' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
@@ -497,7 +516,7 @@ export function EmailSettingsTab() {
                 />
                 <Lock className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
               </div>
-              <p className="text-[11px] text-slate-500">Get your key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">resend.com/api-keys</a>. Leave blank for instant local simulation mode.</p>
+              <p className="text-[11px] text-slate-500">Get your API key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">resend.com/api-keys</a>.</p>
             </div>
 
             <div className="space-y-2">
@@ -534,10 +553,6 @@ export function EmailSettingsTab() {
               {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Save Email Configuration
             </button>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100">
-            <RecaptchaSettingsCard />
           </div>
         </div>
       )}
@@ -903,7 +918,6 @@ export function EmailSettingsTab() {
               >
                 <option value="all">All Logs ({emailLogs.length})</option>
                 <option value="sent">Status: Sent</option>
-                <option value="simulated">Status: System Dispatched</option>
                 <option value="failed">Status: Failed</option>
                 <option value="disabled">Status: Disabled</option>
               </select>
@@ -953,7 +967,6 @@ export function EmailSettingsTab() {
                       <td className="p-3 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           log.status === 'sent' ? 'bg-emerald-100 text-emerald-800' :
-                          log.status === 'simulated' ? 'bg-sky-100 text-sky-800' :
                           log.status === 'disabled' ? 'bg-slate-100 text-slate-600' :
                           'bg-red-100 text-red-800'
                         }`}>
@@ -1129,7 +1142,17 @@ export function EmailSettingsTab() {
 
           {/* Klaviyo Logs Section */}
           <div className="pt-6 border-t border-slate-100">
-            <h4 className="text-sm font-bold text-slate-900 mb-3">Klaviyo Event Stream ({klaviyoLogs.length})</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-bold text-slate-900">Klaviyo Event Stream ({klaviyoLogs.length})</h4>
+              {klaviyoLogs.length > 0 && (
+                <button
+                  onClick={handleClearKlaviyoLogs}
+                  className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1"
+                >
+                  <Trash2 className="h-3 w-3" /> Clear Klaviyo Logs
+                </button>
+              )}
+            </div>
             {klaviyoLogs.length === 0 ? (
               <p className="text-xs text-slate-400 italic">No Klaviyo events recorded yet.</p>
             ) : (
@@ -1151,7 +1174,7 @@ export function EmailSettingsTab() {
                         <td className="p-2 text-slate-700 font-mono">{l.customerEmail}</td>
                         <td className="p-2">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            l.status === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                            l.status === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                           }`}>
                             {l.status}
                           </span>
@@ -1164,11 +1187,6 @@ export function EmailSettingsTab() {
             )}
           </div>
         </div>
-      )}
-
-      {/* SUBTAB: Royal Mail Click & Drop Settings */}
-      {activeSubTab === 'royalmail' && (
-        <RoyalMailSettingsCard />
       )}
 
       {/* SUBTAB: Customer Inquiries / Contact Messages */}
