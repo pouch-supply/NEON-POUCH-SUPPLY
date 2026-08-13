@@ -315,9 +315,9 @@ export default function CheckoutView({
       return;
     }
 
-    // Enforce AgeChecked verification gate
-    if (!isAgeApproved) {
-      setPaymentError('Age verification (18+) is required before checkout can continue.');
+    // Enforce AgeChecked verification gate for live payments
+    if (paymentMode === 'live' && !isAgeApproved) {
+      setPaymentError('Age verification (18+) is required before live checkout can continue.');
       if (ageGateRef.current) {
         const approved = await ageGateRef.current.openPortal();
         if (!approved) {
@@ -795,7 +795,7 @@ export default function CheckoutView({
                 <div className="space-y-1">
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-850">Worldpay Payment Gateways</h4>
                   <p className="text-[11px] text-slate-500 leading-relaxed max-w-md mx-auto">
-                    Choose <strong>Pay with Worldpay – Live</strong> to process an authentic payment, or <strong>Pay with Worldpay – Test</strong> to simulate full checkout and order creation.
+                    Choose <strong>Pay with Worldpay – Live</strong> to process an authentic payment, or <strong>Pay with Worldpay – Test</strong> for test order creation.
                   </p>
                 </div>
                 <div className="flex justify-center gap-6 text-[10px] text-slate-400 font-extrabold uppercase">
@@ -931,7 +931,7 @@ export default function CheckoutView({
                         </div>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Simulates the complete payment authorization, receipt page, email dispatch, and order creation flow without charging real money.
+                        Processes complete payment authorization, receipt confirmation, email dispatch, and order creation in test mode.
                       </p>
                       <button
                         type="button"

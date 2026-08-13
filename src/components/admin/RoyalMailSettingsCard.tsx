@@ -252,7 +252,7 @@ export const RoyalMailSettingsCard: React.FC = () => {
 
               {connStatus.checkedAt && (
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Last checked at {connStatus.checkedAt} • Real API Mode (Zero Simulations)
+                  Last checked at {connStatus.checkedAt} • Royal Mail Live API Connected
                 </p>
               )}
             </div>

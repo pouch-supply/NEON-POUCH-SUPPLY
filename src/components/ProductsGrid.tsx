@@ -441,7 +441,7 @@ export default function ProductsGrid({
               <span className="text-sm">🔒</span> Secure Checkout
             </span>
             <span className="flex items-center gap-1.5 text-slate-600">
-              <span className="text-sm">🛡️</span> Yoti Age Verified
+              <span className="text-sm">🛡️</span> AgeChecked Age Verified
             </span>
           </div>
         </div>

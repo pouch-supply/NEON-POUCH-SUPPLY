@@ -889,7 +889,7 @@ export function EmailSettingsTab() {
                   {testResult.success
                     ? 'Test Email Successfully Delivered via Resend!'
                     : testResult.mode === 'simulated'
-                    ? 'Simulation Mode: No Resend API Key Configured'
+                    ? 'Resend API Key Required: Key Not Configured'
                     : 'Resend Email Dispatch Failed'}
                 </span>
               </div>

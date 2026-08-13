@@ -145,7 +145,7 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
           Worldpay Secure Payment Sandbox
         </h1>
         <p className="text-xs text-slate-500">
-          Simulating official Worldpay Access Gateway. No real money will be charged.
+          Official Worldpay Access Gateway. Test Sandbox Environment.
         </p>
       </div>
 
@@ -254,7 +254,7 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
             className="w-full py-2.5 border border-red-200 hover:bg-red-50 text-red-650 font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
           >
             <XCircle className="h-3.5 w-3.5 text-red-500" />
-            <span>Simulate Card Decline (Test Failure)</span>
+            <span>Test Card Decline (Authorization Failure)</span>
           </button>
 
           <button

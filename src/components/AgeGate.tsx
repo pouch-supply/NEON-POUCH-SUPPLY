@@ -74,7 +74,7 @@ export interface AgeGateHandle {
 export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = false, onApprovedChange, customerData }, ref) => {
   const [approved, setApproved] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Age verification is required before checkout can continue.");
+  const [statusMessage, setStatusMessage] = useState("Age verification (18+) is required to complete your order.");
   const [agecheckId, setAgecheckId] = useState<string | null>(null);
 
   const publicKey = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_AGECHECKED_PUBLIC_KEY) || "PUBLIC_KEY";
@@ -89,7 +89,7 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
     if (detail?.avstatus?.agecheckid) {
       setAgecheckId(String(detail.avstatus.agecheckid));
     }
-    setStatusMessage("Age approval confirmed. Checkout is now available.");
+    setStatusMessage("Your age (18+) has been verified successfully.");
   };
 
   useEffect(() => {
@@ -109,8 +109,8 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
     }
     setStatusMessage(
       isApproved
-        ? "Age approval confirmed. Checkout is now available."
-        : "Age verification is required before checkout can continue."
+        ? "Your age (18+) has been verified successfully."
+        : "Age verification (18+) is required to complete your order."
     );
   }, []);
 
@@ -148,7 +148,7 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
     setApproved(false);
     setIsChecking(false);
     setAgecheckId(null);
-    setStatusMessage("Age verification is required before checkout can continue.");
+    setStatusMessage("Age verification (18+) is required to complete your order.");
   };
 
   const openPortal = async (): Promise<boolean> => {
@@ -157,7 +157,7 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
     if (approved) return true;
 
     setIsChecking(true);
-    setStatusMessage("Initializing the AgeChecked AC0130 flow and preparing the redirect URL for the age verification session.");
+    setStatusMessage("Connecting to AgeChecked verification service...");
 
     try {
       const nameParts = (customerData?.name || "Customer").split(" ");
@@ -186,24 +186,20 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
         (data as { redirect_url?: string }).redirect_url;
       const providerMessage =
         data?.error?.message || data?.message || data?.avstatus?.statusText || data?.avstatus?.statustext;
-      const errorMessage = providerMessage ? `${providerMessage}${data?.error?.code ? ` (code: ${data.error.code})` : ""}` : undefined;
 
       if (!response.ok || !redirectUrl) {
-        const details = data?.details ? JSON.stringify(data.details) : "";
-        const fallbackMessage = errorMessage
-          ? `${errorMessage}${details ? ` — ${details}` : ""}`
-          : "AgeChecked did not return a redirect URL.";
-        setStatusMessage(`AgeChecked AC0130 initialization notice: ${fallbackMessage}`);
+        const fallbackMessage = providerMessage || "Age verification session creation failed. Please try again.";
+        setStatusMessage(fallbackMessage);
         setIsChecking(false);
         return false;
       }
 
       setAgecheckId(data?.avstatus?.agecheckid ? String(data.avstatus.agecheckid) : null);
-      setStatusMessage("AgeChecked returned a redirect URL. Please complete verification in the opened window.");
+      setStatusMessage("Please complete age verification in the popup window.");
 
       const popup = window.open(redirectUrl, "agechecked", "width=480,height=720,noopener,noreferrer");
       if (!popup) {
-        setStatusMessage("Popup window was blocked by browser. Please allow popups or click the verification button again.");
+        setStatusMessage("Popup was blocked by your browser. Please allow popups and try again.");
         setIsChecking(false);
         return false;
       }
@@ -214,13 +210,13 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
         setIsChecking(false);
         const isApprovedNow = window.localStorage.getItem(AGE_APPROVED_STORAGE_KEY) === "true";
         if (!isApprovedNow) {
-          setStatusMessage("The AgeChecked popup closed before an approval result was received. Please complete verification to proceed.");
+          setStatusMessage("Verification window closed before completion. Please try again.");
         }
       }, 500);
 
       return false;
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "AgeChecked initialization failed.");
+      setStatusMessage(error instanceof Error ? error.message : "Age verification failed.");
       setIsChecking(false);
       return false;
     }
@@ -234,17 +230,17 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
 
   return (
     <div
-      className={`rounded-2xl border p-5 transition-all shadow-sm ${
+      className={`rounded-2xl border p-4 sm:p-5 transition-all shadow-xs ${
         approved
-          ? "border-emerald-500/40 bg-emerald-950/20 text-emerald-100"
-          : "border-amber-500/40 bg-amber-950/20 text-amber-100"
+          ? "border-emerald-200 bg-emerald-50/80 text-emerald-950"
+          : "border-amber-200 bg-amber-50/80 text-amber-950"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-3">
           <div
-            className={`mt-0.5 rounded-full p-2 ${
-              approved ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"
+            className={`mt-0.5 rounded-xl p-2.5 shrink-0 ${
+              approved ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"
             }`}
           >
             {approved ? <ShieldCheck className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
@@ -252,52 +248,46 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
           <div>
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs font-bold uppercase tracking-widest ${
-                  approved ? "text-emerald-400" : "text-amber-400"
+                className={`text-[10px] font-black uppercase tracking-wider ${
+                  approved ? "text-emerald-800" : "text-amber-800"
                 }`}
               >
                 {approved ? "Age Verified (18+ Approved)" : "Age Verification Required"}
               </span>
             </div>
-            <h3 className="mt-1 text-base font-semibold text-white">AgeChecked Verification</h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-300">{statusMessage}</p>
+            <h3 className="mt-0.5 text-sm font-bold text-slate-900">AgeChecked Verification</h3>
+            <p className="mt-1 text-xs text-slate-600 leading-relaxed">{statusMessage}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <span
-            className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+            className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
               approved
-                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-                : "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                ? "border-emerald-300 bg-emerald-100/80 text-emerald-800"
+                : "border-amber-300 bg-amber-100/80 text-amber-800"
             }`}
           >
-            {approved ? "Approved" : "Pending"}
+            {approved ? "Verified" : "Pending"}
           </span>
         </div>
       </div>
 
-      {!compact && (
-        <p className="mt-3 text-xs text-slate-400 border-t border-slate-700/50 pt-3">
-          AgeChecked AC0130 is active for age-restricted purchases. Checkout stays locked until age verification is confirmed.
-        </p>
-      )}
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-3.5 flex flex-wrap items-center gap-3">
         {!approved ? (
           <button
             type="button"
             onClick={openPortal}
             disabled={isChecking}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-950 transition hover:bg-amber-400 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 shadow-xs cursor-pointer"
           >
             {isChecking ? (
               <>
-                <RefreshCw className="h-4 w-4 animate-spin" /> Initializing AgeChecked...
+                <RefreshCw className="h-4 w-4 animate-spin" /> Verifying...
               </>
             ) : (
               <>
-                <ShieldCheck className="h-4 w-4" /> Start AgeChecked AC0130 Flow
+                <ShieldCheck className="h-4 w-4" /> Verify Age (18+)
               </>
             )}
           </button>
@@ -305,16 +295,16 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
           <button
             type="button"
             onClick={resetApproval}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 cursor-pointer"
           >
-            Reset Age Verification
+            Reset Verification
           </button>
         )}
       </div>
 
       {agecheckId && (
-        <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-slate-400">
-          AgeChecked ID: {agecheckId}
+        <p className="mt-2 text-[10px] font-mono text-slate-400">
+          Ref: {agecheckId}
         </p>
       )}
     </div>
