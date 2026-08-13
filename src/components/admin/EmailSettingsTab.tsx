@@ -106,6 +106,8 @@ export function EmailSettingsTab() {
   const [testKlaviyoEmail, setTestKlaviyoEmail] = useState('scottkivlinpouch@gmail.com');
   const [sendingKlaviyoTest, setSendingKlaviyoTest] = useState(false);
   const [testKlaviyoResult, setTestKlaviyoResult] = useState<any>(null);
+  const [verifyingKlaviyoKey, setVerifyingKlaviyoKey] = useState(false);
+  const [klaviyoVerifyResult, setKlaviyoVerifyResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
 
   // Fetch all configuration and logs on load
   const loadData = async () => {
@@ -202,10 +204,30 @@ export function EmailSettingsTab() {
     }
   };
 
+  const handleVerifyKlaviyoKey = async () => {
+    if (!klaviyoSettings?.apiKey) return;
+    setVerifyingKlaviyoKey(true);
+    setKlaviyoVerifyResult(null);
+    try {
+      const res = await fetch('/api/klaviyo/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: klaviyoSettings.apiKey })
+      });
+      const data = await res.json();
+      setKlaviyoVerifyResult(data);
+    } catch (err: any) {
+      setKlaviyoVerifyResult({ success: false, error: err.message || 'Failed to verify Klaviyo API key' });
+    } finally {
+      setVerifyingKlaviyoKey(false);
+    }
+  };
+
   const handleSaveKlaviyoSettings = async () => {
     if (!klaviyoSettings) return;
     setSaving(true);
     setMessage(null);
+    setKlaviyoVerifyResult(null);
     try {
       const res = await fetch('/api/klaviyo/settings', {
         method: 'POST',
@@ -214,6 +236,9 @@ export function EmailSettingsTab() {
       });
       if (res.ok) {
         setMessage({ type: 'success', text: 'Klaviyo settings saved successfully!' });
+        if (klaviyoSettings.apiKey) {
+          handleVerifyKlaviyoKey();
+        }
       } else {
         const err = await res.json();
         setMessage({ type: 'error', text: err.error || 'Failed to save Klaviyo settings' });
@@ -1009,14 +1034,43 @@ export function EmailSettingsTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Klaviyo Private API Key</label>
-              <input
-                type="password"
-                value={klaviyoSettings.apiKey || ''}
-                onChange={(e) => setKlaviyoSettings({ ...klaviyoSettings, apiKey: e.target.value })}
-                placeholder="pk_123456789_abcdef..."
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <p className="text-[11px] text-slate-500">Private API Key with Events & Profiles permissions from <a href="https://www.klaviyo.com/settings/account/api-keys" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">klaviyo.com</a>.</p>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={klaviyoSettings.apiKey || ''}
+                  onChange={(e) => setKlaviyoSettings({ ...klaviyoSettings, apiKey: e.target.value })}
+                  placeholder="pk_123456789_abcdef..."
+                  className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyKlaviyoKey}
+                  disabled={verifyingKlaviyoKey || !klaviyoSettings.apiKey}
+                  className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  {verifyingKlaviyoKey ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                  Test Key
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500">Private API Key with Events & Profiles permissions from <a href="https://www.klaviyo.com/settings/account/api-keys" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">klaviyo.com/settings/account/api-keys</a>.</p>
+              
+              {klaviyoVerifyResult && (
+                <div className={`mt-2 p-3 rounded-lg text-xs border ${
+                  klaviyoVerifyResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}>
+                  {klaviyoVerifyResult.success ? (
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                      {klaviyoVerifyResult.message || 'Klaviyo Private API key verified & active!'}
+                    </p>
+                  ) : (
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                      {klaviyoVerifyResult.error || 'Key verification failed.'}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

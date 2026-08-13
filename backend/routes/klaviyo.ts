@@ -37,6 +37,52 @@ router.post('/settings', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/klaviyo/verify - Verify Klaviyo Private API Key
+router.post('/verify', async (req: Request, res: Response) => {
+  try {
+    const { apiKey } = req.body;
+    const settings = await getKlaviyoSettings();
+    let keyToTest = (apiKey || settings.apiKey || process.env.KLAVIYO_API_KEY || '').trim();
+    if (keyToTest.toLowerCase().startsWith('klaviyo-api-key ')) {
+      keyToTest = keyToTest.substring(16).trim();
+    }
+
+    if (!keyToTest) {
+      return res.status(400).json({ success: false, error: 'No Klaviyo Private API Key provided.' });
+    }
+
+    const response = await fetch('https://a.klaviyo.com/api/metrics/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Klaviyo-API-Key ${keyToTest}`,
+        'accept': 'application/json',
+        'revision': '2024-02-15'
+      }
+    });
+
+    if (response.ok) {
+      const data: any = await response.json();
+      const count = Array.isArray(data?.data) ? data.data.length : 0;
+      return res.json({
+        success: true,
+        message: `Klaviyo Private API Key verified successfully! Account connected with ${count} active metrics/events.`
+      });
+    } else {
+      const errText = await response.text();
+      let errorMsg = `HTTP ${response.status}: ${errText}`;
+      try {
+        const jsonErr = JSON.parse(errText);
+        if (jsonErr.errors && Array.isArray(jsonErr.errors)) {
+          errorMsg = jsonErr.errors.map((e: any) => `${e.title || 'Error'}: ${e.detail || e.message || JSON.stringify(e)}`).join(' | ');
+        }
+      } catch (e) {}
+      return res.status(response.status).json({ success: false, error: errorMsg });
+    }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to verify Klaviyo API key' });
+  }
+});
+
 // GET /api/klaviyo/logs
 router.get('/logs', async (_req: Request, res: Response) => {
   try {

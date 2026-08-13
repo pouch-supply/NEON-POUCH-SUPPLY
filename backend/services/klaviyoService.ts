@@ -129,9 +129,12 @@ export async function trackKlaviyoEvent(
     return { success: false, log };
   }
 
-  const apiKey = settings.apiKey || process.env.KLAVIYO_API_KEY;
+  let apiKey = (settings.apiKey || process.env.KLAVIYO_API_KEY || '').trim();
+  if (apiKey.toLowerCase().startsWith('klaviyo-api-key ')) {
+    apiKey = apiKey.substring(16).trim();
+  }
 
-  if (!apiKey || apiKey.trim() === '') {
+  if (!apiKey) {
     console.warn(`[Klaviyo] Event '${eventName}' not tracked for ${customerEmail} (No KLAVIYO_API_KEY configured)`);
     const log = await logKlaviyoEvent({
       eventName,
@@ -144,71 +147,141 @@ export async function trackKlaviyoEvent(
   }
 
   try {
-    // Official Klaviyo Events API v3 endpoint
-    const numValue = typeof eventProperties.$value === 'number' 
-      ? eventProperties.$value 
-      : (typeof eventProperties.value === 'number' ? eventProperties.value : undefined);
+    // 1. Sanitize Profile Attributes for Klaviyo API v3
+    const cleanEmail = (customerEmail || '').trim().toLowerCase();
+    const profileAttributes: Record<string, any> = {
+      email: cleanEmail
+    };
+    const customProfileProps: Record<string, any> = {};
+
+    if (customerProperties && typeof customerProperties === 'object') {
+      for (const [rawKey, val] of Object.entries(customerProperties)) {
+        if (val === undefined || val === null) continue;
+        const key = rawKey.replace(/^\$/, ''); // Remove leading $ if present
+        if (key === 'email') {
+          profileAttributes.email = String(val).trim().toLowerCase();
+        } else if (key === 'first_name' || key === 'firstName') {
+          profileAttributes.first_name = String(val).trim();
+        } else if (key === 'last_name' || key === 'lastName') {
+          profileAttributes.last_name = String(val).trim();
+        } else if (key === 'phone_number' || key === 'phone') {
+          profileAttributes.phone_number = String(val).trim();
+        } else if (key === 'external_id') {
+          profileAttributes.external_id = String(val).trim();
+        } else if (key === 'organization' || key === 'title' || key === 'image' || key === 'location') {
+          profileAttributes[key] = val;
+        } else {
+          customProfileProps[key] = val;
+        }
+      }
+    }
+
+    if (Object.keys(customProfileProps).length > 0) {
+      profileAttributes.properties = customProfileProps;
+    }
+
+    // 2. Extract numeric value
+    let numValue: number | undefined = undefined;
+    if (typeof eventProperties.$value === 'number') numValue = eventProperties.$value;
+    else if (typeof eventProperties.value === 'number') numValue = eventProperties.value;
+    else if (typeof eventProperties.total === 'number') numValue = eventProperties.total;
+    else if (typeof eventProperties.Value === 'number') numValue = eventProperties.Value;
+    else if (typeof eventProperties.$value === 'string') {
+      const parsed = parseFloat(eventProperties.$value);
+      if (!isNaN(parsed)) numValue = parsed;
+    } else if (typeof eventProperties.total === 'string') {
+      const parsed = parseFloat(eventProperties.total);
+      if (!isNaN(parsed)) numValue = parsed;
+    }
+
+    // 3. Extract unique_id for deduplication
+    const uniqueId = eventProperties.$event_id || eventProperties.OrderId || eventProperties.id || undefined;
+
+    // 4. Clean custom event properties
+    const cleanProps = { ...eventProperties };
+    delete cleanProps.$value;
+    delete cleanProps.$event_id;
+
+    // 5. Construct Klaviyo API v3 Event Object
+    const attributes: Record<string, any> = {
+      metric: {
+        data: {
+          type: 'metric',
+          attributes: {
+            name: eventName
+          }
+        }
+      },
+      profile: {
+        data: {
+          type: 'profile',
+          attributes: profileAttributes
+        }
+      },
+      properties: cleanProps,
+      time: new Date().toISOString()
+    };
+
+    if (numValue !== undefined && !isNaN(numValue)) {
+      attributes.value = numValue;
+    }
+
+    if (uniqueId) {
+      attributes.unique_id = String(uniqueId);
+    }
+
+    const requestBody = {
+      data: {
+        type: 'event',
+        attributes
+      }
+    };
+
+    console.log(`[Klaviyo] Sending event '${eventName}' to Klaviyo for ${profileAttributes.email}...`);
 
     const response = await fetch('https://a.klaviyo.com/api/events/', {
       method: 'POST',
       headers: {
-        'Authorization': `Klaviyo-API-Key ${apiKey.trim()}`,
+        'Authorization': `Klaviyo-API-Key ${apiKey}`,
         'Content-Type': 'application/json',
+        'accept': 'application/json',
         'revision': '2024-02-15'
       },
-      body: JSON.stringify({
-        data: {
-          type: 'event',
-          attributes: {
-            metric: {
-              data: {
-                type: 'metric',
-                attributes: {
-                  name: eventName
-                }
-              }
-            },
-            profile: {
-              data: {
-                type: 'profile',
-                attributes: {
-                  email: customerEmail.trim().toLowerCase(),
-                  ...customerProperties
-                }
-              }
-            },
-            properties: eventProperties,
-            value: numValue,
-            time: new Date().toISOString()
-          }
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log(`[Klaviyo Tracking] API response status ${response.status} for event '${eventName}':`, errorText);
+      let errorDetails = `HTTP ${response.status}: ${errorText}`;
+      try {
+        const jsonErr = JSON.parse(errorText);
+        if (jsonErr.errors && Array.isArray(jsonErr.errors)) {
+          errorDetails = jsonErr.errors.map((e: any) => `${e.title || 'Error'}: ${e.detail || e.message || JSON.stringify(e)}`).join(' | ');
+        }
+      } catch (e) {}
+
+      console.error(`[Klaviyo API Error] '${eventName}' failed (${response.status}):`, errorDetails);
       const log = await logKlaviyoEvent({
         eventName,
-        customerEmail,
+        customerEmail: profileAttributes.email,
         status: 'failed',
-        error: `API HTTP ${response.status}: ${errorText}`,
-        payload: { eventProperties }
+        error: errorDetails,
+        payload: { eventProperties: cleanProps }
       });
       return { success: false, log };
     }
 
-    console.log(`[Klaviyo] Event '${eventName}' successfully tracked for ${customerEmail}!`);
+    console.log(`[Klaviyo] Event '${eventName}' successfully tracked for ${profileAttributes.email}!`);
     const log = await logKlaviyoEvent({
       eventName,
-      customerEmail,
+      customerEmail: profileAttributes.email,
       status: 'sent',
-      payload: { eventProperties }
+      payload: { eventProperties: cleanProps }
     });
     return { success: true, log };
 
   } catch (err: any) {
-    console.error(`[Klaviyo] Network error tracking '${eventName}':`, err);
+    console.error(`[Klaviyo Network Error] Failed tracking '${eventName}':`, err);
     const log = await logKlaviyoEvent({
       eventName,
       customerEmail,
