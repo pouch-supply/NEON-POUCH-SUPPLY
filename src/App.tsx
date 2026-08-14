@@ -35,13 +35,19 @@ import {
 import OrderWithdrawalModal from './components/OrderWithdrawalModal';
 import { cleanMediaUrl } from './utils/mediaUtils';
 import { 
+  initializeKlaviyo,
   initKlaviyo, 
+  identifyCustomer,
   klaviyoIdentify, 
   klaviyoReset, 
+  trackEvent,
   klaviyoTrack, 
+  trackViewedProduct,
   klaviyoTrackViewedProduct, 
   klaviyoTrackAddedToCart, 
+  trackStartedCheckout,
   klaviyoTrackStartedCheckout, 
+  trackOrderCompleted,
   klaviyoTrackPlacedOrder 
 } from './utils/klaviyo';
 
@@ -1048,10 +1054,12 @@ export default function App() {
     }
   }, [customers, isInitialLoadDone]);
 
-  // Initialize Klaviyo script when Public API Key/Site ID changes
+  // Initialize Klaviyo script on mount and when Company ID / Public Key changes
   useEffect(() => {
     if (layoutSettings.klaviyoPublicKey) {
       initKlaviyo(layoutSettings.klaviyoPublicKey);
+    } else {
+      initializeKlaviyo();
     }
   }, [layoutSettings.klaviyoPublicKey]);
 

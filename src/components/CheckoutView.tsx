@@ -11,6 +11,7 @@ import SubscriptionIcon from './SubscriptionIcon';
 import GoogleAccountChooserModal from './GoogleAccountChooserModal';
 import AgeGate, { AgeGateHandle } from './AgeGate';
 import { calculateDiscountAmount, calculateVolumePrice } from '../utils';
+import { trackStartedCheckout, trackOrderCompleted, trackCheckoutFailed, trackSubscriptionStarted } from '../utils/klaviyo';
 
 interface CheckoutViewProps {
   cartItems: CartItem[];
@@ -385,6 +386,20 @@ export default function CheckoutView({
     const generatedOrderId = `PS${Math.floor(Math.random() * 90000 + 10000)}`;
     setOrderId(generatedOrderId);
 
+    // Track Started Checkout in Klaviyo
+    try {
+      const firstItem = cartItems[0];
+      if (firstItem) {
+        trackStartedCheckout({
+          id: firstItem.productId,
+          name: firstItem.productTitle,
+          price: finalTotalToPay,
+          currency: 'GBP',
+          recurring: Boolean(cartItems.some(i => i.isSubscription || i.productId?.startsWith('sub-pack-'))),
+        });
+      }
+    } catch (_e) {}
+
     try {
       addLog('REQUEST', {
         endpoint: '/api/worldpay/session',
@@ -467,15 +482,43 @@ export default function CheckoutView({
       }
 
       // Handle error if payment gateway is not configured or session fails
-      setPaymentError(sessionData.message || sessionData.error || 'Payment gateway is currently not configured or session failed. No order was generated.');
+      const errMsg = sessionData.message || sessionData.error || 'Payment gateway is currently not configured or session failed. No order was generated.';
+      setPaymentError(errMsg);
       setIsProcessingPayment(false);
+
+      try {
+        const firstItem = cartItems[0];
+        if (firstItem) {
+          trackCheckoutFailed({
+            id: firstItem.productId,
+            name: firstItem.productTitle,
+            price: finalTotalToPay,
+            currency: 'GBP',
+            recurring: Boolean(cartItems.some(i => i.isSubscription || i.productId?.startsWith('sub-pack-'))),
+          }, errMsg);
+        }
+      } catch (_e) {}
       
     } catch (error: any) {
       console.error('[Checkout] Error:', error);
       addLog('ERROR', { message: error.message });
       setIsProcessing(false);
       setIsProcessingPayment(false);
-      setPaymentError(error.message || 'Failed to process payment');
+      const errMsg = error.message || 'Failed to process payment';
+      setPaymentError(errMsg);
+
+      try {
+        const firstItem = cartItems[0];
+        if (firstItem) {
+          trackCheckoutFailed({
+            id: firstItem.productId,
+            name: firstItem.productTitle,
+            price: finalTotalToPay,
+            currency: 'GBP',
+            recurring: Boolean(cartItems.some(i => i.isSubscription || i.productId?.startsWith('sub-pack-'))),
+          }, errMsg);
+        }
+      } catch (_e) {}
     }
   };
 

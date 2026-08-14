@@ -1,6 +1,7 @@
 // src/components/AgeGate.tsx
 import React, { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { ShieldCheck, ShieldAlert, CheckCircle2, Lock, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
+import { trackAgeVerified } from "../utils/klaviyo";
 
 const AGE_APPROVED_STORAGE_KEY = "agechecked-approved";
 const AGE_APPROVED_AT_STORAGE_KEY = "agechecked-verified-at";
@@ -86,10 +87,20 @@ export const AgeGate = forwardRef<AgeGateHandle, AgeGateProps>(({ compact = fals
     window.localStorage.setItem(AGE_APPROVED_AT_STORAGE_KEY, new Date().toISOString());
     setApproved(true);
     setIsChecking(false);
-    if (detail?.avstatus?.agecheckid) {
-      setAgecheckId(String(detail.avstatus.agecheckid));
+    const resolvedAgeCheckId = detail?.avstatus?.agecheckid ? String(detail.avstatus.agecheckid) : undefined;
+    if (resolvedAgeCheckId) {
+      setAgecheckId(resolvedAgeCheckId);
     }
     setStatusMessage("Your age (18+) has been verified successfully.");
+    
+    // Dispatch Klaviyo Age Verified Event
+    try {
+      trackAgeVerified({
+        agecheck_id: resolvedAgeCheckId,
+        email: customerData?.email,
+        verified_at: new Date().toISOString(),
+      });
+    } catch (_e) {}
   };
 
   useEffect(() => {
