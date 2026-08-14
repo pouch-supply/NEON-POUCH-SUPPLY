@@ -235,6 +235,10 @@ export function EmailSettingsTab() {
         body: JSON.stringify(klaviyoSettings)
       });
       if (res.ok) {
+        const data = await res.json();
+        if (data?.settings) {
+          setKlaviyoSettings(data.settings);
+        }
         setMessage({ type: 'success', text: 'Klaviyo settings saved successfully!' });
         if (klaviyoSettings.apiKey) {
           handleVerifyKlaviyoKey();

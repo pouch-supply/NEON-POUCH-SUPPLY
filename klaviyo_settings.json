@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "apiKey": "pk_VPbY66_6aae5f695cb9c91252fc858563c842ca65",
+  "siteId": "VPbY66",
+  "publicKey": "VPbY66",
+  "listId": "",
+  "trackEvents": {
+    "customerSignup": true,
+    "newsletterSignup": true,
+    "emailVerified": true,
+    "addToCart": true,
+    "checkoutStarted": true,
+    "purchase": true,
+    "refunded": true,
+    "wishlist": true
+  }
+}

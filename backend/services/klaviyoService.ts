@@ -1,4 +1,4 @@
-import { fetchResource, saveResource } from '../../serverDb';
+import { fetchResource, saveResource, fetchStoreSetting, saveStoreSetting, fetchLayoutSettings } from '../../serverDb';
 
 export interface KlaviyoSettings {
   enabled: boolean;
@@ -48,22 +48,30 @@ const DEFAULT_KLAVIYO_SETTINGS: KlaviyoSettings = {
 
 export async function getKlaviyoSettings(): Promise<KlaviyoSettings> {
   try {
-    const stored: any = await fetchResource('klaviyo_settings');
-    const layoutStored: any = await fetchResource('layout_settings').catch(() => null);
+    let stored: any = await fetchStoreSetting('klaviyo_settings');
+    if (!stored || (typeof stored === 'object' && Object.keys(stored).length === 0)) {
+      const legacy = await fetchResource('klaviyo_settings');
+      if (legacy && Array.isArray(legacy) && legacy.length > 0) {
+        stored = legacy[0];
+      }
+    }
+
+    const layoutStored: any = await fetchLayoutSettings().catch(() => null);
 
     const siteIdVal = stored?.siteId || stored?.publicKey || layoutStored?.klaviyoPublicKey || process.env.NEXT_PUBLIC_KLAVIYO_COMPANY_ID || process.env.NEXT_PUBLIC_KLAVIYO_PUBLIC_KEY || process.env.KLAVIYO_SITE_ID || 'VPbY66';
     const apiKeyVal = stored?.apiKey || layoutStored?.klaviyoApiKey || process.env.KLAVIYO_API_KEY || '';
 
-    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+    if (stored && typeof stored === 'object') {
+      const item = Array.isArray(stored) ? stored[0] : stored;
       return {
         ...DEFAULT_KLAVIYO_SETTINGS,
-        ...stored,
-        apiKey: stored.apiKey || apiKeyVal,
+        ...item,
+        apiKey: item.apiKey || apiKeyVal,
         siteId: siteIdVal,
         publicKey: siteIdVal,
         trackEvents: {
           ...DEFAULT_KLAVIYO_SETTINGS.trackEvents,
-          ...(stored.trackEvents || {})
+          ...(item.trackEvents || {})
         }
       };
     } else if (layoutStored) {
@@ -81,9 +89,12 @@ export async function getKlaviyoSettings(): Promise<KlaviyoSettings> {
 export async function saveKlaviyoSettings(settings: Partial<KlaviyoSettings>): Promise<KlaviyoSettings> {
   const current = await getKlaviyoSettings();
   const siteIdVal = settings.siteId || settings.publicKey || current.siteId || 'VPbY66';
+  const apiKeyVal = (settings.apiKey !== undefined ? settings.apiKey : current.apiKey) || '';
+
   const updated: KlaviyoSettings = {
     ...current,
     ...settings,
+    apiKey: apiKeyVal,
     siteId: siteIdVal,
     publicKey: siteIdVal,
     trackEvents: {
@@ -91,7 +102,18 @@ export async function saveKlaviyoSettings(settings: Partial<KlaviyoSettings>): P
       ...(settings.trackEvents || {})
     }
   };
-  await saveResource('klaviyo_settings', updated as any);
+
+  if (apiKeyVal) {
+    process.env.KLAVIYO_API_KEY = apiKeyVal;
+  }
+  if (siteIdVal) {
+    process.env.KLAVIYO_SITE_ID = siteIdVal;
+    process.env.KLAVIYO_PUBLIC_KEY = siteIdVal;
+    process.env.NEXT_PUBLIC_KLAVIYO_COMPANY_ID = siteIdVal;
+  }
+
+  await saveStoreSetting('klaviyo_settings', updated);
+  await saveResource('klaviyo_settings', [updated]);
   return updated;
 }
 

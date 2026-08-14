@@ -851,11 +851,12 @@ export async function fetchResource(resource: string): Promise<any[]> {
   return memoryCache[normResource] || memoryCache[resource] || [];
 }
 
-export async function saveResource(resource: string, list: any[]): Promise<any[]> {
+export async function saveResource(resource: string, list: any[] | any): Promise<any[]> {
   const normResource = normalizeResourceName(resource);
-  if (!Array.isArray(list)) return memoryCache[normResource] || [];
+  const normalizedList = Array.isArray(list) ? list : (list ? [list] : []);
+  if (!Array.isArray(normalizedList)) return memoryCache[normResource] || [];
 
-  memoryCache[normResource] = [...list];
+  memoryCache[normResource] = [...normalizedList];
   if (normResource !== resource) memoryCache[resource] = memoryCache[normResource];
   persistMemoryCacheToBackup();
 
@@ -865,8 +866,8 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
       const validItemIds: string[] = [];
       const BATCH_SIZE = 25;
 
-      for (let i = 0; i < list.length; i += BATCH_SIZE) {
-        const batch = list.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < normalizedList.length; i += BATCH_SIZE) {
+        const batch = normalizedList.slice(i, i + BATCH_SIZE);
         await Promise.all(batch.map(async (item) => {
           if (!item) return;
           const itemId = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
@@ -928,7 +929,57 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
     }
   }
 
-  return list;
+  return normalizedList;
+}
+
+export async function fetchStoreSetting(id: string, defaultVal: any = null): Promise<any> {
+  let settingsData: any = null;
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      const setting = await prisma.storeSetting.findUnique({
+        where: { id }
+      });
+      if (setting && setting.data) {
+        settingsData = setting.data;
+      }
+    } catch (err) {
+      console.error(`[Neon DB] Error fetching store setting ${id}:`, err);
+    }
+  }
+
+  if (!settingsData) {
+    const filePath = path.join(process.cwd(), `${id}.json`);
+    if (fs.existsSync(filePath)) {
+      try {
+        settingsData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      } catch (e) {}
+    }
+  }
+
+  return settingsData || defaultVal;
+}
+
+export async function saveStoreSetting(id: string, data: any): Promise<any> {
+  const filePath = path.join(process.cwd(), `${id}.json`);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {}
+
+  const isConnected = await getDb();
+  if (isConnected) {
+    try {
+      await prisma.storeSetting.upsert({
+        where: { id },
+        update: { data },
+        create: { id, data }
+      });
+    } catch (err) {
+      console.error(`[Neon DB] Error saving store setting ${id}:`, err);
+    }
+  }
+
+  return data;
 }
 
 export async function fetchSingleItem(resource: string, id: string): Promise<any | null> {

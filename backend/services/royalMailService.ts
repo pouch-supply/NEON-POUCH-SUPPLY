@@ -1,4 +1,4 @@
-import { fetchResource, saveResource } from '../../serverDb';
+import { fetchResource, saveResource, fetchStoreSetting, saveStoreSetting } from '../../serverDb';
 import { sendOrderShippedEmail } from './emailService';
 import { trackOrderShipped } from './klaviyoService';
 import {
@@ -84,15 +84,23 @@ export interface ShippingRateOption {
 export async function getRoyalMailSettings(): Promise<RoyalMailSettings> {
   const envKey = process.env.RM_API_KEY || process.env.ROYAL_MAIL_API_KEY || '';
   try {
-    const stored: any = await fetchResource('royalmail_settings');
-    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+    let stored: any = await fetchStoreSetting('royalmail_settings');
+    if (!stored || (typeof stored === 'object' && Object.keys(stored).length === 0)) {
+      const legacy: any = await fetchResource('royalmail_settings');
+      if (legacy && Array.isArray(legacy) && legacy.length > 0) {
+        stored = legacy[0];
+      }
+    }
+
+    if (stored && typeof stored === 'object') {
+      const item = Array.isArray(stored) ? stored[0] : stored;
       return {
         ...DEFAULT_ROYAL_MAIL_SETTINGS,
-        ...stored,
-        apiKey: stored.apiKey && stored.apiKey.trim().length > 0 ? stored.apiKey : (envKey || DEFAULT_ROYAL_MAIL_SETTINGS.apiKey),
+        ...item,
+        apiKey: item.apiKey && item.apiKey.trim().length > 0 ? item.apiKey : (envKey || DEFAULT_ROYAL_MAIL_SETTINGS.apiKey),
         senderAddress: {
           ...DEFAULT_ROYAL_MAIL_SETTINGS.senderAddress,
-          ...(stored.senderAddress || {})
+          ...(item.senderAddress || {})
         }
       };
     }
@@ -107,14 +115,23 @@ export async function getRoyalMailSettings(): Promise<RoyalMailSettings> {
 
 export async function saveRoyalMailSettings(settings: Partial<RoyalMailSettings>): Promise<RoyalMailSettings> {
   const current = await getRoyalMailSettings();
+  const apiKeyVal = (settings.apiKey !== undefined ? settings.apiKey : current.apiKey) || '';
   const updated: RoyalMailSettings = {
     ...current,
     ...settings,
+    apiKey: apiKeyVal,
     senderAddress: {
       ...current.senderAddress,
       ...(settings.senderAddress || {})
     }
   };
+
+  if (apiKeyVal) {
+    process.env.RM_API_KEY = apiKeyVal;
+    process.env.ROYAL_MAIL_API_KEY = apiKeyVal;
+  }
+
+  await saveStoreSetting('royalmail_settings', updated);
   await saveResource('royalmail_settings', [updated]);
   return updated;
 }
