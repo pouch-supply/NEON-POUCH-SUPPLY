@@ -1056,13 +1056,28 @@ export function EmailSettingsTab() {
               
               {klaviyoVerifyResult && (
                 <div className={`mt-2 p-3 rounded-lg text-xs border ${
-                  klaviyoVerifyResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
+                  klaviyoVerifyResult.success 
+                    ? klaviyoVerifyResult.hasEventsWrite === false 
+                      ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}>
                   {klaviyoVerifyResult.success ? (
-                    <p className="font-semibold flex items-center gap-1.5">
-                      <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-                      {klaviyoVerifyResult.message || 'Klaviyo Private API key verified & active!'}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="font-semibold flex items-center gap-1.5">
+                        {klaviyoVerifyResult.hasEventsWrite === false ? (
+                          <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                        )}
+                        {klaviyoVerifyResult.message}
+                      </p>
+                      {klaviyoVerifyResult.hasEventsWrite === false && (
+                        <p className="text-[11px] text-amber-800 pl-5">
+                          💡 <strong>Fix:</strong> In Klaviyo, go to <em>Settings &gt; API Keys &gt; Create Private API Key</em> &rarr; select <strong>"Full Access Key"</strong>, copy it, and paste it here.
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <p className="font-semibold flex items-center gap-1.5">
                       <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />

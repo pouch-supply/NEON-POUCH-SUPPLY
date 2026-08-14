@@ -37,10 +37,10 @@ router.post('/settings', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/klaviyo/verify - Verify Klaviyo Private API Key
-router.post('/verify', async (req: Request, res: Response) => {
+// GET & POST /api/klaviyo/verify - Verify Klaviyo Private API Key
+const handleVerify = async (req: Request, res: Response) => {
   try {
-    const { apiKey } = req.body;
+    const apiKey = req.body?.apiKey || req.query?.apiKey as string | undefined;
     const settings = await getKlaviyoSettings();
     let keyToTest = (apiKey || settings.apiKey || process.env.KLAVIYO_API_KEY || '').trim();
     if (keyToTest.toLowerCase().startsWith('klaviyo-api-key ')) {
@@ -48,9 +48,10 @@ router.post('/verify', async (req: Request, res: Response) => {
     }
 
     if (!keyToTest) {
-      return res.status(400).json({ success: false, error: 'No Klaviyo Private API Key provided.' });
+      return res.status(400).json({ success: false, error: 'No Klaviyo Private API Key provided or saved in settings.' });
     }
 
+    // First check metrics:read
     const response = await fetch('https://a.klaviyo.com/api/metrics/', {
       method: 'GET',
       headers: {
@@ -60,14 +61,7 @@ router.post('/verify', async (req: Request, res: Response) => {
       }
     });
 
-    if (response.ok) {
-      const data: any = await response.json();
-      const count = Array.isArray(data?.data) ? data.data.length : 0;
-      return res.json({
-        success: true,
-        message: `Klaviyo Private API Key verified successfully! Account connected with ${count} active metrics/events.`
-      });
-    } else {
+    if (!response.ok) {
       const errText = await response.text();
       let errorMsg = `HTTP ${response.status}: ${errText}`;
       try {
@@ -78,10 +72,64 @@ router.post('/verify', async (req: Request, res: Response) => {
       } catch (e) {}
       return res.status(response.status).json({ success: false, error: errorMsg });
     }
+
+    const data: any = await response.json();
+    const count = Array.isArray(data?.data) ? data.data.length : 0;
+
+    // Next check events:write permission (required for server-side Analytics > Metrics aggregation)
+    const testEventPayload = {
+      data: {
+        type: 'event',
+        attributes: {
+          metric: { data: { type: 'metric', attributes: { name: 'Storefront Verification' } } },
+          profile: { data: { type: 'profile', attributes: { email: 'verification-check@pouch-supply.com' } } },
+          properties: { verified: true },
+          time: new Date().toISOString()
+        }
+      }
+    };
+
+    const eventCheckRes = await fetch('https://a.klaviyo.com/api/events/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Klaviyo-API-Key ${keyToTest}`,
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+        'revision': '2024-02-15'
+      },
+      body: JSON.stringify(testEventPayload)
+    });
+
+    let hasEventsWrite = eventCheckRes.ok || eventCheckRes.status === 202;
+    let eventsWriteWarning = '';
+
+    if (!hasEventsWrite) {
+      const evErrText = await eventCheckRes.text();
+      try {
+        const parsed = JSON.parse(evErrText);
+        if (parsed.errors?.[0]?.detail) {
+          eventsWriteWarning = parsed.errors[0].detail;
+        }
+      } catch (e) {
+        eventsWriteWarning = evErrText;
+      }
+    }
+
+    return res.json({
+      success: true,
+      hasEventsWrite,
+      eventsWriteWarning: eventsWriteWarning || undefined,
+      message: hasEventsWrite
+        ? `Klaviyo Private API Key verified with Full Access! Account connected with ${count} metrics.`
+        : `API Key connected (${count} metrics), but missing "events:write" scope. Please create a Private Key in Klaviyo with "Full Access" so metrics populate in Analytics.`
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Failed to verify Klaviyo API key' });
   }
-});
+};
+
+router.get('/verify', handleVerify);
+router.post('/verify', handleVerify);
 
 // GET /api/klaviyo/logs
 router.get('/logs', async (_req: Request, res: Response) => {
