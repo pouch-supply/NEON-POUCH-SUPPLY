@@ -15,7 +15,7 @@ export function getKlaviyoCompanyId(): string {
   const fromMeta = metaEnv ? (metaEnv.NEXT_PUBLIC_KLAVIYO_COMPANY_ID || metaEnv.NEXT_PUBLIC_KLAVIYO_PUBLIC_KEY || metaEnv.VITE_KLAVIYO_COMPANY_ID || metaEnv.VITE_KLAVIYO_PUBLIC_KEY || '') : '';
   const fromWindow = typeof window !== 'undefined' ? (window.__KLAVIYO_COMPANY_ID || window.klaviyoCompanyId || '') : '';
   
-  return (fromProcess || fromMeta || fromWindow || '').trim();
+  return (fromProcess || fromMeta || fromWindow || 'VPbY66').trim();
 }
 
 function shouldInitialize(): boolean {
@@ -51,12 +51,12 @@ function pushKlaviyo(event: string, payload: Record<string, unknown> = {}): void
   if (!window.klaviyo) {
     window.klaviyo = [];
   }
+  if (!window._learnq) {
+    window._learnq = [];
+  }
 
   window.klaviyo.push([event, payload]);
-
-  if (window._learnq) {
-    window._learnq.push(['track', event, payload]);
-  }
+  window._learnq.push(['track', event, payload]);
 }
 
 export function identifyCustomer(email?: string, properties: KlaviyoEventProperties = {}): void {
@@ -65,24 +65,17 @@ export function identifyCustomer(email?: string, properties: KlaviyoEventPropert
   if (!window.klaviyo) {
     window.klaviyo = [];
   }
-
-  window.klaviyo.push([
-    'identify',
-    {
-      $email: email,
-      ...properties,
-    },
-  ]);
-
-  if (window._learnq) {
-    window._learnq.push([
-      'identify',
-      {
-        $email: email,
-        ...properties,
-      },
-    ]);
+  if (!window._learnq) {
+    window._learnq = [];
   }
+
+  const profilePayload = {
+    $email: email,
+    ...properties,
+  };
+
+  window.klaviyo.push(['identify', profilePayload]);
+  window._learnq.push(['identify', profilePayload]);
 }
 
 export function trackEvent(eventName: string, properties: KlaviyoEventProperties = {}): void {
@@ -90,79 +83,221 @@ export function trackEvent(eventName: string, properties: KlaviyoEventProperties
 
   const safeProperties = {
     ...properties,
-    event_source: 'worldpay_try_store',
+    event_source: 'pouch_supply_storefront',
   };
 
-  pushKlaviyo('track', { event: eventName, ...safeProperties });
+  pushKlaviyo(eventName, safeProperties);
 }
 
-export function trackViewedProduct(product: { id: string; name: string; price: number; currency: string; recurring?: boolean }): void {
+export function trackViewedProduct(product: { id: string; name: string; price: number; currency: string; recurring?: boolean; image?: string }): void {
   trackEvent('Viewed Product', {
-    product_id: product.id,
-    product_name: product.name,
+    ProductID: product.id,
+    ProductName: product.name,
+    Price: product.price,
+    $value: product.price,
     value: product.price,
-    currency: product.currency,
+    currency: product.currency || 'GBP',
+    ImageURL: product.image,
     recurring: Boolean(product.recurring),
   });
 }
 
 export function trackAgeVerified(properties: KlaviyoEventProperties = {}): void {
   trackEvent('Age Verified', {
-    flow: 'ac0130',
+    flow: 'age_gate',
     ...properties,
   });
 }
 
-export function trackStartedCheckout(product: { id: string; name: string; price: number; currency: string; recurring?: boolean }): void {
-  trackEvent('Started Checkout', {
-    product_id: product.id,
-    product_name: product.name,
-    value: product.price,
-    currency: product.currency,
-    recurring: Boolean(product.recurring),
-  });
+export function trackStartedCheckout(data: { items?: any[]; total?: number; customerEmail?: string; customerName?: string } | { id: string; name: string; price: number; currency: string; recurring?: boolean }): void {
+  if ('items' in data) {
+    const items = data.items || [];
+    const total = data.total || 0;
+    if (data.customerEmail) {
+      identifyCustomer(data.customerEmail, {
+        $first_name: data.customerName?.split(' ')[0] || 'Valued',
+        $last_name: data.customerName?.split(' ').slice(1).join(' ') || 'Customer',
+      });
+    }
+
+    trackEvent('Started Checkout', {
+      $value: total,
+      value: total,
+      ItemNames: items.map((i: any) => i.productTitle || i.title || i.name),
+      Items: items.map((i: any) => ({
+        ProductID: i.productId || i.id,
+        SKU: i.sku || i.productId || i.id,
+        ProductName: i.productTitle || i.title || i.name,
+        Quantity: i.quantity || 1,
+        ItemPrice: i.price,
+        RowTotal: (i.price || 0) * (i.quantity || 1),
+        ImageURL: i.image
+      })),
+      currency: 'GBP'
+    });
+
+    // Also notify backend
+    if (data.customerEmail) {
+      fetch('/api/klaviyo/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventType: 'checkout_started',
+          customerEmail: data.customerEmail,
+          data: { items, total }
+        })
+      }).catch(() => {});
+    }
+  } else {
+    trackEvent('Started Checkout', {
+      ProductID: data.id,
+      ProductName: data.name,
+      $value: data.price,
+      value: data.price,
+      currency: data.currency || 'GBP',
+      recurring: Boolean(data.recurring),
+    });
+  }
 }
 
-export function trackOrderCompleted(order: { orderId: string; product: { id: string; name: string; price: number; currency: string; recurring?: boolean }; email?: string; amount?: number }): void {
-  const eventProperties = {
-    order_id: order.orderId,
-    product_id: order.product.id,
-    product_name: order.product.name,
-    value: order.amount ?? order.product.price,
-    currency: order.product.currency,
-    recurring: Boolean(order.product.recurring),
+export function trackOrderCompleted(order: {
+  orderId?: string;
+  id?: string;
+  customerEmail?: string;
+  email?: string;
+  customerName?: string;
+  name?: string;
+  items?: any[];
+  total?: number;
+  amount?: number;
+  destination?: string;
+  address?: string;
+  deliveryMethod?: string;
+  discountApplied?: string | null;
+  product?: { id: string; name: string; price: number; currency: string; recurring?: boolean };
+}): void {
+  const orderId = String(order.orderId || order.id || `PS${Math.floor(10000 + Math.random() * 90000)}`);
+  const email = (order.customerEmail || order.email || 'customer@pouch-supply.com').trim().toLowerCase();
+  const customerName = order.customerName || order.name || 'Valued Customer';
+  const totalValue = typeof order.total === 'number' ? order.total : (order.amount ?? order.product?.price ?? 0);
+  
+  const nameParts = customerName.split(/\s+/);
+  const firstName = nameParts[0] || 'Valued';
+  const lastName = nameParts.slice(1).join(' ') || 'Customer';
+
+  // Identify in browser onsite
+  identifyCustomer(email, {
+    $first_name: firstName,
+    $last_name: lastName,
+    first_name: firstName,
+    last_name: lastName
+  });
+
+  const rawItems = order.items && order.items.length > 0 ? order.items : (order.product ? [{
+    productId: order.product.id,
+    productTitle: order.product.name,
+    price: order.product.price,
+    quantity: 1,
+    isSubscription: order.product.recurring
+  }] : []);
+
+  const formattedItems = rawItems.map((i: any) => {
+    const price = typeof i.price === 'number' ? i.price : parseFloat(i.price) || 0;
+    const qty = typeof i.quantity === 'number' ? i.quantity : parseInt(i.quantity) || 1;
+    return {
+      ProductID: String(i.productId || i.id || 'pouch-item'),
+      SKU: String(i.sku || i.productId || i.id || 'SKU-001'),
+      ProductName: String(i.productTitle || i.title || i.name || 'Nicotine Pouch Pack'),
+      Quantity: qty,
+      ItemPrice: price,
+      Price: price,
+      RowTotal: parseFloat((price * qty).toFixed(2)),
+      ImageURL: i.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300'
+    };
+  });
+
+  const eventPayload = {
+    $event_id: orderId,
+    $value: totalValue,
+    OrderId: orderId,
+    order_id: orderId,
+    ItemNames: formattedItems.map(i => i.ProductName),
+    Items: formattedItems,
+    Categories: ['Nicotine Pouches', 'Storefront'],
+    Destination: order.destination || order.address || 'United Kingdom',
+    DeliveryMethod: order.deliveryMethod || 'Royal Mail Tracked 24/48',
+    DiscountApplied: order.discountApplied || null,
+    ShippingAddress: {
+      first_name: firstName,
+      last_name: lastName,
+      address1: order.destination || order.address || 'United Kingdom'
+    },
+    extra: {
+      order_id: orderId,
+      items: formattedItems,
+      total: totalValue
+    }
   };
 
-  if (order.email) {
-    identifyCustomer(order.email, {
-      $first_name: 'Customer',
-      $last_name: 'Worldpay',
-      customer_type: order.product.recurring ? 'subscriber' : 'one_time_customer',
+  // Push "Placed Order" to client-side Klaviyo tracker
+  trackEvent('Placed Order', eventPayload);
+
+  // Push "Ordered Product" for individual items
+  for (const item of formattedItems) {
+    trackEvent('Ordered Product', {
+      $event_id: `${orderId}_${item.ProductID}`,
+      $value: item.RowTotal,
+      OrderId: orderId,
+      ProductID: item.ProductID,
+      ProductName: item.ProductName,
+      Quantity: item.Quantity,
+      ItemPrice: item.ItemPrice,
+      RowTotal: item.RowTotal
     });
   }
 
-  trackEvent('Placed Order', eventProperties);
+  // Also trigger server-side dual dispatch for reliability
+  fetch('/api/klaviyo/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventType: 'purchase',
+      customerEmail: email,
+      data: {
+        id: orderId,
+        customerEmail: email,
+        customerName,
+        total: totalValue,
+        destination: order.destination || order.address,
+        deliveryMethod: order.deliveryMethod,
+        discountApplied: order.discountApplied,
+        items: rawItems
+      }
+    })
+  }).catch(err => {
+    console.warn('[Klaviyo Client Track Error]:', err);
+  });
 }
 
 export function trackCheckoutFailed(product: { id: string; name: string; price: number; currency: string; recurring?: boolean }, errorMessage?: string): void {
   trackEvent('Checkout Failed', {
-    product_id: product.id,
-    product_name: product.name,
-    value: product.price,
-    currency: product.currency,
+    ProductID: product.id,
+    ProductName: product.name,
+    $value: product.price,
+    currency: product.currency || 'GBP',
     recurring: Boolean(product.recurring),
-    error_message: errorMessage ?? 'unknown',
+    ErrorMessage: errorMessage ?? 'unknown',
   });
 }
 
 export function trackSubscriptionStarted(product: { id: string; name: string; price: number; currency: string; recurring?: boolean }, subscriptionId?: string): void {
   trackEvent('Started Subscription', {
-    product_id: product.id,
-    product_name: product.name,
-    value: product.price,
-    currency: product.currency,
+    ProductID: product.id,
+    ProductName: product.name,
+    $value: product.price,
+    currency: product.currency || 'GBP',
     recurring: true,
-    subscription_id: subscriptionId ?? 'unknown',
+    SubscriptionID: subscriptionId ?? 'unknown',
   });
 }
 
@@ -194,55 +329,69 @@ export const klaviyoReset = () => {
 
 export const klaviyoTrack = trackEvent;
 
-export const klaviyoTrackViewedProduct = (product: { id: string; title?: string; name?: string; price: number; isSubscription?: boolean }) => {
+export const klaviyoTrackViewedProduct = (product: { id: string; title?: string; name?: string; price: number; isSubscription?: boolean; image?: string }) => {
   trackViewedProduct({
     id: product.id,
     name: product.name || product.title || 'Product',
     price: product.price,
     currency: 'GBP',
+    image: product.image,
     recurring: Boolean(product.isSubscription),
   });
 };
 
-export const klaviyoTrackAddedToCart = (product: { id: string; title?: string; name?: string; price: number; isSubscription?: boolean }, quantity: number = 1) => {
+export const klaviyoTrackAddedToCart = (product: { id: string; title?: string; name?: string; price: number; isSubscription?: boolean; image?: string }, quantity: number = 1) => {
   trackEvent('Added to Cart', {
-    product_id: product.id,
-    product_name: product.name || product.title || 'Product',
-    quantity,
+    ProductID: product.id,
+    ProductName: product.name || product.title || 'Product',
+    Quantity: quantity,
+    $value: product.price * quantity,
     value: product.price * quantity,
+    Price: product.price,
+    ImageURL: product.image,
     currency: 'GBP',
     recurring: Boolean(product.isSubscription),
   });
 };
 
-export const klaviyoTrackStartedCheckout = (cartItems: any[], subtotal: number, discountAmount: number = 0) => {
-  const firstItem = cartItems[0] || { productId: 'cart', productTitle: 'Cart Items', price: subtotal };
+export const klaviyoTrackStartedCheckout = (cartItems: any[], subtotal: number, discountAmount: number = 0, email?: string, name?: string) => {
   trackStartedCheckout({
-    id: firstItem.productId || firstItem.id || 'cart',
-    name: firstItem.productTitle || firstItem.name || 'Cart Items',
-    price: Math.max(0, subtotal - discountAmount),
-    currency: 'GBP',
-    recurring: Boolean(cartItems.some(i => i.isSubscription || i.productId?.startsWith('sub-pack-'))),
+    items: cartItems,
+    total: Math.max(0, subtotal - discountAmount),
+    customerEmail: email,
+    customerName: name
   });
 };
 
-export const klaviyoTrackPlacedOrder = (orderId: string, cartItems: any[], total: number, discountCode: string = '', email?: string) => {
-  const firstItem = cartItems[0] || { productId: 'order-item', productTitle: 'Order Items', price: total };
+export const klaviyoTrackPlacedOrder = (
+  orderId: string,
+  cartItems: any[],
+  total: number,
+  discountCode: string = '',
+  email?: string,
+  name?: string,
+  destination?: string
+) => {
   trackOrderCompleted({
     orderId,
-    email,
-    product: {
-      id: firstItem.productId || firstItem.id || 'order-item',
-      name: firstItem.productTitle || firstItem.name || 'Order Items',
-      price: total,
-      currency: 'GBP',
-      recurring: Boolean(cartItems.some(i => i.isSubscription || i.productId?.startsWith('sub-pack-'))),
-    },
-    amount: total,
+    items: cartItems,
+    total,
+    discountApplied: discountCode,
+    customerEmail: email,
+    customerName: name,
+    destination
   });
 };
 
 export const klaviyoTrackNewsletterSubscribe = (email: string) => {
   identifyCustomer(email, { source: 'Footer Newsletter' });
-  trackEvent('Subscribed to Newsletter', { email, form: 'Footer Form' });
+  trackEvent('Newsletter Subscribed', { email, source: 'Storefront Footer' });
+  fetch('/api/klaviyo/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventType: 'newsletter_signup',
+      customerEmail: email
+    })
+  }).catch(() => {});
 };

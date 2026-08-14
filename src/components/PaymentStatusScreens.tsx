@@ -4,6 +4,7 @@ import {
   CheckCircle, XCircle, ArrowLeft, Send, ShoppingBag, Truck, ExternalLink, Check
 } from 'lucide-react';
 import { Order } from '../types';
+import { trackOrderCompleted } from '../utils/klaviyo';
 
 // ==========================================
 // 1. WORLDPAY SECURE PAYMENT GATEWAY / TEST SIMULATOR
@@ -89,6 +90,17 @@ export function WorldpayGatewaySimulator({ onReturnToShop }: SecureGatewaySimula
       setIsProcessing(false);
 
       if (response.ok && data.success) {
+        // Trigger Klaviyo order tracking immediately
+        trackOrderCompleted({
+          orderId,
+          total: parseFloat(amount) || pendingObj?.total || 0,
+          customerName: pendingObj?.customerName || cardHolder,
+          customerEmail: pendingObj?.customerEmail,
+          destination: pendingObj?.destination,
+          items: pendingObj?.items,
+          discountApplied: pendingObj?.discountApplied
+        });
+
         // Clear cart and pending order backup
         localStorage.removeItem('ps_cart');
         localStorage.removeItem(`ps_pending_order_${orderId}`);
@@ -319,6 +331,17 @@ export function PaymentSuccessScreen({ onReturnToShop }: PaymentSuccessScreenPro
               if (!parsedTxId && (foundAny.worldpayTxId || foundAny.gatewayTxId)) {
                 setTxId(foundAny.worldpayTxId || foundAny.gatewayTxId || '');
               }
+              // Track order success with Klaviyo
+              trackOrderCompleted({
+                orderId: found.id,
+                total: found.total,
+                customerName: found.customerName,
+                customerEmail: found.customerEmail,
+                destination: found.destination,
+                deliveryMethod: found.deliveryMethod,
+                discountApplied: found.discountApplied,
+                items: found.items
+              });
             }
           }
         }

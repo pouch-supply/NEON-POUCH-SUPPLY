@@ -1622,9 +1622,12 @@ export default function App() {
     // Track Placed Order in Klaviyo
     klaviyoTrackPlacedOrder(
       paymentDetails.orderId,
-      cartItems,
+      paymentDetails.items || cartItems,
       paymentDetails.total,
-      paymentDetails.discountApplied ? paymentDetails.discountApplied.title : ''
+      paymentDetails.discountApplied ? paymentDetails.discountApplied.title : '',
+      paymentDetails.customerEmail,
+      paymentDetails.customerName,
+      paymentDetails.address
     );
 
     // Clear cart

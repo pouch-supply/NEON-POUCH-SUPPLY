@@ -251,6 +251,15 @@ export default function CheckoutView({
           const orderResponse = await fetch(`/api/worldpay/order/${orderId}`);
           const orderData = await safeParseJson(orderResponse);
           
+          trackOrderCompleted({
+            orderId: orderId,
+            customerName: orderData.customerName || fullName,
+            customerEmail: orderData.customerEmail || email,
+            destination: orderData.destination || `${addressLine}, ${city}, ${postcode}, ${country}`,
+            total: orderData.total || finalTotalToPay,
+            items: orderData.items || cartItems
+          });
+
           setPaymentSuccessData({
             orderId: orderId,
             total: orderData.total || 0,
@@ -367,6 +376,14 @@ export default function CheckoutView({
         });
 
         if (response.ok) {
+          trackOrderCompleted({
+            orderId: orderData.orderId,
+            customerName: orderData.customerName,
+            customerEmail: orderData.customerEmail,
+            destination: orderData.address,
+            total: orderData.total,
+            items: orderData.items
+          });
           onCompleteCheckout(orderData);
           setPaymentSuccessData(orderData);
         } else {
