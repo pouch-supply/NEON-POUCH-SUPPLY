@@ -1171,12 +1171,14 @@ export default function AdminDashboard({
       localStorage.setItem('ps_products', JSON.stringify(localProducts));
       localStorage.setItem('ps_collections', JSON.stringify(localCollections));
       localStorage.setItem('ps_orders', JSON.stringify(localOrders));
-      localStorage.setItem('ps_files', JSON.stringify(finalFilesToSave));
+      // Save lightweight subset for files to prevent LocalStorage quota overflow
+      const filesSubset = (finalFilesToSave || []).slice(0, 25).map((f: any) => ({ id: f.id, url: f.url, fileName: f.fileName, size: f.size }));
+      localStorage.setItem('ps_files', JSON.stringify(filesSubset));
       localStorage.setItem('ps_customers', JSON.stringify(localCustomers));
       localStorage.setItem('ps_discounts', JSON.stringify(localDiscounts));
       localStorage.setItem('ps_blogs', JSON.stringify(localBlogs));
     } catch (e) {
-      console.warn('[Admin Save] LocalStorage write warn:', e);
+      // Ignored for localStorage quota
     }
 
     // Direct HTTP POST to API endpoints for instant database persistence
@@ -1282,7 +1284,8 @@ export default function AdminDashboard({
 
         // 2. Sync to localStorage immediately
         try {
-          localStorage.setItem('ps_files', JSON.stringify(updated));
+          const filesSubset = updated.slice(0, 25).map((f: any) => ({ id: f.id, url: f.url, fileName: f.fileName, size: f.size }));
+          localStorage.setItem('ps_files', JSON.stringify(filesSubset));
         } catch (e) {}
 
         // 3. Persist to /api/files database endpoint
@@ -2847,7 +2850,8 @@ export default function AdminDashboard({
       onUpdateFiles(updated);
       setLocalFiles(updated);
       try {
-        localStorage.setItem('ps_files', JSON.stringify(updated));
+        const filesSubset = updated.slice(0, 25).map((f: any) => ({ id: f.id, url: f.url, fileName: f.fileName, size: f.size }));
+        localStorage.setItem('ps_files', JSON.stringify(filesSubset));
       } catch (e) {}
 
       fetch('/api/files', {

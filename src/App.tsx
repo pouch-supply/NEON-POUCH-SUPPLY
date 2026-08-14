@@ -105,22 +105,39 @@ export default function App() {
 
   // Helper to safely write to LocalStorage with quota recovery
   const safeSaveToLocalStorage = (key: string, value: any) => {
+    // For large collections like media files, do not overflow localstorage quota since they are persisted in the server database
+    if (key === 'ps_files') {
+      try {
+        const list = Array.isArray(value) ? value : [];
+        // Store a lightweight subset of max 25 items for offline fallback if needed
+        const lightweight = list.slice(0, 25).map(f => ({
+          id: f.id,
+          url: f.url,
+          fileName: f.fileName,
+          size: f.size,
+          dateAdded: f.dateAdded
+        }));
+        localStorage.setItem(key, JSON.stringify(lightweight));
+      } catch (_) {
+        try { localStorage.removeItem(key); } catch (_) {}
+      }
+      return;
+    }
+
     try {
       const strVal = typeof value === 'string' ? value : JSON.stringify(value);
       localStorage.setItem(key, strVal);
     } catch (e) {
-      console.warn(`[LocalStorage] Failed to write key "${key}". Attempting storage cleanup...`, e);
       try {
-        // Clear simulated emails and old non-critical caches to free space
+        // Clear non-critical caches to free space
         localStorage.removeItem('ps_simulated_emails');
-        const filesStr = localStorage.getItem('ps_files');
-        if (filesStr && filesStr.length > 500000) {
-          localStorage.removeItem('ps_files');
-        }
+        localStorage.removeItem('ps_files');
         const strVal = typeof value === 'string' ? value : JSON.stringify(value);
-        localStorage.setItem(key, strVal);
-      } catch (retryErr) {
-        console.warn(`[LocalStorage] Quota error persisted for key "${key}":`, retryErr);
+        if (strVal.length < 500000) {
+          localStorage.setItem(key, strVal);
+        }
+      } catch (_) {
+        // Silently ignore browser localstorage quota limits
       }
     }
   };
