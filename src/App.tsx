@@ -350,14 +350,21 @@ export default function App() {
 
   const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
   const [isDbOffline, setIsDbOffline] = useState<boolean>(false);
+  const lastSyncedHash = useRef<Record<string, string>>({});
 
-  // Reusable, highly robust sync engine that checks database connectivity headers
+  // Reusable, highly robust sync engine that checks database connectivity headers and avoids redundant syncs
   const syncToApi = async (resource: string, payload: any[]) => {
     try {
+      const serialized = JSON.stringify(payload);
+      if (lastSyncedHash.current[resource] === serialized) {
+        return; // Data has not changed since last load/sync, avoid redundant POST
+      }
+      lastSyncedHash.current[resource] = serialized;
+
       const res = await fetch(`/api/${resource}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: serialized
       });
       if (res.ok) {
         const offlineHeader = res.headers.get("X-Database-Offline");
@@ -367,8 +374,8 @@ export default function App() {
           setIsDbOffline(false);
         }
       }
-    } catch (err) {
-      console.error(`[Sync Engine] Failed to sync ${resource}:`, err);
+    } catch (err: any) {
+      console.warn(`[Sync Engine] Failed to sync ${resource}:`, err?.message || err);
     }
   };
 
@@ -411,6 +418,7 @@ export default function App() {
                 merged.push(localProd);
               }
             }
+            lastSyncedHash.current['products'] = JSON.stringify(merged);
             return merged;
           });
           loadedProductsSuccess.current = true;
@@ -424,12 +432,14 @@ export default function App() {
                 merged.push(localCol);
               }
             }
+            lastSyncedHash.current['collections'] = JSON.stringify(merged);
             return merged;
           });
           loadedCollectionsSuccess.current = true;
         }
         if (Array.isArray(ordersRes)) {
           setOrders(ordersRes);
+          lastSyncedHash.current['orders'] = JSON.stringify(ordersRes);
           loadedOrdersSuccess.current = true;
         }
         if (Array.isArray(filesRes)) {
@@ -441,12 +451,14 @@ export default function App() {
                 merged.push(localFile);
               }
             }
+            lastSyncedHash.current['files'] = JSON.stringify(merged);
             return merged;
           });
           loadedFilesSuccess.current = true;
         }
         if (Array.isArray(custsRes) && custsRes.length > 0) {
           setCustomers(custsRes);
+          lastSyncedHash.current['customers'] = JSON.stringify(custsRes);
           loadedCustomersSuccess.current = true;
           
           // Sync currently logged-in customer's details immediately on load
@@ -465,6 +477,7 @@ export default function App() {
         }
         if (Array.isArray(discsRes) && discsRes.length > 0) {
           setDiscounts(discsRes);
+          lastSyncedHash.current['discounts'] = JSON.stringify(discsRes);
           loadedDiscountsSuccess.current = true;
         }
         if (Array.isArray(pagesRes) && pagesRes.length > 0) {
@@ -545,6 +558,7 @@ export default function App() {
         }
         if (Array.isArray(blogsRes) && blogsRes.length > 0) {
           setBlogs(blogsRes);
+          lastSyncedHash.current['blogs'] = JSON.stringify(blogsRes);
           loadedBlogsSuccess.current = true;
         }
         
