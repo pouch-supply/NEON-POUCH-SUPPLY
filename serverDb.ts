@@ -380,47 +380,42 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
         }
       }
     } else if (norm === 'blogs') {
-      const blogSlug = item.slug || id;
+      const blogSlug = item.slug ? String(item.slug).trim() : id;
+      const cleanContent = typeof item.content === 'string' ? item.content : (typeof item.body === 'string' ? item.body : (item.content ? String(item.content) : ''));
+      const blogData = {
+        title: item.title || 'Untitled Blog',
+        slug: blogSlug,
+        excerpt: item.excerpt || null,
+        content: cleanContent,
+        image: item.image || null,
+        author: item.author || null,
+        category: item.category || null,
+        status: item.status || 'Active',
+        publishedAt: item.publishedAt || null,
+        readTime: item.readTime || null,
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+        data: item
+      };
+
       try {
         await prisma.blogPost.upsert({
           where: { id },
-          update: {
-            title: item.title || 'Untitled Blog',
-            slug: blogSlug,
-            excerpt: item.excerpt || null,
-            content: item.content || '',
-            image: item.image || null,
-            author: item.author || null,
-            category: item.category || null,
-            status: item.status || 'Active',
-            publishedAt: item.publishedAt || null,
-            readTime: item.readTime || null,
-            tags: Array.isArray(item.tags) ? item.tags : [],
-            data: item
-          },
+          update: blogData,
           create: {
             id,
-            title: item.title || 'Untitled Blog',
-            slug: blogSlug,
-            excerpt: item.excerpt || null,
-            content: item.content || '',
-            image: item.image || null,
-            author: item.author || null,
-            category: item.category || null,
-            status: item.status || 'Active',
-            publishedAt: item.publishedAt || null,
-            readTime: item.readTime || null,
-            tags: Array.isArray(item.tags) ? item.tags : [],
-            data: item
+            ...blogData
           }
         });
       } catch (bErr: any) {
         if (bErr?.code === 'P2002') {
+          const fallbackSlug = `${blogSlug}-${String(id).slice(-6)}`;
           await prisma.blogPost.upsert({
             where: { id },
-            update: { slug: `${blogSlug}-${id}`, data: item },
-            create: { id, title: item.title || 'Untitled Blog', slug: `${blogSlug}-${id}`, content: '', data: item }
-          }).catch(() => {});
+            update: { ...blogData, slug: fallbackSlug },
+            create: { id, ...blogData, slug: fallbackSlug }
+          }).catch((e: any) => console.warn(`[BlogPost Fallback Upsert] warning:`, e?.message));
+        } else {
+          console.warn(`[BlogPost Sync] warning:`, bErr?.message);
         }
       }
     } else if (norm === 'discounts') {
@@ -610,6 +605,59 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
           metadata: item.metadata || item,
         }
       });
+    } else if (norm === 'files' || norm === 'fileentry' || norm === 'fileentries') {
+      if (item.url) {
+        const sizeVal = item.size ?? item.fileSize;
+        const sizeStr = typeof sizeVal === 'number'
+          ? (sizeVal > 1024 * 1024 ? `${(sizeVal / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(sizeVal / 1024)} KB`)
+          : (sizeVal ? String(sizeVal) : null);
+
+        const rawPublicId = item.publicId;
+        const publicIdStr = (rawPublicId && typeof rawPublicId === 'string' && rawPublicId.trim() !== '')
+          ? rawPublicId.trim()
+          : null;
+
+        const fileData = {
+          fileName: item.fileName || item.originalFilename || 'Media Asset',
+          altText: item.altText ? String(item.altText) : 'Media Asset',
+          size: sizeStr,
+          fileSize: sizeStr,
+          references: item.references ? String(item.references) : 'Direct Upload',
+          url: String(item.url),
+          secureUrl: item.secureUrl ? String(item.secureUrl) : String(item.url),
+          mimeType: item.mimeType ? String(item.mimeType) : null,
+          publicId: publicIdStr,
+          resourceType: item.resourceType ? String(item.resourceType) : 'image',
+          format: item.format ? String(item.format) : null,
+          folder: item.folder ? String(item.folder) : 'storefront_media',
+          width: typeof item.width === 'number' ? item.width : (parseInt(String(item.width), 10) || null),
+          height: typeof item.height === 'number' ? item.height : (parseInt(String(item.height), 10) || null),
+          data: item
+        };
+
+        try {
+          await prisma.fileEntry.upsert({
+            where: { id },
+            update: fileData,
+            create: {
+              id,
+              ...fileData
+            }
+          });
+        } catch (upsertErr: any) {
+          if (upsertErr?.code === 'P2002') {
+            await prisma.fileEntry.upsert({
+              where: { id },
+              update: { ...fileData, publicId: null },
+              create: {
+                id,
+                ...fileData,
+                publicId: null
+              }
+            }).catch(() => {});
+          }
+        }
+      }
     }
   } catch (mErr: any) {
     console.warn(`[Prisma Model Sync] ${norm} sync warning:`, mErr?.message);
@@ -664,6 +712,9 @@ async function fetchFromPrismaModel(resource: string): Promise<any[]> {
     } else if (norm === 'customers') {
       const items = await prisma.customer.findMany();
       return items.map(c => (c.data && typeof c.data === 'object') ? { ...(c.data as object), id: c.id } : c);
+    } else if (norm === 'files' || norm === 'fileentry' || norm === 'fileentries') {
+      const items = await prisma.fileEntry.findMany({ orderBy: { createdAt: 'desc' } });
+      return items.map(f => (f.data && typeof f.data === 'object') ? { ...(f.data as object), id: f.id, url: f.url } : f);
     } else if (norm === 'custompages' || norm === 'pages') {
       const items = await prisma.customPage.findMany();
       return items.map(cp => {
@@ -761,12 +812,6 @@ export async function fetchResource(resource: string): Promise<any[]> {
         const list = Array.from(mergedMap.values());
         memoryCache[normResource] = list;
         persistMemoryCacheToBackup();
-
-        // Background sync to direct Prisma model table as well
-        for (const item of list) {
-          syncToPrismaModel(normResource, item).catch(() => {});
-        }
-
         return list;
       }
 
@@ -774,23 +819,27 @@ export async function fetchResource(resource: string): Promise<any[]> {
       const defaultList = memoryCache[normResource] || memoryCache[resource] || [];
       if (defaultList.length > 0) {
         console.log(`[Neon DB] Seeding initial ${normResource} (${defaultList.length} items)...`);
-        for (const item of defaultList) {
-          const itemId = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
-          await prisma.storeResource.upsert({
-            where: {
-              resource_itemId: {
+        const BATCH_SIZE = 25;
+        for (let i = 0; i < defaultList.length; i += BATCH_SIZE) {
+          const batch = defaultList.slice(i, i + BATCH_SIZE);
+          await Promise.all(batch.map(async (item) => {
+            const itemId = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
+            await prisma.storeResource.upsert({
+              where: {
+                resource_itemId: {
+                  resource: normResource,
+                  itemId
+                }
+              },
+              update: { data: item },
+              create: {
                 resource: normResource,
-                itemId
+                itemId,
+                data: item
               }
-            },
-            update: { data: item },
-            create: {
-              resource: normResource,
-              itemId,
-              data: item
-            }
-          });
-          syncToPrismaModel(normResource, item).catch(() => {});
+            }).catch(() => {});
+            syncToPrismaModel(normResource, item).catch(() => {});
+          }));
         }
       }
       return defaultList;
@@ -814,29 +863,33 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
   if (isConnected) {
     try {
       const validItemIds: string[] = [];
+      const BATCH_SIZE = 25;
 
-      for (const item of list) {
-        if (!item) continue;
-        const itemId = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
-        validItemIds.push(itemId);
+      for (let i = 0; i < list.length; i += BATCH_SIZE) {
+        const batch = list.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(async (item) => {
+          if (!item) return;
+          const itemId = String(item.id || item.slug || `item-${Date.now()}-${Math.random()}`);
+          validItemIds.push(itemId);
 
-        await prisma.storeResource.upsert({
-          where: {
-            resource_itemId: {
+          await prisma.storeResource.upsert({
+            where: {
+              resource_itemId: {
+                resource: normResource,
+                itemId
+              }
+            },
+            update: { data: item },
+            create: {
               resource: normResource,
-              itemId
+              itemId,
+              data: item
             }
-          },
-          update: { data: item },
-          create: {
-            resource: normResource,
-            itemId,
-            data: item
-          }
-        });
+          }).catch((e: any) => console.warn(`[StoreResource Sync] ${normResource} ${itemId} warning:`, e?.message));
 
-        // Dual sync to dedicated Prisma model table
-        syncToPrismaModel(normResource, item).catch(() => {});
+          // Dual sync to dedicated Prisma model table
+          syncToPrismaModel(normResource, item).catch(() => {});
+        }));
       }
 
       // Delete items removed from list in StoreResource
@@ -848,7 +901,7 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
               notIn: validItemIds
             }
           }
-        });
+        }).catch((e: any) => console.warn(`[StoreResource deleteMany] ${normResource} warning:`, e?.message));
       }
 
       // Delete items removed from list in dedicated Prisma tables
@@ -867,6 +920,8 @@ export async function saveResource(resource: string, list: any[]): Promise<any[]
         await prisma.discount.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
       } else if (norm === 'custompages' || norm === 'pages') {
         await prisma.customPage.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
+      } else if (norm === 'files' || norm === 'fileentry' || norm === 'fileentries') {
+        await prisma.fileEntry.deleteMany({ where: { id: { notIn: validItemIds } } }).catch(() => {});
       }
     } catch (err) {
       console.error(`[Neon DB] Error saving resource ${normResource}:`, err);
