@@ -1672,9 +1672,9 @@ export default function App() {
 
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #334155;">
-          <div style="background-color: #0d1117; padding: 25px 20px; text-align: center;">
-            <span style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">PERFUME SAMPLER</span>
-            <div style="font-size: 9px; font-weight: bold; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Order withdrawal receipt</div>
+          <div style="background-color: #071d37; padding: 25px 20px; text-align: center;">
+            <span style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">POUCH SUPPLY CO.</span>
+            <div style="font-size: 9px; font-weight: bold; color: #00e599; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Order withdrawal receipt</div>
           </div>
           
           <div style="padding: 24px; text-align: left;">
@@ -2829,7 +2829,7 @@ export default function App() {
               </div>
             </div>
 
-            <p className="text-[10px] text-slate-400">Your mock order was registered within our active database. Toggle to the **Admin Portal** to fulfill this order and check revenue updates!</p>
+            <p className="text-[10px] text-slate-400">Your order has been registered in the database. You can track this order in your customer portal or fulfill it via the Admin Portal.</p>
 
             <button
               onClick={() => {

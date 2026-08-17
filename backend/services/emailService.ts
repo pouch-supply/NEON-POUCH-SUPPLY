@@ -257,13 +257,17 @@ export async function sendEmail(
       html
     });
 
-    // Fallback: If custom domain error occurs, retry with onboarding@resend.dev
+    // Fallback: If custom domain error or invalid from address occurs, retry with onboarding@resend.dev
     if (resendResponse.error) {
       const errMsg = resendResponse.error.message || String(resendResponse.error);
-      const isDomainError = errMsg.toLowerCase().includes('domain') || errMsg.toLowerCase().includes('not verified') || errMsg.toLowerCase().includes('onboarding');
+      const isDomainOrFromError = errMsg.toLowerCase().includes('domain') ||
+        errMsg.toLowerCase().includes('not verified') ||
+        errMsg.toLowerCase().includes('onboarding') ||
+        errMsg.toLowerCase().includes('from') ||
+        errMsg.toLowerCase().includes('invalid');
 
-      if (isDomainError && !fromEmail.includes('onboarding@resend.dev')) {
-        console.warn(`[EmailService] Custom sender domain failed (${errMsg}). Retrying with fallback onboarding@resend.dev...`);
+      if (isDomainOrFromError && !fromEmail.includes('onboarding@resend.dev')) {
+        console.warn(`[EmailService] Sender failed (${errMsg}). Retrying with fallback onboarding@resend.dev...`);
         fromEmail = 'Pouch Supply Co. <onboarding@resend.dev>';
         resendResponse = await resend.emails.send({
           from: fromEmail,
