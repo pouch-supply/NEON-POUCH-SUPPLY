@@ -442,6 +442,10 @@ export default function CheckoutView({
           variant: (item as any).variant || (item as any).concreteVariantName || (item as any).strength || (item as any).flavour || 'Standard',
           sku: (item as any).sku || (item as any).concreteVariantId || item.productId || 'SKU-001',
           vendor: item.vendor || '',
+          isSubscription: Boolean(item.isSubscription || (item.productId && (item.productId.startsWith('sub-pack') || item.productId.includes('sub-pack')))),
+          subscriptionPlan: (item as any).subscriptionPlan || 'LITE Plan',
+          subscriptionFrequency: (item as any).subscriptionFrequency || '1day',
+          frequencyDiscount: (item as any).frequencyDiscount || '10%',
           total: Number((item.price * item.quantity).toFixed(2))
         })),
         discountApplied: currentDiscount,
