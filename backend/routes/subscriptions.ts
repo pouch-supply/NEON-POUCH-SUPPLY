@@ -7,8 +7,32 @@ import {
   chargeRecurringSubscription,
   extractRecurringAuthorizationHref,
 } from "../services/worldpaySubscription";
+import { processDueSubscriptions } from "../services/subscriptionCron";
 
 const router = Router();
+
+/**
+ * Manual / Cron trigger to process all due renewals.
+ */
+router.post(
+  "/process-renewals",
+  async (_req: Request, res: Response) => {
+    try {
+      const result = await processDueSubscriptions();
+      return res.json({
+        success: true,
+        message: `Processed ${result.processed} subscription(s): ${result.succeeded} succeeded, ${result.failed} failed.`,
+        ...result
+      });
+    } catch (error: any) {
+      console.error("[Process Renewals Error]", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+);
 
 /**
  * Create subscription record after the FIRST successful payment.

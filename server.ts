@@ -13,6 +13,11 @@ async function start() {
     getDb().catch(() => {});
   });
 
+  // Start background subscription renewal cron engine
+  import("./backend/services/subscriptionCron").then(({ startSubscriptionRenewalWorker }) => {
+    startSubscriptionRenewalWorker(15 * 60 * 1000); // scan every 15 minutes
+  });
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
   });

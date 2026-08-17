@@ -194,12 +194,27 @@ async function saveVerifiedOrder(
     try {
       const planName = subItem.productTitle || subItem.title || 'Pouch Supply Subscription';
       const planId = subItem.productId || 'sub-pack-core';
+      const rawFrequency = (subItem.subscriptionFrequency || subItem.frequency || subItem.billingInterval || pending?.items?.find((i: any) => i.isSubscription)?.subscriptionFrequency || '1day').toString().toLowerCase();
+      
+      let billingInterval = '1day';
+      if (rawFrequency.includes('day') || rawFrequency.includes('1') || rawFrequency === 'next day (test)') {
+        billingInterval = '1day';
+      } else if (rawFrequency.includes('week') && !rawFrequency.includes('bi')) {
+        billingInterval = 'weekly';
+      } else if (rawFrequency.includes('bi') || rawFrequency.includes('14')) {
+        billingInterval = 'bi-weekly';
+      } else if (rawFrequency.includes('month') || rawFrequency.includes('30')) {
+        billingInterval = 'month';
+      } else {
+        billingInterval = rawFrequency;
+      }
+
+      const { calculateNextBillingDate } = await import('../services/subscriptionCron');
+      const nextBillingDate = calculateNextBillingDate(billingInterval, new Date());
+
       const recurringHref = `https://access.worldpay.com/payments/recurring/wp-${details.transactionId || orderId}`;
       const schemeReference = `SCHEME-${details.transactionId || orderId}`;
       const subAmount = subItem.price && subItem.price > 0 ? Number(subItem.price) : Number(total);
-
-      const nextBillingDate = new Date();
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
       const subId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       createdSubscriptionId = subId;
@@ -214,7 +229,7 @@ async function saveVerifiedOrder(
         amount: subAmount,
         currency: 'GBP',
         status: 'active',
-        billingInterval: 'month',
+        billingInterval,
         nextBillingDate,
         worldpayTransactionId: details.transactionId || orderId,
         worldpayRecurringHref: recurringHref,
@@ -364,9 +379,13 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
 
     await savePendingCheckout(transactionReference, pendingPayload);
 
-    // TEST MODE REQUESTED OR ENFORCED
-    if (cfg.isTestMode) {
-      console.log(`[Worldpay Session] Creating TEST / SANDBOX checkout for Order: ${transactionReference}`);
+    // Worldpay HPP Request (Live or Sandbox Remote API)
+    // If test mode is requested and real test credentials exist, we call try.access.worldpay.com
+    const isRemoteTest = cfg.isTestMode && cfg.authHeader && cfg.baseUrl.includes('try.access.worldpay.com');
+    const isLocalSimulatedTest = cfg.isTestMode && !isRemoteTest;
+
+    if (isLocalSimulatedTest) {
+      console.log(`[Worldpay Session] Creating SIMULATED test checkout for Order: ${transactionReference}`);
       const testGatewayUrl = `${origin}/payment/gateway?orderId=${encodeURIComponent(transactionReference)}&amount=${encodeURIComponent(pendingPayload.total.toFixed(2))}&mode=test`;
 
       return res.status(200).json({
@@ -381,16 +400,15 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       });
     }
 
-    // LIVE MODE REQUESTED: Check for missing live credentials
     if (!cfg.authHeader || !cfg.entity) {
       return res.status(400).json({
         success: false,
-        message: 'Live Worldpay Access API credentials are not configured in environment variables (WORLDPAY_ENTITY, WORLDPAY_API_USERNAME, WORLDPAY_API_PASSWORD).',
-        error: 'Live Worldpay credentials missing.'
+        message: 'Worldpay Access API credentials are not configured in environment variables (WORLDPAY_ENTITY, WORLDPAY_API_USERNAME, WORLDPAY_API_PASSWORD).',
+        error: 'Worldpay credentials missing.'
       });
     }
 
-    // LIVE Worldpay HPP Request
+    // Worldpay HPP Request (Remote API: live or try.access.worldpay.com)
     const successReturnUrl = `${origin}/api/worldpay/callback?orderId=${encodeURIComponent(transactionReference)}&status=SUCCESS`;
     const pendingReturnUrl = `${origin}/api/worldpay/callback?orderId=${encodeURIComponent(transactionReference)}&status=PENDING`;
     const failureReturnUrl = `${origin}/api/worldpay/callback?orderId=${encodeURIComponent(transactionReference)}&status=FAILED`;

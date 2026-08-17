@@ -117,6 +117,30 @@ async function ensureNeonTablesExist(): Promise<void> {
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Subscription" (
+        "id" TEXT PRIMARY KEY,
+        "customerId" TEXT,
+        "customerEmail" TEXT NOT NULL,
+        "customerName" TEXT,
+        "planId" TEXT NOT NULL,
+        "planName" TEXT NOT NULL,
+        "amount" DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        "currency" TEXT NOT NULL DEFAULT 'GBP',
+        "status" TEXT NOT NULL DEFAULT 'active',
+        "billingInterval" TEXT NOT NULL DEFAULT 'month',
+        "nextBillingDate" TIMESTAMP(3),
+        "worldpayTransactionId" TEXT,
+        "worldpayRecurringHref" TEXT,
+        "worldpaySchemeReference" TEXT,
+        "lastPaymentStatus" TEXT,
+        "lastPaymentId" TEXT,
+        "lastPaymentAt" TIMESTAMP(3),
+        "failedPaymentCount" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     isTablesInitialized = true;
   } catch (err) {
     console.warn('[Neon Table Setup] Warning: Table initialization check encountered error:', err);
@@ -658,6 +682,54 @@ async function syncToPrismaModel(resource: string, item: any): Promise<void> {
           }
         }
       }
+    } else if (norm === 'subscriptions' || norm === 'subscription') {
+      const subEmail = String(item.customerEmail || item.email || `customer-${id}@pouch-supply.com`).toLowerCase().trim();
+      const amountVal = typeof item.amount === 'number' ? item.amount : (parseFloat(item.amount) || 0.0);
+      const nextDate = item.nextBillingDate ? new Date(item.nextBillingDate) : null;
+      const lastPaymentDate = item.lastPaymentAt ? new Date(item.lastPaymentAt) : null;
+
+      await prisma.subscription.upsert({
+        where: { id },
+        update: {
+          customerId: item.customerId || null,
+          customerEmail: subEmail,
+          customerName: item.customerName || null,
+          planId: item.planId || 'sub-pack',
+          planName: item.planName || 'Pouch Supply Subscription',
+          amount: amountVal,
+          currency: item.currency || 'GBP',
+          status: item.status || 'active',
+          billingInterval: item.billingInterval || 'month',
+          nextBillingDate: nextDate,
+          worldpayTransactionId: item.worldpayTransactionId || null,
+          worldpayRecurringHref: item.worldpayRecurringHref || item.recurringHref || null,
+          worldpaySchemeReference: item.worldpaySchemeReference || null,
+          lastPaymentStatus: item.lastPaymentStatus || null,
+          lastPaymentId: item.lastPaymentId || null,
+          lastPaymentAt: lastPaymentDate,
+          failedPaymentCount: typeof item.failedPaymentCount === 'number' ? item.failedPaymentCount : 0
+        },
+        create: {
+          id,
+          customerId: item.customerId || null,
+          customerEmail: subEmail,
+          customerName: item.customerName || null,
+          planId: item.planId || 'sub-pack',
+          planName: item.planName || 'Pouch Supply Subscription',
+          amount: amountVal,
+          currency: item.currency || 'GBP',
+          status: item.status || 'active',
+          billingInterval: item.billingInterval || 'month',
+          nextBillingDate: nextDate,
+          worldpayTransactionId: item.worldpayTransactionId || null,
+          worldpayRecurringHref: item.worldpayRecurringHref || item.recurringHref || null,
+          worldpaySchemeReference: item.worldpaySchemeReference || null,
+          lastPaymentStatus: item.lastPaymentStatus || null,
+          lastPaymentId: item.lastPaymentId || null,
+          lastPaymentAt: lastPaymentDate,
+          failedPaymentCount: typeof item.failedPaymentCount === 'number' ? item.failedPaymentCount : 0
+        }
+      });
     }
   } catch (mErr: any) {
     console.warn(`[Prisma Model Sync] ${norm} sync warning:`, mErr?.message);
@@ -697,6 +769,30 @@ async function fetchFromPrismaModel(resource: string): Promise<any[]> {
           createdAt: o.createdAt ? o.createdAt.toISOString() : undefined
         };
       });
+    } else if (norm === 'subscriptions' || norm === 'subscription') {
+      const items = await prisma.subscription.findMany({ orderBy: { createdAt: 'desc' } });
+      return items.map(s => ({
+        id: s.id,
+        customerId: s.customerId,
+        customerEmail: s.customerEmail,
+        customerName: s.customerName,
+        planId: s.planId,
+        planName: s.planName,
+        amount: Number(s.amount),
+        currency: s.currency,
+        status: s.status,
+        billingInterval: s.billingInterval,
+        nextBillingDate: s.nextBillingDate ? s.nextBillingDate.toISOString() : null,
+        worldpayTransactionId: s.worldpayTransactionId,
+        worldpayRecurringHref: s.worldpayRecurringHref,
+        worldpaySchemeReference: s.worldpaySchemeReference,
+        lastPaymentStatus: s.lastPaymentStatus,
+        lastPaymentId: s.lastPaymentId,
+        lastPaymentAt: s.lastPaymentAt ? s.lastPaymentAt.toISOString() : null,
+        failedPaymentCount: s.failedPaymentCount,
+        createdAt: s.createdAt.toISOString(),
+        updatedAt: s.updatedAt.toISOString()
+      }));
     } else if (norm === 'products') {
       const items = await prisma.product.findMany();
       return items.map(p => (p.data && typeof p.data === 'object') ? { ...(p.data as object), id: p.id } : p);
