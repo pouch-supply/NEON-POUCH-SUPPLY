@@ -1002,31 +1002,75 @@ export default function CheckoutView({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => executePaymentProcess('test')}
-                        disabled={isProcessing}
-                        className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:cursor-not-allowed"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin text-white" />
-                            <span>Launching Worldpay Sandbox...</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="h-4 w-4 text-amber-200" />
-                            {hasSubscription ? (
-                              <span className="flex items-center gap-2 font-black text-white">
-                                <Repeat className="h-4 w-4 text-amber-200 shrink-0" />
-                                Pay & Start Recurring Subscription – Test (£{finalTotalToPay.toFixed(2)})
-                              </span>
-                            ) : (
-                              <span>Pay with Worldpay – Test (£{finalTotalToPay.toFixed(2)})</span>
-                            )}
-                          </>
-                        )}
-                      </button>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => executePaymentProcess('test')}
+                          disabled={isProcessing}
+                          className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:cursor-not-allowed"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                              <span>Launching Worldpay Sandbox...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="h-4 w-4 text-amber-200" />
+                              {hasSubscription ? (
+                                <span className="flex items-center gap-2 font-black text-white">
+                                  <Repeat className="h-4 w-4 text-amber-200 shrink-0" />
+                                  Pay & Start Recurring Subscription – Test (£{finalTotalToPay.toFixed(2)})
+                                </span>
+                              ) : (
+                                <span>Pay with Worldpay – Test (£{finalTotalToPay.toFixed(2)})</span>
+                              )}
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!fullName || !email || !addressLine) {
+                              setPaymentError('Please fill in your shipping and contact information.');
+                              return;
+                            }
+                            const generatedOrderId = `PS${Math.floor(Math.random() * 90000 + 10000)}`;
+                            const pendingOrderObj = {
+                              orderId: generatedOrderId,
+                              amount: finalTotalToPay.toFixed(2),
+                              total: finalTotalToPay,
+                              customerName: fullName,
+                              customerEmail: email,
+                              destination: `${addressLine}, ${city}, ${postcode}, ${country}`,
+                              items: cartItems.map(item => ({
+                                productId: item.productId,
+                                productTitle: item.productTitle,
+                                price: item.price,
+                                quantity: item.quantity,
+                                image: item.image || '',
+                                variant: (item as any).variant || (item as any).concreteVariantName || (item as any).strength || (item as any).flavour || 'Standard',
+                                sku: (item as any).sku || (item as any).concreteVariantId || item.productId || 'SKU-001',
+                                vendor: item.vendor || '',
+                                total: Number((item.price * item.quantity).toFixed(2)),
+                                isSubscription: item.isSubscription || item.productId?.startsWith('sub-pack-')
+                              })),
+                              discountApplied: currentDiscount,
+                              storeCreditApplied: storeCreditApplied,
+                              isTestMode: true
+                            };
+                            localStorage.setItem(`ps_pending_order_${generatedOrderId}`, JSON.stringify(pendingOrderObj));
+                            window.history.pushState({}, '', `/payment/gateway?orderId=${encodeURIComponent(generatedOrderId)}&amount=${encodeURIComponent(finalTotalToPay.toFixed(2))}&mode=test`);
+                            window.dispatchEvent(new Event('popstate'));
+                          }}
+                          disabled={isProcessing}
+                          className="w-full bg-slate-800 hover:bg-slate-900 text-amber-300 font-bold py-2.5 px-4 rounded-xl text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                          <span>Use In-App Gateway Simulator (Instant 1-Click Test)</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
