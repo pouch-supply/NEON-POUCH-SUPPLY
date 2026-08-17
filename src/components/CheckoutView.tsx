@@ -993,16 +993,16 @@ export default function CheckoutView({
                       
                       <div className="bg-white border border-amber-200 rounded-xl p-3 text-[11px] space-y-2">
                         <div className="flex items-center justify-between text-slate-700">
-                          <span className="font-bold">1. Recommended Frictionless Card:</span>
-                          <code className="bg-slate-100 px-2 py-0.5 rounded font-mono font-bold text-amber-900">4907 6399 9990 9022</code>
+                          <span className="font-bold">1. Zero-Challenge Visa (Recommended):</span>
+                          <code className="bg-slate-100 px-2 py-0.5 rounded font-mono font-bold text-amber-900">4000 0000 0000 2701</code>
                         </div>
                         <div className="flex items-center justify-between text-slate-700">
-                          <span className="font-bold">2. Standard Test Visa:</span>
-                          <code className="bg-slate-100 px-2 py-0.5 rounded font-mono font-bold text-slate-900">4444 3333 2222 1111</code>
+                          <span className="font-bold">2. Zero-Challenge Mastercard:</span>
+                          <code className="bg-slate-100 px-2 py-0.5 rounded font-mono font-bold text-slate-900">5200 0000 0000 2235</code>
                         </div>
                         <div className="border-t border-slate-100 pt-1.5 flex justify-between text-[10px] text-slate-500">
                           <span>Expiry: <strong className="text-slate-800">12/28</strong> | CVV: <strong className="text-slate-800">123</strong></span>
-                          <span>If 3DS prompts: enter PIN <strong className="text-amber-800">555</strong></span>
+                          <span>Cardholder: <strong className="text-slate-800">AUTHORISED</strong></span>
                         </div>
                       </div>
 
