@@ -541,8 +541,9 @@ export async function createExpressApp() {
   app.use("/api/discounts", discountsRouter);
   app.use("/api/custompages", customPagesRouter);
   app.use("/api/blogs", blogsRouter);
-  app.use("/api/worldpay", worldpayRouter);
   app.use("/api/worldpay/subscriptions", subscriptionsRouter);
+  app.use("/api/subscriptions", subscriptionsRouter);
+  app.use("/api/worldpay", worldpayRouter);
   app.use("/api/folder-structure", structureRouter);
   app.use("/api/email", emailRouter);
   app.use("/api/klaviyo", klaviyoRouter);

@@ -12,27 +12,32 @@ import { processDueSubscriptions } from "../services/subscriptionCron";
 const router = Router();
 
 /**
- * Manual / Cron trigger to process all due renewals.
+ * Manual / Browser / Cron trigger to process all due renewals.
+ * Supports both GET (for browser URL visits / cron pings) and POST.
  */
-router.post(
-  "/process-renewals",
-  async (_req: Request, res: Response) => {
-    try {
-      const result = await processDueSubscriptions();
-      return res.json({
-        success: true,
-        message: `Processed ${result.processed} subscription(s): ${result.succeeded} succeeded, ${result.failed} failed.`,
-        ...result
-      });
-    } catch (error: any) {
-      console.error("[Process Renewals Error]", error);
-      return res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
+const handleProcessRenewals = async (_req: Request, res: Response) => {
+  try {
+    const result = await processDueSubscriptions();
+    return res.json({
+      success: true,
+      message: `Processed ${result.processed} subscription(s): ${result.succeeded} succeeded, ${result.failed} failed.`,
+      timestamp: new Date().toISOString(),
+      ...result
+    });
+  } catch (error: any) {
+    console.error("[Process Renewals Error]", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Failed to process due subscriptions"
+    });
   }
-);
+};
+
+router.get("/process-renewals", handleProcessRenewals);
+router.post("/process-renewals", handleProcessRenewals);
+router.get("/cron", handleProcessRenewals);
+router.post("/cron", handleProcessRenewals);
 
 /**
  * Create subscription record after the FIRST successful payment.
