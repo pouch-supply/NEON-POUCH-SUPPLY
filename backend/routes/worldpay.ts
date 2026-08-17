@@ -442,8 +442,7 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
     const body: Record<string, unknown> = {
       transactionReference,
       merchant: { 
-        entity: cfg.entity,
-        narrative: { line1: cleanNarrative }
+        entity: cfg.entity
       },
       narrative: { line1: cleanNarrative },
       value: { currency: 'GBP', amount: priceNum },
