@@ -415,16 +415,26 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
     const cancelReturnUrl = `${origin}/payment/cancelled?orderId=${encodeURIComponent(transactionReference)}`;
     const expiryReturnUrl = `${origin}/payment/failed?orderId=${encodeURIComponent(transactionReference)}&reason=expired`;
 
-    const rawLabel = (items && items[0]?.productTitle) || `Pouch Supply Order ${transactionReference}`;
-    const label = rawLabel.length > 24 ? `${rawLabel.slice(0, 21)}...` : rawLabel;
+    const rawLabel = (items && items[0]?.productTitle) || 'Pouch Supply Order';
+    // Worldpay narrative.line1 schema: max 24 chars, ONLY [a-zA-Z0-9-., ] allowed
+    let cleanNarrative = String(rawLabel)
+      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 24);
+    if (!cleanNarrative || cleanNarrative.length === 0) {
+      cleanNarrative = 'Pouch Supply Order';
+    }
+
+    const cleanDescription = String(rawLabel || 'Pouch Supply Order').slice(0, 80);
 
     const body: Record<string, unknown> = {
       transactionReference,
       merchant: { entity: cfg.entity },
-      narrative: { line1: label },
+      narrative: { line1: cleanNarrative },
       value: { currency: 'GBP', amount: priceNum },
-      description: label,
-      billingAddressName: customerName || 'Customer',
+      description: cleanDescription,
+      billingAddressName: (customerName || 'Customer').replace(/[^a-zA-Z0-9-., ]/g, ' ').trim().slice(0, 50) || 'Customer',
       resultURLs: {
         successURL: successReturnUrl,
         pendingURL: pendingReturnUrl,
