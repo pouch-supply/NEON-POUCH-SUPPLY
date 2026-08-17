@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SubscriptionIcon from './SubscriptionIcon';
-import GoogleAccountChooserModal from './GoogleAccountChooserModal';
+import { signInWithGoogleFirebase } from '../lib/firebase';
 
 interface CustomerDrawerProps {
   isOpen: boolean;
@@ -95,66 +95,30 @@ export default function CustomerDrawer({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  useEffect(() => {
-    const handleOAuthMessage = (event: MessageEvent) => {
-      const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
-        return;
-      }
-      if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.customer) {
-        onLogin(event.data.customer);
-        setIsGoogleModalOpen(false);
-        setSuccessMsg(`Logged in with Google (${event.data.customer.email})!`);
-      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
-        setErrorMsg(event.data.error || 'Google Authentication failed.');
-      }
-    };
-    window.addEventListener('message', handleOAuthMessage);
-    return () => window.removeEventListener('message', handleOAuthMessage);
-  }, [onLogin]);
-  const [customGmailInput, setCustomGmailInput] = useState('');
-
-  const handleGoogleLoginSubmit = async (account: { email: string; name?: string; picture?: string; customer?: any }) => {
-    if (account.customer) {
-      localStorage.setItem('ps_logged_in_customer', JSON.stringify(account.customer));
-      onLogin(account.customer);
-      setIsGoogleModalOpen(false);
-      setSuccessMsg(`Signed in with Google (${account.customer.email})!`);
-      return;
-    }
-
-    const targetEmail = account.email.toLowerCase().trim();
-    if (!targetEmail || !targetEmail.includes('@')) {
-      setErrorMsg('Please enter a valid Gmail address.');
-      return;
-    }
-    setIsSubmitting(true);
+  const handleDirectGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const defaultName = account.name || targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      const response = await fetch('/api/customers/google-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: targetEmail,
-          name: defaultName,
-          picture: account.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Google login failed.');
-
-      localStorage.setItem('ps_logged_in_customer', JSON.stringify(data.customer));
-      onLogin(data.customer);
-      setIsGoogleModalOpen(false);
-      setSuccessMsg(`Signed in with Google (${targetEmail})!`);
+      const res = await signInWithGoogleFirebase();
+      if (res && res.customer) {
+        localStorage.setItem('ps_logged_in_customer', JSON.stringify(res.customer));
+        onLogin(res.customer);
+        setSuccessMsg(`Signed in as ${res.customer.name || res.customer.email}!`);
+      }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Server connection error during Google sign in.');
+      console.warn('[Firebase Google Auth Error]', err);
+      if (err?.code === 'auth/popup-closed-by-user' || err?.message?.includes('closed-by-user')) {
+        setErrorMsg('Google Sign-In popup was closed. Please try again.');
+      } else if (err?.code === 'auth/popup-blocked') {
+        setErrorMsg('Sign-In popup was blocked by browser. Please allow popups for this site.');
+      } else {
+        setErrorMsg(err?.message || 'Google Sign-In could not be completed.');
+      }
     } finally {
-      setIsSubmitting(false);
+      setIsGoogleLoading(false);
     }
   };
   
@@ -442,20 +406,21 @@ export default function CustomerDrawer({
                           {/* Google Sign In Button */}
                           <button
                             type="button"
-                            onClick={() => {
-                              setErrorMsg('');
-                              setSuccessMsg('');
-                              setIsGoogleModalOpen(true);
-                            }}
-                            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-250 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl shadow-2xs transition-all cursor-pointer hover:border-slate-350"
+                            onClick={handleDirectGoogleSignIn}
+                            disabled={isGoogleLoading || isSubmitting}
+                            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-250 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl shadow-2xs transition-all cursor-pointer hover:border-slate-350 disabled:opacity-50"
                           >
-                            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
-                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
-                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                            </svg>
-                            <span>Sign in with Gmail (Google SSO)</span>
+                            {isGoogleLoading ? (
+                              <RefreshCw className="h-4 w-4 animate-spin text-slate-600" />
+                            ) : (
+                              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                              </svg>
+                            )}
+                            <span>{isGoogleLoading ? 'Connecting to Google...' : 'Sign in with Google'}</span>
                           </button>
 
                           <div className="relative flex items-center justify-center my-2">
@@ -1313,13 +1278,6 @@ export default function CustomerDrawer({
         </div>
       )}
     </AnimatePresence>
-
-    <GoogleAccountChooserModal
-      isOpen={isGoogleModalOpen}
-      onClose={() => setIsGoogleModalOpen(false)}
-      onSelectAccount={(account) => handleGoogleLoginSubmit(account)}
-      isLoading={isSubmitting}
-    />
     </>
   );
 }

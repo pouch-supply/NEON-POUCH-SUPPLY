@@ -107,7 +107,7 @@ export function EmailSettingsTab() {
   const [sendingKlaviyoTest, setSendingKlaviyoTest] = useState(false);
   const [testKlaviyoResult, setTestKlaviyoResult] = useState<any>(null);
   const [verifyingKlaviyoKey, setVerifyingKlaviyoKey] = useState(false);
-  const [klaviyoVerifyResult, setKlaviyoVerifyResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+  const [klaviyoVerifyResult, setKlaviyoVerifyResult] = useState<{ success: boolean; message?: string; error?: string; hasEventsWrite?: boolean } | null>(null);
 
   // Fetch all configuration and logs on load
   const loadData = async () => {

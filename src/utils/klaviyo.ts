@@ -110,13 +110,14 @@ export function trackAgeVerified(properties: KlaviyoEventProperties = {}): void 
 }
 
 export function trackStartedCheckout(data: { items?: any[]; total?: number; customerEmail?: string; customerName?: string } | { id: string; name: string; price: number; currency: string; recurring?: boolean }): void {
-  if ('items' in data) {
-    const items = data.items || [];
-    const total = data.total || 0;
-    if (data.customerEmail) {
-      identifyCustomer(data.customerEmail, {
-        $first_name: data.customerName?.split(' ')[0] || 'Valued',
-        $last_name: data.customerName?.split(' ').slice(1).join(' ') || 'Customer',
+  if ('items' in data || 'total' in data) {
+    const multiItemData = data as { items?: any[]; total?: number; customerEmail?: string; customerName?: string };
+    const items = multiItemData.items || [];
+    const total = multiItemData.total || 0;
+    if (multiItemData.customerEmail) {
+      identifyCustomer(multiItemData.customerEmail, {
+        $first_name: multiItemData.customerName?.split(' ')[0] || 'Valued',
+        $last_name: multiItemData.customerName?.split(' ').slice(1).join(' ') || 'Customer',
       });
     }
 
@@ -137,25 +138,26 @@ export function trackStartedCheckout(data: { items?: any[]; total?: number; cust
     });
 
     // Also notify backend
-    if (data.customerEmail) {
+    if (multiItemData.customerEmail) {
       fetch('/api/klaviyo/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventType: 'checkout_started',
-          customerEmail: data.customerEmail,
+          customerEmail: multiItemData.customerEmail,
           data: { items, total }
         })
       }).catch(() => {});
     }
   } else {
+    const singleItemData = data as { id: string; name: string; price: number; currency: string; recurring?: boolean };
     trackEvent('Started Checkout', {
-      ProductID: data.id,
-      ProductName: data.name,
-      $value: data.price,
-      value: data.price,
-      currency: data.currency || 'GBP',
-      recurring: Boolean(data.recurring),
+      ProductID: singleItemData.id,
+      ProductName: singleItemData.name,
+      $value: singleItemData.price,
+      value: singleItemData.price,
+      currency: singleItemData.currency || 'GBP',
+      recurring: Boolean(singleItemData.recurring),
     });
   }
 }
@@ -173,7 +175,7 @@ export function trackOrderCompleted(order: {
   destination?: string;
   address?: string;
   deliveryMethod?: string;
-  discountApplied?: string | null;
+  discountApplied?: any;
   product?: { id: string; name: string; price: number; currency: string; recurring?: boolean };
 }): void {
   const orderId = String(order.orderId || order.id || `PS${Math.floor(10000 + Math.random() * 90000)}`);
