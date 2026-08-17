@@ -426,7 +426,18 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       cleanNarrative = 'Pouch Supply Order';
     }
 
-    const cleanDescription = String(rawLabel || 'Pouch Supply Order').slice(0, 80);
+    // Clean description to avoid Next.js / 3DS frame parsing exceptions on Worldpay HPP
+    const cleanDescription = String(rawLabel || 'Pouch Supply Order')
+      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 60) || 'Pouch Supply Order';
+
+    const cleanBillingName = String(customerName || 'Valued Customer')
+      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 50) || 'Customer';
 
     const body: Record<string, unknown> = {
       transactionReference,
@@ -434,7 +445,7 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       narrative: { line1: cleanNarrative },
       value: { currency: 'GBP', amount: priceNum },
       description: cleanDescription,
-      billingAddressName: (customerName || 'Customer').replace(/[^a-zA-Z0-9-., ]/g, ' ').trim().slice(0, 50) || 'Customer',
+      billingAddressName: cleanBillingName,
       resultURLs: {
         successURL: successReturnUrl,
         pendingURL: pendingReturnUrl,

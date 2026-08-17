@@ -990,9 +990,18 @@ export default function CheckoutView({
                           <span className="bg-amber-200 text-amber-900 text-[9.5px] px-2.5 py-0.5 rounded-full font-mono font-extrabold">TEST / SANDBOX</span>
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Processes complete payment authorization, receipt confirmation, email dispatch, and order creation in test mode.
-                      </p>
+                      
+                      <div className="bg-white border border-amber-200 rounded-xl p-3 text-[11px] space-y-1.5">
+                        <div className="flex items-center justify-between text-slate-700">
+                          <span className="font-bold">Sandbox Test Card (Auto-Auth / No 3DS):</span>
+                          <code className="bg-slate-100 px-2 py-0.5 rounded font-mono font-bold text-amber-900">4444 3333 2222 1111</code>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-500">
+                          <span>Expiry: <strong className="text-slate-800">12/28</strong> | CVV: <strong className="text-slate-800">123</strong></span>
+                          <span>Auto-approved (bypasses sandbox 3DS)</span>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => executePaymentProcess('test')}
