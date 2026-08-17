@@ -416,9 +416,9 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
     const expiryReturnUrl = `${origin}/payment/failed?orderId=${encodeURIComponent(transactionReference)}&reason=expired`;
 
     const rawLabel = (items && items[0]?.productTitle) || 'Pouch Supply Order';
-    // Worldpay narrative.line1 schema: max 24 chars, ONLY [a-zA-Z0-9-., ] allowed
+    // Worldpay narrative schema: merchant.narrative.line1 (Max 24 alphanumeric chars)
     let cleanNarrative = String(rawLabel)
-      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+      .replace(/[^a-zA-Z0-9 ]/g, '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 24);
@@ -426,22 +426,25 @@ async function handleCreateHostedPaymentPage(req: Request, res: Response) {
       cleanNarrative = 'Pouch Supply Order';
     }
 
-    // Clean description to avoid Next.js / 3DS frame parsing exceptions on Worldpay HPP
-    const cleanDescription = String(rawLabel || 'Pouch Supply Order')
-      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+    // Clean simple description
+    const cleanDescription = String(rawLabel || 'Pouch Supply')
+      .replace(/[^a-zA-Z0-9 ]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 60) || 'Pouch Supply Order';
+      .slice(0, 40) || 'Pouch Supply Order';
 
-    const cleanBillingName = String(customerName || 'Valued Customer')
-      .replace(/[^a-zA-Z0-9-., ]/g, ' ')
+    const cleanBillingName = String(customerName || 'Scott Kivlin')
+      .replace(/[^a-zA-Z0-9 ]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 50) || 'Customer';
+      .slice(0, 40) || 'Scott Kivlin';
 
     const body: Record<string, unknown> = {
       transactionReference,
-      merchant: { entity: cfg.entity },
+      merchant: { 
+        entity: cfg.entity,
+        narrative: { line1: cleanNarrative }
+      },
       narrative: { line1: cleanNarrative },
       value: { currency: 'GBP', amount: priceNum },
       description: cleanDescription,
