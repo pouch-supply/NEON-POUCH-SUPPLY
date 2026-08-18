@@ -376,7 +376,7 @@ export default function PrivacyPolicy({ onNavigate }: PrivacyPolicyProps) {
           <div className="flex flex-col sm:flex-row items-center gap-4 text-slate-400 text-xs sm:text-sm font-medium pt-1">
             <span className="flex items-center gap-1.5 justify-center">
               <Clock className="h-4 w-4 text-slate-500" />
-              Effective Date: <strong className="text-white">June 20, 2026</strong>
+              Effective Date: <strong className="text-white">June 21, 2026</strong>
             </span>
             <span className="hidden sm:inline text-slate-600">•</span>
             <span className="flex items-center gap-1.5 justify-center">
