@@ -1548,8 +1548,8 @@ export default function App() {
         subFrequency: hasSubscription ? 'Every 4 Weeks' : (loggedInCustomer.subFrequency || 'Every 4 Weeks'),
         subCansCount: hasSubscription ? (subItem?.quantity || 8) : (loggedInCustomer.subCansCount || 8),
         subPrice: hasSubscription ? (subItem?.price || 35.99) : (loggedInCustomer.subPrice || 35.99),
-        nextPayment: hasSubscription ? new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (loggedInCustomer.nextPayment || '19 June 2026'),
-        nextDelivery: hasSubscription ? new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (loggedInCustomer.nextDelivery || '24 June 2026')
+        nextPayment: hasSubscription ? new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (loggedInCustomer.nextPayment || ''),
+        nextDelivery: hasSubscription ? new Date(Date.now() + 32 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : (loggedInCustomer.nextDelivery || '')
       };
 
       // Check if this customer was referred and is placing an order using their 10% welcome coupon

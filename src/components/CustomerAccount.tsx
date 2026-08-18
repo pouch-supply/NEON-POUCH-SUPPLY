@@ -358,8 +358,8 @@ export default function CustomerAccount({
     let realCansCount = 6;
     let realPriceVal = 27.99;
     let realFreqVal = 'Bi-Weekly';
-    let realNextPayment = 'In 14 days';
-    let realNextDelivery = 'In 16 days';
+    let realNextPayment = '';
+    let realNextDelivery = '';
 
     if (latestSubOrder) {
       const subItem = (latestSubOrder.items || []).find((i: any) => 
@@ -406,10 +406,10 @@ export default function CustomerAccount({
         realFreqVal = 'Bi-Weekly';
       }
 
+      const orderDate = latestSubOrder.createdAt ? new Date(latestSubOrder.createdAt) : new Date();
       if ((subItem as any)?.nextPaymentDate) {
         realNextPayment = (subItem as any).nextPaymentDate;
       } else {
-        const orderDate = latestSubOrder.createdAt ? new Date(latestSubOrder.createdAt) : new Date();
         const nextDate = new Date(orderDate);
         if (realFreqVal.includes('Next Day')) nextDate.setDate(orderDate.getDate() + 1);
         else if (realFreqVal === 'Weekly') nextDate.setDate(orderDate.getDate() + 7);
@@ -417,6 +417,13 @@ export default function CustomerAccount({
         else nextDate.setDate(orderDate.getDate() + 14);
         realNextPayment = nextDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       }
+
+      const delivDate = new Date(orderDate);
+      if (realFreqVal.includes('Next Day')) delivDate.setDate(delivDate.getDate() + 2);
+      else if (realFreqVal === 'Weekly') delivDate.setDate(delivDate.getDate() + 9);
+      else if (realFreqVal === 'One Month') delivDate.setDate(delivDate.getDate() + 32);
+      else delivDate.setDate(delivDate.getDate() + 16);
+      realNextDelivery = delivDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
     if (!state) {
@@ -428,7 +435,7 @@ export default function CustomerAccount({
 
       state = {
         subPlan: chosenPlan,
-        subStatus: (loggedInCustomer as any).subStatus || 'Active',
+        subStatus: (loggedInCustomer as any).subStatus || (hasRealSubscription ? 'Active' : 'Inactive'),
         subFrequency: chosenFreq,
         subCansCount: chosenCans,
         subPrice: chosenPrice,
@@ -447,13 +454,10 @@ export default function CustomerAccount({
           { id: 'card_1', brand: 'Visa', last4: '4242', exp: '12/28', default: true }
         ],
         ordersCount: orders.filter(o => o.customerEmail && o.customerEmail.toLowerCase() === loggedInCustomer.email.toLowerCase()).length,
-        subItems: (loggedInCustomer as any).subItems || (allProducts.length >= 2 ? [
+        subItems: (loggedInCustomer as any).subItems || (latestSubOrder && allProducts.length >= 2 ? [
           { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(chosenCans / 2) || 3, image: allProducts[0].image, price: allProducts[0].price },
           { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(chosenCans / 2) || 3, image: allProducts[1].image, price: allProducts[1].price }
-        ] : [
-          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(chosenCans / 2) || 3, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
-          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(chosenCans / 2) || 3, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
-        ])
+        ] : [])
       };
     } else {
       // Ensure sync with loggedInCustomer's real storeCredit, referralCode, and real subscription orders
@@ -469,6 +473,7 @@ export default function CustomerAccount({
         state.subPrice = realPriceVal;
         state.subFrequency = realFreqVal;
         state.nextPayment = realNextPayment;
+        state.nextDelivery = realNextDelivery;
       } else {
         if ((loggedInCustomer as any).subStatus !== undefined) state.subStatus = (loggedInCustomer as any).subStatus;
         if ((loggedInCustomer as any).subPlan !== undefined) state.subPlan = (loggedInCustomer as any).subPlan;
@@ -484,15 +489,12 @@ export default function CustomerAccount({
 
       if ((loggedInCustomer as any).subItems !== undefined) {
         state.subItems = (loggedInCustomer as any).subItems;
-      } else if (!state.subItems || state.subItems.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) !== state.subCansCount) {
+      } else if (latestSubOrder && (!state.subItems || state.subItems.length === 0)) {
         const cansCount = state.subCansCount || 6;
         state.subItems = allProducts.length >= 2 ? [
           { productId: allProducts[0].id, title: allProducts[0].title, quantity: Math.floor(cansCount / 2) || 3, image: allProducts[0].image, price: allProducts[0].price },
           { productId: allProducts[1].id, title: allProducts[1].title, quantity: Math.ceil(cansCount / 2) || 3, image: allProducts[1].image, price: allProducts[1].price }
-        ] : [
-          { productId: 'prod-1', title: 'VELO Freeze Max', quantity: Math.floor(cansCount / 2) || 3, image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=120&q=80', price: 4.50 },
-          { productId: 'prod-2', title: 'ZYN Cool Mint', quantity: Math.ceil(cansCount / 2) || 3, image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=120&q=80', price: 4.50 }
-        ];
+        ] : [];
       }
     }
 
@@ -1428,49 +1430,136 @@ export default function CustomerAccount({
                   {/* Middle Row: Next Order & Subscription Visualizers */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    {/* Next Order visualizer */}
+                    {/* Next Order / Latest Order visualizer */}
                     <div className="lg:col-span-2 space-y-6">
                       
-                      {/* Next Order details card */}
-                      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs relative">
-                        <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
-                          <h3 className="font-extrabold text-sm text-[#071d37] uppercase tracking-wider flex items-center gap-1.5">
-                            <Truck className="h-4.5 w-4.5 text-[#dfa047]" />
-                            Your next order
-                          </h3>
-                          <span className="text-[10px] font-bold text-slate-500 bg-slate-150 py-1 px-3 rounded-full">Scheduled</span>
-                        </div>
+                      {/* Subscription Scheduled Box or Latest Order Card */}
+                      {hasRealSubscription ? (
+                        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs relative">
+                          <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+                            <h3 className="font-extrabold text-sm text-[#071d37] uppercase tracking-wider flex items-center gap-1.5">
+                              <Truck className="h-4.5 w-4.5 text-[#dfa047]" />
+                              Next Subscription Delivery
+                            </h3>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 py-1 px-3 rounded-full">
+                              Scheduled
+                            </span>
+                          </div>
 
-                        <div className="grid grid-cols-3 gap-4 text-xs font-semibold py-2">
-                          <div>
-                            <p className="text-[9px] text-slate-400 uppercase font-bold">Delivering On</p>
-                            <p className="text-xs font-extrabold text-[#071d37] mt-0.5">{custState.nextDelivery}</p>
+                          <div className="grid grid-cols-3 gap-4 text-xs font-semibold py-2">
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Delivering On</p>
+                              <p className="text-xs font-extrabold text-[#071d37] mt-0.5">{custState.nextDelivery || 'Calculating...'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Box Items</p>
+                              <p className="text-xs font-extrabold text-[#071d37] mt-0.5">{custState.subCansCount || 6} canisters</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Total Price</p>
+                              <p className="text-xs font-extrabold text-slate-900 mt-0.5">£{(Number(custState.subPrice || 0)).toFixed(2)}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[9px] text-slate-400 uppercase font-bold">Box Items</p>
-                            <p className="text-xs font-extrabold text-[#071d37] mt-0.5">{custState.subCansCount} canisters</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] text-slate-400 uppercase font-bold">Total Price</p>
-                            <p className="text-xs font-extrabold text-slate-900 mt-0.5">£{(Number(custState.subPrice || 0)).toFixed(2)}</p>
-                          </div>
-                        </div>
 
-                        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 mt-4">
-                          <button 
-                            onClick={() => { setSelectedOrderDetails(myOrders[0] || null); }}
-                            className="flex-1 bg-[#071d37] hover:bg-[#0c2e56] text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
-                          >
-                            View Order Details
-                          </button>
-                          <button 
-                            onClick={() => setActiveTab('subscriptions')}
-                            className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-[#071d37] font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
-                          >
-                            Manage Subscription
-                          </button>
+                          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 mt-4">
+                            {myOrders.length > 0 && (
+                              <button 
+                                onClick={() => { setSelectedOrderDetails(myOrders[0] || null); }}
+                                className="flex-1 bg-[#071d37] hover:bg-[#0c2e56] text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
+                              >
+                                View Order Details
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => setActiveTab('subscriptions')}
+                              className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-[#071d37] font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
+                            >
+                              Manage Subscription
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      ) : myOrders.length > 0 ? (
+                        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs relative">
+                          <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+                            <h3 className="font-extrabold text-sm text-[#071d37] uppercase tracking-wider flex items-center gap-1.5">
+                              <Package className="h-4.5 w-4.5 text-[#dfa047]" />
+                              Your Latest Order (#{myOrders[0].id})
+                            </h3>
+                            <span className={`text-[10px] font-bold py-1 px-3 rounded-full border ${
+                              myOrders[0].fulfillmentStatus === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              myOrders[0].fulfillmentStatus === 'Fulfilled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              {myOrders[0].fulfillmentStatus === 'Delivered' ? 'Delivered' : 
+                               myOrders[0].fulfillmentStatus === 'Fulfilled' ? 'Dispatched' : 'Processing'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4 text-xs font-semibold py-2">
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Ordered On</p>
+                              <p className="text-xs font-extrabold text-[#071d37] mt-0.5">
+                                {myOrders[0].createdAt ? new Date(myOrders[0].createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Items</p>
+                              <p className="text-xs font-extrabold text-[#071d37] mt-0.5">
+                                {myOrders[0].items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || myOrders[0].items?.length || 1} items
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-400 uppercase font-bold">Total Paid</p>
+                              <p className="text-xs font-extrabold text-slate-900 mt-0.5">£{(Number(myOrders[0].total || 0)).toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 mt-4">
+                            <button 
+                              onClick={() => { setSelectedOrderDetails(myOrders[0]); }}
+                              className="flex-1 bg-[#071d37] hover:bg-[#0c2e56] text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
+                            >
+                              View Order Details
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setTrackerInput(myOrders[0].trackingId || myOrders[0].id);
+                                setTrackedOrder(myOrders[0]);
+                                setActiveTab('orders');
+                              }}
+                              className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-[#071d37] font-bold text-xs uppercase tracking-wider py-2.5 rounded-xl transition-colors cursor-pointer text-center"
+                            >
+                              Track Delivery
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs relative text-center py-8 space-y-4">
+                          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-500">
+                            <Package className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-extrabold text-sm text-[#071d37] uppercase tracking-wider">No Orders Placed Yet</h3>
+                            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                              Your customer account is active! Browse our premium nicotine pouches or set up a recurring subscription box for automatic delivery savings.
+                            </p>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 max-w-sm mx-auto">
+                            <button 
+                              onClick={() => { window.location.href = '/'; }}
+                              className="flex-1 bg-[#071d37] hover:bg-[#0c2e56] text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-colors cursor-pointer text-center"
+                            >
+                              Shop Pouches
+                            </button>
+                            <button 
+                              onClick={() => { window.location.href = '/subscribe'; }}
+                              className="flex-1 bg-[#dfa047] hover:bg-[#c98e3b] text-[#071d37] font-black text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-colors cursor-pointer text-center"
+                            >
+                              Subscribe & Save
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Active subscription summary card */}
                       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
@@ -1513,7 +1602,7 @@ export default function CustomerAccount({
                             <div className="flex-1 space-y-1 text-center md:text-left">
                               <h4 className="text-sm font-black text-[#071d37] uppercase tracking-wide">{(custState.subPlan || 'LITE').toUpperCase()} BOX PLAN</h4>
                               <p className="text-xs text-slate-500">{custState.subCansCount || 6} items • Deliver {custState.subFrequency || 'Bi-Weekly'}</p>
-                              <p className="text-xs font-bold text-[#dfa047]">£{(custState.subPrice || 27.99).toFixed(2)} per delivery • Next charge: {custState.nextPayment || 'In 14 days'}</p>
+                              <p className="text-xs font-bold text-[#dfa047]">£{(Number(custState.subPrice || 27.99)).toFixed(2)} per delivery{custState.nextPayment ? ` • Next charge: ${custState.nextPayment}` : ''}</p>
                             </div>
 
                             <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0">
